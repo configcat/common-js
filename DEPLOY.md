@@ -6,7 +6,7 @@ Increase version number by using `npm version patch | minor | major`
 
  *example: increasing patch version* 
 ```PowerShell
-npm varsion patch
+npm version patch
 ```
 
 ### 2. Push tag to remote
