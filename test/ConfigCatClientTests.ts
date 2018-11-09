@@ -3,7 +3,7 @@ import { assert, expect } from "chai";
 import "mocha";
 import { IConfigFetcher, IConfigCatKernel, ICache } from "../src/.";
 import { ProjectConfig } from "../src/ProjectConfigService";
-import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
+import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { InMemoryCache } from "../src/Cache";
 
 describe("ConfigCatClient", () => {
@@ -58,7 +58,7 @@ describe("ConfigCatClient", () => {
 });
 
 export class FakeConfigFetcher implements IConfigFetcher {
-  fetchLogic(lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void {
+  fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void {
     if (callback) {
       callback(new ProjectConfig(0, "", ""));
     }
