@@ -15,4 +15,4 @@ npm version patch
  ```
 
 ### 3. That's it ;)
-You can follow the build status here -> https://travis-ci.com/configcat/common-js
+You can follow the build status here -> https://travis-ci.org/configcat/common-js
