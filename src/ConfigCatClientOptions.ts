@@ -39,9 +39,9 @@ export abstract class OptionsBase implements IOptions {
 
 export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
-    public pollIntervalSeconds: number = 5;
+    public pollIntervalSeconds: number = 60;
 
-    public maxInitWaitTimeSeconds: number = 60;
+    public maxInitWaitTimeSeconds: number = 5;
 
     public configChanged: () => void = () => { };
 
