@@ -14,21 +14,14 @@ export abstract class OptionsBase implements IOptions {
     public apiKey: string;
 
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
+        if (!apiKey) {
+            throw new Error("Invalid 'apiKey' value");
+        }
+
         this.apiKey = apiKey;
         if (options && options.logger)
         {
             this.logger = options.logger;
-        }
-    }
-
-    protected validate(): void {
-
-        if (!this.apiKey) {
-            throw new Error("Invalid 'apiKey' value");
-        }
-
-        if (!this.logger) {
-            throw new Error("Invalid 'logger' instance");
         }
     }
 
@@ -66,11 +59,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
                 this.configChanged = options.configChanged;
             }
         }
-    }
-
-    validate(): void {
-
-        super.validate();
 
         if (!this.maxInitWaitTimeSeconds || this.maxInitWaitTimeSeconds < 1) {
             throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
@@ -83,15 +71,8 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 }
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-
     constructor(apiKey: string, options: IManualPollOptions) {
-
         super(apiKey, "m-" + VERSION, options);
-    }
-
-    validate(): void {
-
-        super.validate();
     }
 }
 
@@ -108,11 +89,6 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
                 this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
             }
         }
-    }
-
-    validate(): void {
-
-        super.validate();
 
         if (!this.cacheTimeToLiveSeconds || this.cacheTimeToLiveSeconds < 1) {
             throw new Error("Invalid 'cacheTimeToLiveSeconds' value. Value must be greater than zero.");

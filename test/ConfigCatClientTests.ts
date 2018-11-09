@@ -3,60 +3,58 @@ import { assert, expect } from "chai";
 import "mocha";
 import { IConfigFetcher, IConfigCatKernel, ICache } from "../src/.";
 import { ProjectConfig } from "../src/ProjectConfigService";
-import { ManualPollOptions } from "../src/ConfigCatClientOptions";
+import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
+import { InMemoryCache } from "../src/Cache";
 
-describe("Options", () => {
-
-  it("Initialization With NULL 'logger' ShouldThrowError", () => {
-
-    expect(() => {
-      let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null});
-      let client: IConfigCatClient = new ConfigCatClient(options, new FakeConfigCatKernel());
-    }).to.throw("Invalid 'logger' instance");
-  });
-
+describe("ConfigCatClient", () => {
   it("Initialization With NULL 'apiKey' ShouldThrowError", () => {
 
     expect(() => {
+      let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
       let options: ManualPollOptions = new ManualPollOptions(null, null)
-      let client: IConfigCatClient = new ConfigCatClient(options, new FakeConfigCatKernel());
+      let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     }).to.throw("Invalid 'apiKey' value");
   });
 
-  it("Initialization With NULL 'configuration' Should crea(e an ins,ance", () => {
+  it("Initialization With NULL 'configuration' ShouldThrowError", () => {
 
-    let client: IConfigCatClient = new ConfigCatClient(null, new FakeConfigCatKernel());
+    expect(() => {
+      let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+      let client: IConfigCatClient = new ConfigCatClient(null, configCatKernel);
+    }).to.throw("Invalid 'options' value");
+  });
 
+  it("Initialization With NULL 'configCatKernel' ShouldThrowError", () => {
+
+    expect(() => {
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, null);
+    }).to.throw("Invalid 'configCatKernel' value");
+  }); 
+  
+  it("Initialization With AutoPollOptions should create an istance", () => {
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
   });
 
-  it("Initialization With 'LazyLoadConfiguration' Should create an instance", () => {
+  it("Initialization With LazyLoadOptions should create an istance", () => {
 
-    let client: IConfigCatClient = new ConfigCatClient("APIKEY", new FakeConfigFetcher(), new LazyLoadOptions());
-
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
   });
 
-  it("Initialization With 'ManualPollConfiguration' Should create an instance", () => {
+  it("Initialization With ManualPollOptions should create an istance", () => {
 
-    let client: IConfigCatClient = new ConfigCatClient(, new FakeConfigCatKernel());
-
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
   });
 
-  it("Initialization With 'LazyLoadConfiguration' Should create an instance", () => {
-
-    let client: IConfigCatClient = new ConfigCatClient("APIKEY", new FakeConfigFetcher(), new LazyLoadConfiguration());
-
-    assert.isDefined(client);
-  });
-
-  it("Initialization With 'AutoPollConfiguration' Should create an instance", () => {
-
-    let client: IConfigCatClient = new ConfigCatClient("APIKEY", new FakeConfigFetcher(), new AutoPollConfiguration());
-
-    assert.isDefined(client);
-  });
 });
 
 export class FakeConfigFetcher implements IConfigFetcher {

@@ -6,8 +6,6 @@ export class ManualPollService extends ConfigServiceBase implements IConfigServi
 
     public constructor(configFetcher: IConfigFetcher, cache: ICache, config: ManualPollOptions) {
 
-        config.validate();
-
         super(configFetcher, cache, config);
     }
 

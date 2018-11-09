@@ -7,7 +7,6 @@ export class LazyLoadConfigService extends ConfigServiceBase implements IConfigS
     private cacheTimeToLiveSeconds: number;
 
     constructor(configFetcher: IConfigFetcher, cache: ICache, config: LazyLoadOptions) {
-        config.validate();
 
         super(configFetcher, cache, config);
 

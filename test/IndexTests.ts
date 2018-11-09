@@ -9,21 +9,24 @@ describe("ConfigCatClient index (main)", () => {
 
     it("createClientWithAutoPoll ShouldCreateInstance", () => {
 
-        var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", new FakeConfigCatKernel() );
+        let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+        var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel);
 
         assert.isDefined(client);
     });
 
     it("createClientWithLazyLoad ShouldCreateInstance", () => {
 
-        var client: IConfigCatClient = configcatClient.createClientWithLazyLoad("APIKEY", new FakeConfigCatKernel() );
+        let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+        var client: IConfigCatClient = configcatClient.createClientWithLazyLoad("APIKEY", configCatKernel);
 
         assert.isDefined(client);
     });
 
     it("createClientWithManualPoll ShouldCreateInstance", () => {
 
-        var client: IConfigCatClient = configcatClient.createClientWithManualPoll("APIKEY", new FakeConfigCatKernel() );
+        let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
+        var client: IConfigCatClient = configcatClient.createClientWithManualPoll("APIKEY", configCatKernel);
 
         assert.isDefined(client);
     });
