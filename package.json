@@ -1,0 +1,61 @@
+{
+  "name": "configcat-common",
+  "version": "1.0.2",
+  "description": "ConfigCat is a configuration as a service that lets you manage your features and configurations without actually deploying new code.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "nyc mocha --require ts-node/register test/**/*.ts --exit --timeout 30000",
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "configcat",
+    "config",
+    "configuration",
+    "remote configuration",
+    "configcat client",
+    "feature flags",
+    "feature toggle",
+    "feature switch",
+    "canary release",
+    "soft launch",
+    "release strategy"
+  ],
+  "author": "ConfigCat",
+  "license": "MIT",
+  "dependencies": {
+    "js-sha1": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.12.2",
+    "chai": "^4.2.0",
+    "del": "^3.0.0",
+    "mocha": "^5.2.0",
+    "nyc": "^13.1.0",
+    "source-map-support": "^0.5.9",
+    "ts-node": "^7.0.1",
+    "typescript": "^2.9.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/configcat/node-sdk"
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "reporter": [
+      "text-summary",
+      "html",
+      "json",
+      "lcov"
+    ],
+    "all": true,
+    "include": [
+      "src"
+    ]
+  }
+}
