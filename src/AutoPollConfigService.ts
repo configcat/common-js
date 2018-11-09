@@ -1,4 +1,4 @@
-import { AutoPollConfiguration } from "./ConfigCatClientConfiguration";
+import { AutoPollConfiguration } from "./ConfigCatClientOptions";
 import { IConfigService, ProjectConfig, ConfigServiceBase } from "./ProjectConfigService";
 import { IConfigFetcher, ICache } from ".";
 

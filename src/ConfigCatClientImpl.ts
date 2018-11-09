@@ -1,5 +1,5 @@
-import { IConfigFetcher, ICache } from ".";
-import { AutoPollConfiguration, ManualPollConfiguration, LazyLoadConfiguration } from "./ConfigCatClientConfiguration";
+import { IConfigFetcher, ICache, IConfigCatKernel } from ".";
+import { AutoPollOptions, ManualPollOptions, LazyLoadOptions } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ProjectConfigService";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { InMemoryCache } from "./Cache";
@@ -23,61 +23,23 @@ export interface IConfigCatClient {
 }
 
 export class ConfigCatClientImpl implements IConfigCatClient {
-    private apiKey: string;
     private configService: IConfigService;
     private evaluator: IRolloutEvaluator;
 
     constructor(
-        apiKey: string,
-        configFetcher: IConfigFetcher,
-        configuration?: AutoPollConfiguration | ManualPollConfiguration | LazyLoadConfiguration,
-        cache?: ICache,
-        evaluator?: IRolloutEvaluator) {
+        options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
+        configCatKernel: IConfigCatKernel) {
 
-        if (!apiKey) {
-            throw new Error("Invalid 'apiKey' value");
-        }
+        this.evaluator = new RolloutEvaluator(options.logger);
 
-        this.apiKey = apiKey;
-
-        if (configuration && configuration instanceof LazyLoadConfiguration) {
-
-            let lc: LazyLoadConfiguration = <LazyLoadConfiguration>configuration;
-
-            this.configService = new LazyLoadConfigService(
-                configFetcher,
-                cache ? cache : new InMemoryCache(),
-                lc);
-
-            this.evaluator = evaluator ? evaluator : new RolloutEvaluator(lc.logger);
-
-        } else if (configuration && configuration instanceof ManualPollConfiguration) {
-
-            let mc: ManualPollConfiguration = <ManualPollConfiguration>configuration;
-
-            this.configService = new ManualPollService(
-                configFetcher,
-                cache ? cache : new InMemoryCache(),
-                mc);
-
-            this.evaluator = evaluator ? evaluator : new RolloutEvaluator(mc.logger);
-
+        if (options && options instanceof LazyLoadOptions) {                        
+            this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, configCatKernel.cache, <LazyLoadOptions>options);
+        } else if (options && options instanceof ManualPollOptions) {
+            this.configService = new ManualPollService(configCatKernel.configFetcher, configCatKernel.cache, <ManualPollOptions>options);
+        } else if (options && options instanceof AutoPollOptions) {
+            this.configService = new AutoPollConfigService(configCatKernel.configFetcher, configCatKernel.cache, <AutoPollOptions>options);
         } else {
-
-            let ac: AutoPollConfiguration = new AutoPollConfiguration();
-
-            if (configuration && configuration instanceof AutoPollConfiguration) {
-                ac = <AutoPollConfiguration>configuration;
-            }
-
-            let autoConfigService: AutoPollConfigService = new AutoPollConfigService(
-                configFetcher,
-                cache ? cache : new InMemoryCache(),
-                ac);
-
-            this.configService = autoConfigService;
-
-            this.evaluator = evaluator ? evaluator : new RolloutEvaluator(ac.logger);
+            throw new Error("Invalid 'options' value");
         }
     }
 

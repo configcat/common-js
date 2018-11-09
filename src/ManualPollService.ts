@@ -1,5 +1,5 @@
 import { IConfigService, ProjectConfig, ConfigServiceBase } from "./ProjectConfigService";
-import { ManualPollConfiguration } from "./ConfigCatClientConfiguration";
+import { ManualPollConfiguration } from "./ConfigCatClientOptions";
 import { IConfigFetcher, ICache } from ".";
 
 export class ManualPollService extends ConfigServiceBase implements IConfigService {

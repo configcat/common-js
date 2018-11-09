@@ -1,5 +1,5 @@
 import { IConfigFetcher, IConfigCatLogger, ICache } from ".";
-import { ConfigurationBase } from "./ConfigCatClientConfiguration";
+import { ConfigurationBase } from "./ConfigCatClientOptions";
 
 export class ProjectConfig {
     /** Entity identifier */
