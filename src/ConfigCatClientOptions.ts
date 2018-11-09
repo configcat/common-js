@@ -13,12 +13,15 @@ export abstract class OptionsBase implements IOptions {
 
     public apiKey: string;
 
+    public clientVersion: string;
+
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
             throw new Error("Invalid 'apiKey' value");
         }
 
         this.apiKey = apiKey;
+        this.clientVersion = clientVersion;
         if (options && options.logger)
         {
             this.logger = options.logger;
