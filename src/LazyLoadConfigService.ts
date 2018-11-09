@@ -1,12 +1,12 @@
 import { IConfigService, ConfigServiceBase, ProjectConfig } from "./ProjectConfigService";
-import { LazyLoadConfiguration } from "./ConfigCatClientOptions";
+import { LazyLoadOptions} from "./ConfigCatClientOptions";
 import { IConfigFetcher, ICache } from ".";
 
 export class LazyLoadConfigService extends ConfigServiceBase implements IConfigService {
 
     private cacheTimeToLiveSeconds: number;
 
-    constructor(configFetcher: IConfigFetcher, cache: ICache, config: LazyLoadConfiguration) {
+    constructor(configFetcher: IConfigFetcher, cache: ICache, config: LazyLoadOptions) {
         config.validate();
 
         super(configFetcher, cache, config);

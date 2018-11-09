@@ -1,4 +1,4 @@
-import { AutoPollConfiguration } from "./ConfigCatClientOptions";
+import { AutoPollOptions } from "./ConfigCatClientOptions";
 import { IConfigService, ProjectConfig, ConfigServiceBase } from "./ProjectConfigService";
 import { IConfigFetcher, ICache } from ".";
 
@@ -8,7 +8,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     private maxInitWaitExpire: Date;
     private configChanged: () => void;
 
-    constructor(configFetcher: IConfigFetcher, cache: ICache, autoPollConfig: AutoPollConfiguration) {
+    constructor(configFetcher: IConfigFetcher, cache: ICache, autoPollConfig: AutoPollOptions) {
 
         autoPollConfig.validate();
 

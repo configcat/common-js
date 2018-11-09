@@ -1,10 +1,10 @@
 import { IConfigService, ProjectConfig, ConfigServiceBase } from "./ProjectConfigService";
-import { ManualPollConfiguration } from "./ConfigCatClientOptions";
+import { ManualPollOptions } from "./ConfigCatClientOptions";
 import { IConfigFetcher, ICache } from ".";
 
 export class ManualPollService extends ConfigServiceBase implements IConfigService {
 
-    public constructor(configFetcher: IConfigFetcher, cache: ICache, config: ManualPollConfiguration) {
+    public constructor(configFetcher: IConfigFetcher, cache: ICache, config: ManualPollOptions) {
 
         config.validate();
 

@@ -97,13 +97,17 @@ export class ManualPollOptions extends OptionsBase implements IManualPollOptions
 
 export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions {
 
-    public cacheTimeToLiveSeconds: number;
+    public cacheTimeToLiveSeconds: number = 60;
 
     constructor(apiKey: string, options: ILazyLoadingOptions) {
 
         super(apiKey, "l-" + VERSION, options);
 
-        this.cacheTimeToLiveSeconds = 60;
+        if (options) {
+            if (options.cacheTimeToLiveSeconds) {
+                this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
+            }
+        }
     }
 
     validate(): void {

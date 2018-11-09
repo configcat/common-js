@@ -1,5 +1,5 @@
-import { ConfigCatClientImpl, IConfigCatClient } from "./ConfigCatClientImpl";
-import { AutoPollConfiguration, ManualPollConfiguration, LazyLoadConfiguration, IOptions } from "./ConfigCatClientOptions";
+import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
+import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions } from "./ConfigCatClientOptions";
 import { ProjectConfig } from "./ProjectConfigService";
 
 /**
@@ -8,14 +8,7 @@ import { ProjectConfig } from "./ProjectConfigService";
  * @param config - Configuration for autoPoll mode
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-
-    let c: AutoPollConfiguration = new AutoPollConfiguration();
-
-    
-
-    var result: ConfigCatClientImpl = new ConfigCatClientImpl(apiKey, configCatKernel.configFetcher, c, configCatKernel.cache);
-
-    return result;
+    return new ConfigCatClient(new AutoPollOptions(apiKey, options), configCatKernel);
 }
 
 /**
@@ -24,16 +17,7 @@ export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfi
  * @param config - Configuration for manualPoll mode
  */
 export function createClientWithManualPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IManualPollOptions): IConfigCatClient {
-
-    let c: ManualPollConfiguration = new ManualPollConfiguration();
-
-    if (config && config.logger) {
-        c.logger = config.logger;
-    }
-
-    var result: ConfigCatClientImpl = new ConfigCatClientImpl(apiKey, configCatKernel.configFetcher, c, configCatKernel.cache);
-
-    return result;
+    return new ConfigCatClient(new ManualPollOptions(apiKey, options), configCatKernel);
 }
 
 /**
@@ -42,20 +26,7 @@ export function createClientWithManualPoll(apiKey: string, configCatKernel: ICon
  * @param config - Configuration for lazyLoad mode
  */
 export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfigCatKernel, options?: ILazyLoadingOptions): IConfigCatClient {
-
-    let c: LazyLoadConfiguration = new LazyLoadConfiguration();
-
-    if (config && config.logger) {
-        c.logger = config.logger;
-    }
-
-    if (config && config.cacheTimeToLiveSeconds) {
-        c.cacheTimeToLiveSeconds = config.cacheTimeToLiveSeconds;
-    }
-
-    var result: ConfigCatClientImpl = new ConfigCatClientImpl(apiKey, configCatKernel.configFetcher, c, configCatKernel.cache);
-
-    return result;
+    return new ConfigCatClient(new LazyLoadOptions(apiKey, options), configCatKernel);
 }
 
 export interface IAutoPollOptions extends IOptions {
@@ -67,7 +38,6 @@ export interface IAutoPollOptions extends IOptions {
 }
 
 export interface IManualPollOptions extends IOptions {
-
 }
 
 export interface ILazyLoadingOptions extends IOptions {

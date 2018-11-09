@@ -22,13 +22,21 @@ export interface IConfigCatClient {
     forceRefresh(callback: () => void): void;
 }
 
-export class ConfigCatClientImpl implements IConfigCatClient {
+export class ConfigCatClient implements IConfigCatClient {
     private configService: IConfigService;
     private evaluator: IRolloutEvaluator;
 
     constructor(
         options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
         configCatKernel: IConfigCatKernel) {
+
+        if (!options) {
+            throw new Error("Invalid 'options' value");
+        }
+
+        if (!configCatKernel) {
+            throw new Error("Invalid 'configCatKernel' value");
+        }
 
         this.evaluator = new RolloutEvaluator(options.logger);
 

@@ -1,5 +1,5 @@
 import { IConfigFetcher, IConfigCatLogger, ICache } from ".";
-import { ConfigurationBase } from "./ConfigCatClientOptions";
+import { OptionsBase } from "./ConfigCatClientOptions";
 
 export class ProjectConfig {
     /** Entity identifier */
@@ -27,7 +27,7 @@ export abstract class ConfigServiceBase {
     protected cache: ICache;
     protected logger: IConfigCatLogger;
 
-    constructor(configFetcher: IConfigFetcher, cache: ICache, baseConfig: ConfigurationBase) {
+    constructor(configFetcher: IConfigFetcher, cache: ICache, baseConfig: OptionsBase) {
         
         if (!configFetcher) {
             throw new Error("Invalid 'configFetcher' value");
