@@ -1,5 +1,5 @@
 import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions } from "./ConfigCatClientOptions";
+import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsBase } from "./ConfigCatClientOptions";
 import { ProjectConfig } from "./ProjectConfigService";
 
 /**
@@ -56,7 +56,7 @@ export interface IConfigCatKernel{
 }
 
 export interface IConfigFetcher {
-    fetchLogic(lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void;
+    fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void;
 }
 
 export interface ICache {

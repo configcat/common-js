@@ -25,7 +25,7 @@ export interface IConfigService {
 export abstract class ConfigServiceBase {
     protected configFetcher: IConfigFetcher;
     protected cache: ICache;
-    protected logger: IConfigCatLogger;
+    protected baseConfig: OptionsBase;
 
     constructor(configFetcher: IConfigFetcher, cache: ICache, baseConfig: OptionsBase) {
         
@@ -43,12 +43,12 @@ export abstract class ConfigServiceBase {
 
         this.configFetcher = configFetcher;
         this.cache = cache;
-        this.logger = baseConfig.logger;
+        this.baseConfig = baseConfig;
     }
 
     protected refreshLogicBase(lastProjectConfig: ProjectConfig, callback: (value: ProjectConfig) => void): void {
 
-        this.configFetcher.fetchLogic(lastProjectConfig, (newConfig) => {
+        this.configFetcher.fetchLogic(this.baseConfig, lastProjectConfig, (newConfig) => {
 
             if (newConfig) {
 
