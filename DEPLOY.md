@@ -4,7 +4,7 @@
 ### 1. Create a new version (patch, minor, major)
 Increase version number by using `npm version patch | minor | major`
 
- *example: increasing patch version* 
+ *Example: increasing patch version* 
 ```PowerShell
 npm version patch
 ```
