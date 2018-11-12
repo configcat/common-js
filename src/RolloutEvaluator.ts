@@ -162,7 +162,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             case "Country":
                 return User.country;
             default:
-                return User.custom[attribute];
+                return (User.custom || {})[attribute];
         }
     }
 }
