@@ -22,6 +22,7 @@ export abstract class OptionsBase implements IOptions {
 
         this.apiKey = apiKey;
         this.clientVersion = clientVersion;
+        
         if (options && options.logger)
         {
             this.logger = options.logger;
@@ -29,11 +30,7 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        if (this.apiKey) {
-            return "https://cdn.configcat.com/configuration-files/" + this.apiKey + "/config_v2.json";
-        }
-
-        throw new Error("Invalid 'apiKey'");
+        return "https://cdn.configcat.com/configuration-files/" + this.apiKey + "/config_v2.json";
     }
 }
 

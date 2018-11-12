@@ -1,6 +1,6 @@
 import { IConfigFetcher, ICache, IConfigCatKernel } from ".";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions } from "./ConfigCatClientOptions";
-import { IConfigService } from "./ProjectConfigService";
+import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { InMemoryCache } from "./Cache";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
@@ -16,7 +16,7 @@ export const CONFIG_CHANGE_EVENT_NAME: string = "changed";
 export interface IConfigCatClient {
 
     /** Return a value of the key (Key for programs) */
-    getValue(key: string, defaultValue: any, user: User, callback: (value: any) => void): void;
+    getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
 
     /** Refresh the configuration */
     forceRefresh(callback: () => void): void;
@@ -51,7 +51,7 @@ export class ConfigCatClient implements IConfigCatClient {
         }
     }
 
-    getValue(key: string, defaultValue: any, user: User, callback: (value: any) => void): void {
+    getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
 
         this.configService.getConfig((value) => {
             var result: any = defaultValue;

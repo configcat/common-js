@@ -1,9 +1,9 @@
-import { ProjectConfig } from "./ProjectConfigService";
+import { ProjectConfig } from "./ConfigServiceBase";
 import * as sha1 from "js-sha1";
 import { IConfigCatLogger } from ".";
 
 export interface IRolloutEvaluator {
-    Evaluate(config: ProjectConfig, key: string, defaultValue: any, User: User): any;
+    Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User): any;
 }
 
 /** Object for variation evaluation */
@@ -34,7 +34,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(config: ProjectConfig, key: string, defaultValue: any, User: User): any {
+    Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User): any {
 
         if (!config || !config.JSONConfig) {
 
@@ -54,13 +54,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         let result: any;
 
-        if (User) {
+        if (user) {
 
-            result = this.EvaluateRules(json[key].RolloutRules, User);
+            result = this.EvaluateRules(json[key].RolloutRules, user);
 
             if (result == null) {
 
-                result = this.EvaluateVariations(json[key].RolloutPercentageItems, key, User);
+                result = this.EvaluateVariations(json[key].RolloutPercentageItems, key, user);
             }
         }
 

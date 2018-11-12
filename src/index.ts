@@ -1,6 +1,6 @@
 import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsBase } from "./ConfigCatClientOptions";
-import { ProjectConfig } from "./ProjectConfigService";
+import { ProjectConfig } from "./ConfigServiceBase";
 
 /**
  * Create an instance of ConfigCatClient and setup AutoPoll mode

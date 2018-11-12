@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { RolloutEvaluator, User } from "../src/RolloutEvaluator";
-import { ProjectConfig } from "../src/ProjectConfigService";
+import { ProjectConfig } from "../src/ConfigServiceBase";
 import * as fs from "fs";
 import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
 

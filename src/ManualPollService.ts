@@ -1,4 +1,4 @@
-import { IConfigService, ProjectConfig, ConfigServiceBase } from "./ProjectConfigService";
+import { IConfigService, ProjectConfig, ConfigServiceBase } from "./ConfigServiceBase";
 import { ManualPollOptions } from "./ConfigCatClientOptions";
 import { IConfigFetcher, ICache } from ".";
 
