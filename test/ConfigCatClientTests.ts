@@ -46,6 +46,16 @@ describe("ConfigCatClient", () => {
     client.getValue("debug", false, function(value) {
       assert.equal(true, value);
     }, new User("identifier"));
+
+    client.forceRefresh(function(){
+      client.getValue("debug", false, function(value) {
+        assert.equal(true, value);
+      });
+      
+      client.getValue("debug", false, function(value) {
+        assert.equal(true, value);
+      }, new User("identifier"));
+    });
   });
 
   it("Initialization With LazyLoadOptions should create an istance", () => {
@@ -62,6 +72,16 @@ describe("ConfigCatClient", () => {
     client.getValue("debug", false, function(value) {
       assert.equal(true, value);
     }, new User("identifier"));
+
+    client.forceRefresh(function(){
+      client.getValue("debug", false, function(value) {
+        assert.equal(true, value);
+      });
+      
+      client.getValue("debug", false, function(value) {
+        assert.equal(true, value);
+      }, new User("identifier"));
+    });
   });
 
   it("Initialization With ManualPollOptions should create an istance", () => {
