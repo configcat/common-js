@@ -52,7 +52,7 @@ export abstract class ConfigServiceBase {
 
             if (newConfig) {
 
-                this.cache.Set(newConfig);
+                this.cache.Set(this.baseConfig.apiKey, newConfig);
 
                 callback(newConfig);
             }

@@ -1,5 +1,8 @@
-# ConfigCat SDK for node.js
-ConfigCat is a cloud based configuration as a service. It integrates with your apps, backends, websites, and other programs, so you can configure them through this website even after they are deployed.
+# ConfigCat Common library for JavaScript
+
+ConfigCat Common library for JavaScript is an intermediate package for providing the common ConfigCat SDK logic for [ConfigCat SDK for Node.js](https://github.com/configcat/node-sdk) and [ConfigCat SDK for JavaScript](https://github.com/configcat/js-sdk).
+
+ConfigCat is a feature flag, feature toggle and configuration management service. That lets you launch new features and change your software configuration remotely without actually (re)deploying code.
 https://configcat.com  
 
 [![Build Status](https://travis-ci.com/configcat/common-js.svg?branch=master)](https://travis-ci.com/configcat/common-js) [![codecov](https://codecov.io/gh/configcat/common-js/branch/master/graph/badge.svg)](https://codecov.io/gh/configcat/common-js) [![Known Vulnerabilities](https://snyk.io/test/github/configcat/common-js/badge.svg?targetFile=package.json)](https://snyk.io/test/github/configcat/common-js?targetFile=package.json) ![License](https://img.shields.io/github/license/configcat/common-js.svg) \
@@ -7,7 +10,7 @@ https://configcat.com
 
 ## Getting Started
 
- 1. Install [NPM](https://docs.npmjs.com/cli/install) package: [configcat-client-node]( https://npmjs.com/package/configcat-common)
+ 1. Install [NPM](https://docs.npmjs.com/cli/install) package: [configcat-common]( https://npmjs.com/package/configcat-common)
  ```PowerShell
   npm i configcat-common
  ```

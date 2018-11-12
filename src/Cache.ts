@@ -2,14 +2,13 @@ import { ProjectConfig } from "./ProjectConfigService";
 import { ICache } from ".";
 
 export class InMemoryCache implements ICache {
-    cache: ProjectConfig;
+    cache:  { [apiKey: string] : ProjectConfig; };
 
-    Set(config: ProjectConfig): void {
-        this.cache = config;
+    Set(apiKey: string, config: ProjectConfig): void {
+        this.cache[apiKey] = config;
     }
-    Get(): ProjectConfig {
-        var c: ProjectConfig = this.cache;
 
-        return c;
+    Get(apiKey: string): ProjectConfig {
+        return this.cache[apiKey];
     }
 }

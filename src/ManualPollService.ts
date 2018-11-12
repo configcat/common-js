@@ -11,11 +11,12 @@ export class ManualPollService extends ConfigServiceBase implements IConfigServi
 
     getConfig(callback: (value: ProjectConfig) => void): void {
 
-        callback(this.cache.Get());
+        callback(this.cache.Get(this.baseConfig.apiKey));
     }
+    
     refreshConfig(callback?: (value: ProjectConfig) => void): void {
 
-        this.refreshLogicBase(this.cache.Get(), (newConfig) => {
+        this.refreshLogicBase(this.cache.Get(this.baseConfig.apiKey), (newConfig) => {
             if (callback) {
                 callback(newConfig);
             }

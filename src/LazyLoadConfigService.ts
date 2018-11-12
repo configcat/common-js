@@ -15,7 +15,7 @@ export class LazyLoadConfigService extends ConfigServiceBase implements IConfigS
 
     getConfig(callback: (value: ProjectConfig) => void): void {
 
-        let p: ProjectConfig = this.cache.Get();
+        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
 
         if (p && p.Timestamp < new Date().getTime() + (this.cacheTimeToLiveSeconds * 1000)) {
             callback(p);
@@ -28,7 +28,7 @@ export class LazyLoadConfigService extends ConfigServiceBase implements IConfigS
     }
 
     refreshConfig(callback?: (value: ProjectConfig) => void): void {
-        let p: ProjectConfig = this.cache.Get();
+        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
 
         this.refreshLogicBase(p, (newConfig) => {
             callback(newConfig);

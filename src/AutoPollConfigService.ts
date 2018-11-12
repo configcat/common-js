@@ -19,7 +19,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
     getConfig(callback: (value: ProjectConfig) => void): void {
 
-        var p: ProjectConfig = this.cache.Get();
+        var p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
 
         if (!p && new Date().getTime() < this.maxInitWaitExpire.getTime()) {
             this.refreshLogic(callback);
@@ -33,7 +33,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     }
 
     private refreshLogic(callback?: (value: ProjectConfig) => void): void {
-        let p: ProjectConfig = this.cache.Get();
+        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
 
         this.refreshLogicBase(p, (newConfig) => {
 

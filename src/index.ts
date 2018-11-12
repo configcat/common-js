@@ -60,7 +60,7 @@ export interface IConfigFetcher {
 }
 
 export interface ICache {
-    Set(config: ProjectConfig): void;
+    Set(apiKey: string, config: ProjectConfig): void;
 
-    Get(): ProjectConfig;
+    Get(apiKey: string): ProjectConfig;
 }
