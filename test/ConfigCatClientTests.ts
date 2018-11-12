@@ -6,6 +6,7 @@ import { ProjectConfig } from "../src/ConfigServiceBase";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { InMemoryCache } from "../src/Cache";
 import { User } from "../src/RolloutEvaluator";
+import { doesNotReject } from "assert";
 
 describe("ConfigCatClient", () => {
   it("Initialization With NULL 'apiKey' ShouldThrowError", () => {
@@ -33,7 +34,7 @@ describe("ConfigCatClient", () => {
     }).to.throw("Invalid 'configCatKernel' value");
   }); 
   
-  it("Initialization With AutoPollOptions should create an istance, GetValue works", () => {
+  it("Initialization With AutoPollOptions should create an istance, GetValue works", (done) => {
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: null})
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -41,24 +42,27 @@ describe("ConfigCatClient", () => {
 
     client.getValue("debug", false, function(value) {
       assert.equal(true, value);
-    });
-    
-    client.getValue("debug", false, function(value) {
-      assert.equal(true, value);
-    }, new User("identifier"));
-
-    client.forceRefresh(function(){
-      client.getValue("debug", false, function(value) {
-        assert.equal(true, value);
-      });
       
       client.getValue("debug", false, function(value) {
         assert.equal(true, value);
+
+        client.forceRefresh(function(){
+          client.getValue("debug", false, function(value) {
+            assert.equal(true, value);
+
+            client.getValue("debug", false, function(value) {
+              assert.equal(true, value);
+
+              done();
+            }, new User("identifier"));
+          });
+        });
       }, new User("identifier"));
+
     });
   });
 
-  it("Initialization With LazyLoadOptions should create an istance", () => {
+  it("Initialization With LazyLoadOptions should create an istance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: null})
@@ -67,24 +71,29 @@ describe("ConfigCatClient", () => {
 
     client.getValue("debug", false, function(value) {
       assert.equal(true, value);
-    });
-    
-    client.getValue("debug", false, function(value) {
-      assert.equal(true, value);
-    }, new User("identifier"));
 
-    client.forceRefresh(function(){
       client.getValue("debug", false, function(value) {
         assert.equal(true, value);
-      });
-      
-      client.getValue("debug", false, function(value) {
-        assert.equal(true, value);
+
+        client.forceRefresh(function(){
+          client.getValue("debug", false, function(value) {
+            assert.equal(true, value);
+
+            client.getValue("debug", false, function(value) {
+              assert.equal(true, value);
+
+              done();
+            }, new User("identifier"));
+          });
+        });
       }, new User("identifier"));
     });
+    
+    
+
   });
 
-  it("Initialization With ManualPollOptions should create an istance", () => {
+  it("Initialization With ManualPollOptions should create an istance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
@@ -93,19 +102,22 @@ describe("ConfigCatClient", () => {
 
     client.getValue("debug", false, function(value) {
       assert.equal(false, value);
-    });
-    
-    client.getValue("debug", false, function(value) {
-      assert.equal(false, value);
-    }, new User("identifier"));
 
-    client.forceRefresh(function(){
       client.getValue("debug", false, function(value) {
-        assert.equal(true, value);
-      });
-      
-      client.getValue("debug", false, function(value) {
-        assert.equal(true, value);
+        assert.equal(false, value);
+        
+        client.forceRefresh(function(){
+          client.getValue("debug", false, function(value) {
+            assert.equal(true, value);
+
+            client.getValue("debug", false, function(value) {
+              assert.equal(true, value);
+
+              done();
+            }, new User("identifier"));
+          });
+        });
+
       }, new User("identifier"));
     });
   });
