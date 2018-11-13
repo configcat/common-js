@@ -69,7 +69,12 @@ describe("ConfigCatClient", () => {
             client.getValue("debug", false, function(value) {
               assert.equal(true, value);
 
-              done();
+              client.getValue("NOT_EXISTS", false, function(value) {
+                assert.equal(false, value);
+  
+                done();
+              }, new User("identifier"));
+
             }, new User("identifier"));
           });
         });
@@ -90,23 +95,12 @@ describe("ConfigCatClient", () => {
 
       client.getValue("debug", false, function(value) {
         assert.equal(true, value);
-
-        client.forceRefresh(function(){
-          client.getValue("debug", false, function(value) {
-            assert.equal(true, value);
-
-            client.getValue("debug", false, function(value) {
-              assert.equal(true, value);
-
+          client.getValue("NOT_EXISTS", false, function(value) {
+            assert.equal(false, value);
               done();
             }, new User("identifier"));
-          });
-        });
+        }, new User("identifier"));
       }, new User("identifier"));
-    });
-    
-    
-
   });
 
   it("Initialization With ManualPollOptions should create an istance", (done) => {
@@ -129,7 +123,11 @@ describe("ConfigCatClient", () => {
             client.getValue("debug", false, function(value) {
               assert.equal(true, value);
 
-              done();
+              client.getValue("NOT_EXISTS", false, function(value) {
+                assert.equal(false, value);
+  
+                done();
+              }, new User("identifier"));
             }, new User("identifier"));
           });
         });
