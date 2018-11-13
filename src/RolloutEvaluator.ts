@@ -9,8 +9,11 @@ export interface IRolloutEvaluator {
 /** Object for variation evaluation */
 export class User {
 
-    constructor(identifier: string) {
+    constructor(identifier: string, email: string = null, country: string = null, custom = {}) {
         this.identifier = identifier;
+        this.email = email;
+        this.country = country;
+        this.custom = custom;
     }
 
     /** Unique identifier for the User or Session. e.g. Email address, Primary key, Session Id */
