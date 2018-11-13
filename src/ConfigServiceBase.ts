@@ -44,6 +44,10 @@ export abstract class ConfigServiceBase {
 
                 callback(newConfig);
             }
+            else {
+
+                callback(lastProjectConfig);
+            }
         });
     }
 }
