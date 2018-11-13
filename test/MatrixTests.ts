@@ -26,7 +26,6 @@ describe("MatrixTests", () => {
             }
 
             var lines: string[] = data.toString().split(require("os").EOL);
-
             lines.forEach(function (line: string): void {
 
                 if (header) {
@@ -41,7 +40,7 @@ describe("MatrixTests", () => {
 
                         let key: string = header[i];
 
-                        let actual: any = evaluator.Evaluate(CONFIG, key, Helper.GetTypedDefaultValue(key), user);
+                        let actual: any = evaluator.Evaluate(CONFIG, key, null, user);
 
                         let expected: any = Helper.GetTypedValue(line.split(";")[i], key);
 
@@ -58,14 +57,11 @@ describe("MatrixTests", () => {
                     }
 
                 } else {
-
                     header = line.split(";");
                 }
-
+                
                 rowNo++;
-            });
-
-            done();
+            }, done());
         });
     });
 
@@ -81,9 +77,17 @@ describe("MatrixTests", () => {
 
             let result: User = new User(up[0]);
 
-            result.email = up[1];
-            result.country = up[2];
-            result.custom[headers[3]] = up[3];
+            if (up[1]){
+                result.email = up[1];
+            }
+
+            if (up[2]) {
+                result.country = up[2];
+            }
+
+            if (up[3]) {
+                result.custom[headers[3]] = up[3];
+            }
 
             return result;
         }
@@ -103,23 +107,6 @@ describe("MatrixTests", () => {
             }
 
             return value;
-        }
-
-        public static GetTypedDefaultValue(key: string): string | boolean | number {
-
-            if (key.substring(0, "bool".length) === "bool") {
-                return false;
-            }
-
-            if (key.substring(0, "double".length) === "double") {
-                return -123.456;
-            }
-
-            if (key.substring(0, "integer".length) === "integer") {
-                return 123;
-            }
-
-            return "N/A";
         }
     }
 });
