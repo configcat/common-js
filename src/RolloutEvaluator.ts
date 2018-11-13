@@ -36,16 +36,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User): any {
 
-        if (!config || !config.JSONConfig) {
+        if (!config || !config.ConfigJSON) {
 
             this.logger.error("JSONConfig is not present, returning defaultValue");
 
             return defaultValue;
         }
 
-        let json: any = JSON.parse(config.JSONConfig);
-
-        if (!json[key]) {
+        if (!config.ConfigJSON[key]) {
 
             this.logger.error("Unknown key: '" + key + "'");
 
@@ -56,15 +54,15 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         if (user) {
 
-            result = this.EvaluateRules(json[key].RolloutRules, user);
+            result = this.EvaluateRules(config.ConfigJSON[key].RolloutRules, user);
 
             if (result == null) {
 
-                result = this.EvaluateVariations(json[key].RolloutPercentageItems, key, user);
+                result = this.EvaluateVariations(config.ConfigJSON[key].RolloutPercentageItems, key, user);
             }
         }
 
-        return result == null ? json[key].Value : result;
+        return result == null ? config.ConfigJSON[key].Value : result;
     }
 
     private EvaluateRules(rolloutRules: any, User: User): any {

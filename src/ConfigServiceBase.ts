@@ -4,14 +4,14 @@ import { OptionsBase } from "./ConfigCatClientOptions";
 export class ProjectConfig {
     /** Entity identifier */
     HttpETag: string;
-    /** ConfigCat config content */
-    JSONConfig: string;
+    /** ConfigCat config */
+    ConfigJSON: any;
     /** Timestamp in milliseconds */
     Timestamp: number;
 
     constructor(timeStamp: number, jsonConfig: string, httpETag: string) {
         this.Timestamp = timeStamp;
-        this.JSONConfig = jsonConfig;
+        this.ConfigJSON = JSON.parse(jsonConfig);
         this.HttpETag = httpETag;
     }
 }
