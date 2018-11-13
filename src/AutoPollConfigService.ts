@@ -13,7 +13,6 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
         super(configFetcher, cache, autoPollConfig);
 
         this.timer = setInterval(() => this.refreshConfig(), autoPollConfig.pollIntervalSeconds * 1000);
-        this.maxInitWaitExpire = new Date(new Date().getTime() + autoPollConfig.maxInitWaitTimeSeconds * 1000);
         this.configChanged = autoPollConfig.configChanged;
     }
 
@@ -21,7 +20,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
         var p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
 
-        if (!p && new Date().getTime() < this.maxInitWaitExpire.getTime()) {
+        if (!p) {
             this.refreshLogic(callback);
         } else {
             callback(p);

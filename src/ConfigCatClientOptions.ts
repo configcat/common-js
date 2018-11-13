@@ -5,6 +5,7 @@ const VERSION: string = require("../package.json").version;
 
 export interface IOptions {
     logger?: IConfigCatLogger;
+    requestTimeoutMs?: number;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -15,6 +16,8 @@ export abstract class OptionsBase implements IOptions {
 
     public clientVersion: string;
 
+    public requestTimeoutMs: number = 30000;
+
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
             throw new Error("Invalid 'apiKey' value");
@@ -23,9 +26,19 @@ export abstract class OptionsBase implements IOptions {
         this.apiKey = apiKey;
         this.clientVersion = clientVersion;
         
-        if (options && options.logger)
+        if (options)
         {
-            this.logger = options.logger;
+            if (options.logger) { 
+                this.logger = options.logger;
+            }
+
+            if (options.requestTimeoutMs ) { 
+                if (options.requestTimeoutMs < 0) {
+                    throw new Error("Invalid 'requestTimeoutMs' value");
+                }
+                
+                this.requestTimeoutMs = options.requestTimeoutMs;
+            }
         }
     }
 
@@ -38,8 +51,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
     public pollIntervalSeconds: number = 60;
 
-    public maxInitWaitTimeSeconds: number = 5;
-
     public configChanged: () => void = () => { };
 
     constructor(apiKey: string, options: IAutoPollOptions) {
@@ -47,9 +58,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
         super(apiKey, "a-" + VERSION, options);
 
         if (options) {
-            if (options.maxInitWaitTimeSeconds) {
-                this.maxInitWaitTimeSeconds = options.maxInitWaitTimeSeconds;
-            }
 
             if (options.pollIntervalSeconds) {
                 this.pollIntervalSeconds = options.pollIntervalSeconds;
@@ -58,10 +66,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
             if (options.configChanged) {
                 this.configChanged = options.configChanged;
             }
-        }
-
-        if (!this.maxInitWaitTimeSeconds || this.maxInitWaitTimeSeconds < 1) {
-            throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
         }
 
         if (!this.pollIntervalSeconds || this.pollIntervalSeconds < 1) {

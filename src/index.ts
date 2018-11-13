@@ -32,8 +32,6 @@ export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfi
 export interface IAutoPollOptions extends IOptions {
     pollIntervalSeconds?: number;
 
-    maxInitWaitTimeSeconds?: number;
-
     configChanged?: () => void;
 }
 
