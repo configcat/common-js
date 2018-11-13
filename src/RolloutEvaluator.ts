@@ -76,7 +76,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                 let rule: any = rolloutRules[i];
 
-                let ca: string = this.GetUserAttribute(User, rule.ComparisonAttribute);
+                let comparisonAttribute: string = this.GetUserAttribute(User, rule.ComparisonAttribute) || '';
 
                 switch (rule.Comparator) {
                     case 0: // in
@@ -85,7 +85,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                         for (let ci: number = 0; ci < cvs.length; ci++) {
 
-                            if (cvs[ci].trim() === ca) {
+                            if (cvs[ci].trim() === comparisonAttribute) {
                                 return rule.Value;
                             }
                         }
@@ -95,7 +95,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                     case 1: // notIn
 
                         if (!rule.ComparisonValue.split(",").some(e => {
-                            if (e.trim() === ca) {
+                            if (e.trim() === comparisonAttribute) {
                                 return true;
                             }
 
@@ -109,7 +109,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                     case 2: // contains
 
-                        if (ca.search(rule.ComparisonValue) !== -1) {
+                        if (comparisonAttribute.search(rule.ComparisonValue) !== -1) {
                             return rule.Value;
                         }
 
@@ -117,7 +117,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                     case 3: // not contains
 
-                        if (ca.search(rule.ComparisonValue) === -1) {
+                        if (comparisonAttribute.search(rule.ComparisonValue) === -1) {
                             return rule.Value;
                         }
 
