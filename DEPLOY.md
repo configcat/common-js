@@ -14,5 +14,7 @@ npm version patch
   git push origin <new tag>
  ```
 
-### 3. That's it ;)
 You can follow the build status here -> https://travis-ci.org/configcat/common-js
+
+### 4. Update dependant packages
+Update `common-js` version number in `js-sdk` and `node-sdk`'s `package.json` and re-deploy both packages.
