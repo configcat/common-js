@@ -29,18 +29,6 @@ export abstract class ConfigServiceBase {
 
     constructor(configFetcher: IConfigFetcher, cache: ICache, baseConfig: OptionsBase) {
         
-        if (!configFetcher) {
-            throw new Error("Invalid 'configFetcher' value");
-        }
-
-        if (!cache) {
-            throw new Error("Invalid 'cache' value");
-        }
-
-        if (!baseConfig) {
-            throw new Error("Invalid 'baseConfig' value");
-        }
-
         this.configFetcher = configFetcher;
         this.cache = cache;
         this.baseConfig = baseConfig;

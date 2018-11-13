@@ -33,6 +33,22 @@ describe("ConfigCatClient", () => {
     let client: IConfigCatClient = new ConfigCatClient(options, null);
     }).to.throw("Invalid 'configCatKernel' value");
   }); 
+
+  it("Initialization With NULL 'configCatKernel' ShouldThrowError", () => {
+
+    expect(() => {
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, {configFetcher: null, cache: new InMemoryCache()});
+    }).to.throw("Invalid 'configCatKernel.configFetcher' value");
+  }); 
+
+  it("Initialization With NULL 'configCatKernel' ShouldThrowError", () => {
+
+    expect(() => {
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, {configFetcher: new FakeConfigFetcher(), cache: null});
+    }).to.throw("Invalid 'configCatKernel.cache' value");
+  }); 
   
   it("Initialization With AutoPollOptions should create an istance, GetValue works", (done) => {
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};

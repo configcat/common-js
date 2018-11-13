@@ -38,6 +38,14 @@ export class ConfigCatClient implements IConfigCatClient {
             throw new Error("Invalid 'configCatKernel' value");
         }
 
+        if (!configCatKernel.cache) {
+            throw new Error("Invalid 'configCatKernel.cache' value");
+        }
+
+        if (!configCatKernel.configFetcher) {
+            throw new Error("Invalid 'configCatKernel.configFetcher' value");
+        }
+
         this.evaluator = new RolloutEvaluator(options.logger);
 
         if (options && options instanceof LazyLoadOptions) {                        
