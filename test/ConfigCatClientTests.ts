@@ -95,10 +95,17 @@ describe("ConfigCatClient", () => {
 
       client.getValue("debug", false, function(value) {
         assert.equal(true, value);
-          client.getValue("NOT_EXISTS", false, function(value) {
+
+        client.getValue("NOT_EXISTS", false, function(value) {
             assert.equal(false, value);
-              done();
-            }, new User("identifier"));
+
+            client.forceRefresh(function(){
+              client.getValue("debug", false, function(value) {
+                assert.equal(true, value);
+                done();
+              }, new User("identifier"));
+            });
+          }, new User("identifier"));
         }, new User("identifier"));
       }, new User("identifier"));
   });
