@@ -142,6 +142,48 @@ describe("ConfigCatClient", () => {
       }, new User("identifier"));
     });
   });
+
+
+  it("Initialization With ManualPollOptions should create an istance", (done) => {
+
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    client.getValue("debug", false, function(value) {
+      assert.equal(false, value);
+      done();
+    });
+  });
+
+  it("Initialization With AutoPollOptions should create an istance", (done) => {
+
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
+    let options: ManualPollOptions = new AutoPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    client.getValue("debug", false, function(value) {
+      assert.equal(false, value);
+      done();
+    });
+  });
+
+  
+  it("Initialization With LazyLoadOptions should create an istance", (done) => {
+
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
+    let options: ManualPollOptions = new LazyLoadOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    client.getValue("debug", false, function(value) {
+      assert.equal(false, value);
+      done();
+    });
+  });
+
 });
 
 export class FakeConfigFetcher implements IConfigFetcher {
@@ -152,13 +194,11 @@ export class FakeConfigFetcher implements IConfigFetcher {
   }
 }
 
-export class FakeConfigFetcherWithTimeout implements IConfigFetcher {
+export class FakeConfigFetcherWithNullNewConfig implements IConfigFetcher {
   fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void {
-    setTimeout(() => {
-      if (callback) {
-        callback(new ProjectConfig(0, "{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }", ""));
-      }  
-    }, 3);
+    if (callback) {
+      callback(null);
+    }
   }
 }
 
