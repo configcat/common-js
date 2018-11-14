@@ -71,21 +71,21 @@ describe("MatrixTests", () => {
 
             let up: string[] = row.split(";");
 
-            if (up[0] === "##nouserobject##") {
+            if (up[0] === "##null##") {
                 return null;
             }
 
             let result: User = new User(up[0]);
 
-            if (up[1]){
+            if (up[1] !== "##null##"){
                 result.email = up[1];
             }
 
-            if (up[2]) {
+            if (up[2] !== "##null##"){
                 result.country = up[2];
             }
 
-            if (up[3]) {
+            if (up[3] !== "##null##"){
                 result.custom[headers[3]] = up[3];
             }
 
