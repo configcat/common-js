@@ -5,7 +5,7 @@
 
 ConfigCat Common library for JavaScript is a shared package that provides the common ConfigCat SDK logic for [ConfigCat SDK for Node.js](https://github.com/configcat/node-sdk) and [ConfigCat SDK for JavaScript](https://github.com/configcat/js-sdk).
 
-ConfigCat is a feature flag, feature toggle, and configuration management service that lets you launch new features and change your software configuration remotely without actually (re)deploying code.
+ConfigCat is a feature flag, feature toggle, and configuration management service that lets you launch new features and change your software configuration remotely without actually (re)deploying code. ConfigCat even helps you do controlled roll-outs like canary releases and blue-green deployments.
 
 ## Installing
 ```
