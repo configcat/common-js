@@ -76,7 +76,11 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                 let rule: any = rolloutRules[i];
 
-                let comparisonAttribute: string = this.GetUserAttribute(User, rule.ComparisonAttribute) || '';
+                let comparisonAttribute: string = this.GetUserAttribute(User, rule.ComparisonAttribute);
+
+                if (!comparisonAttribute) {
+                    continue;
+                }
 
                 switch (rule.Comparator) {
                     case 0: // in
