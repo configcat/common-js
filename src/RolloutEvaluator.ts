@@ -20,13 +20,13 @@ export class User {
     identifier: string;
 
     /** Optional parameter for easier targeting rule definitions */
-    email: string;
+    email?: string;
 
     /** Optional parameter for easier targeting rule definitions */
-    country: string;
+    country?: string;
 
     /** Optional dictionary for custom attributes of the User for advanced targeting rule definitions. e.g. User role, Subscription type */
-    custom: { [key: string]: string } = {};
+    custom?: { [key: string]: string } = {};
 }
 
 export class RolloutEvaluator implements IRolloutEvaluator {
