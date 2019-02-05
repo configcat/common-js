@@ -22,10 +22,5 @@ Increase version number by using `npm version patch | minor | major`
 
     You can follow the build status here -> https://travis-ci.org/configcat/common-js
 
-1. Publish to NPM
-   ```PowerShell
-   npm publish
-   ```
-
 2. Update dependant packages
     Update `common-js` version number in `js-sdk` and `node-sdk`'s `package.json` and re-deploy both packages.
