@@ -49,7 +49,6 @@
     ],
     "reporter": [
       "text-summary",
-      "html",
       "json",
       "lcov"
     ],
