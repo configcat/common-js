@@ -1,20 +1,26 @@
 ## Deploy steps
 
 
-### 1. Create a new version (patch, minor, major)
+1. Run tests
+   ```PowerShell
+    npm test
+    ```
+
+1. Create a new version (patch, minor, major)
 Increase version number by using `npm version patch | minor | major`
 
- *Example: increasing patch version* 
-```PowerShell
-npm version patch
-```
+    *Example: increasing patch version* 
+    ```PowerShell
+    npm version patch
+    ```
 
-### 2. Push tag to remote
- ```PowerShell
-  git push origin <new tag>
- ```
+1. Push tag to remote
+    ```PowerShell
+    git push origin <new version>
+    ```
+    *Example: npm push origin 1.1.15*
 
-You can follow the build status here -> https://travis-ci.org/configcat/common-js
+    You can follow the build status here -> https://travis-ci.org/configcat/common-js
 
-### 4. Update dependant packages
-Update `common-js` version number in `js-sdk` and `node-sdk`'s `package.json` and re-deploy both packages.
+1. Update dependant packages
+    Update `common-js` version number in `js-sdk` and `node-sdk`'s `package.json` and re-deploy both packages.
