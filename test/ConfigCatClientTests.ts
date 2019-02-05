@@ -50,7 +50,7 @@ describe("ConfigCatClient", () => {
     }).to.throw("Invalid 'configCatKernel.cache' value");
   }); 
   
-  it("Initialization With AutoPollOptions should create an istance, GetValue works", (done) => {
+  it("Initialization With AutoPollOptions should create an instance, GetValue works", (done) => {
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: null})
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -83,7 +83,7 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("Initialization With LazyLoadOptions should create an istance", (done) => {
+  it("Initialization With LazyLoadOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: null})
@@ -110,7 +110,7 @@ describe("ConfigCatClient", () => {
       }, new User("identifier"));
   });
 
-  it("Initialization With ManualPollOptions should create an istance", (done) => {
+  it("Initialization With ManualPollOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache()};
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
@@ -143,8 +143,7 @@ describe("ConfigCatClient", () => {
     });
   });
 
-
-  it("Initialization With ManualPollOptions should create an istance", (done) => {
+  it("Initialization With ManualPollOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: null})
@@ -157,7 +156,7 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("Initialization With AutoPollOptions should create an istance", (done) => {
+  it("Initialization With AutoPollOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
     let options: ManualPollOptions = new AutoPollOptions("APIKEY", {logger: null})
@@ -171,7 +170,7 @@ describe("ConfigCatClient", () => {
   });
 
   
-  it("Initialization With LazyLoadOptions should create an istance", (done) => {
+  it("Initialization With LazyLoadOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
     let options: ManualPollOptions = new LazyLoadOptions("APIKEY", {logger: null})
@@ -182,6 +181,21 @@ describe("ConfigCatClient", () => {
       assert.equal(false, value);
       done();
     });
+  });
+
+  it("ConfigCatClient.getValue works without optional user info", (done) => {
+
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache()};
+    let options: ManualPollOptions = new AutoPollOptions("APIKEY", {logger: null})
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    let myUser = { identifier: "IDENTIFIER" };
+    assert.isDefined(client);
+
+    client.getValue("debug", false, function(value) {
+      assert.equal(false, value);
+      done();
+    },
+    myUser);
   });
 
 });
