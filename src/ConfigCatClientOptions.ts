@@ -6,6 +6,7 @@ const VERSION: string = require("../package.json").version;
 export interface IOptions {
     logger?: IConfigCatLogger;
     requestTimeoutMs?: number;
+    baseUrl?: string;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -18,6 +19,8 @@ export abstract class OptionsBase implements IOptions {
 
     public requestTimeoutMs: number = 30000;
 
+    public baseUrl: string = "https://cdn.configcat.com";
+
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
             throw new Error("Invalid 'apiKey' value");
@@ -25,25 +28,29 @@ export abstract class OptionsBase implements IOptions {
 
         this.apiKey = apiKey;
         this.clientVersion = clientVersion;
-        
+
         if (options)
         {
-            if (options.logger) { 
+            if (options.logger) {
                 this.logger = options.logger;
             }
 
-            if (options.requestTimeoutMs ) { 
+            if (options.requestTimeoutMs ) {
                 if (options.requestTimeoutMs < 0) {
                     throw new Error("Invalid 'requestTimeoutMs' value");
                 }
-                
+
                 this.requestTimeoutMs = options.requestTimeoutMs;
+            }
+
+            if (options.baseUrl) {
+                this.baseUrl = options.baseUrl;
             }
         }
     }
 
     getUrl(): string {
-        return "https://cdn.configcat.com/configuration-files/" + this.apiKey + "/config_v2.json";
+        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v2.json";
     }
 }
 

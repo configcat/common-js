@@ -29,7 +29,7 @@ describe("Options", () => {
   });
 
   it("ManualPollOptions initialization With parameters works", () => {
-    let fakeLogger = new FakeLogger();
+    let fakeLogger: FakeLogger = new FakeLogger();
     let configChanged = function(){ };
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: fakeLogger, requestTimeoutMs: 10});
 
@@ -39,6 +39,15 @@ describe("Options", () => {
     assert.equal(10, options.requestTimeoutMs);
     assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
     assert.equal("m", options.clientVersion[0]);
+  });
+  
+  it("ManualPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
+
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
+
+    assert.isDefined(options);
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
   });
 
   it("AutoPollOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
@@ -65,7 +74,7 @@ describe("Options", () => {
   });
 
   it("AutoPollOptions initialization With parameters works", () => {
-    let fakeLogger = new FakeLogger();
+    let fakeLogger: FakeLogger = new FakeLogger();
     let configChanged = function(){ };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: fakeLogger, configChanged: configChanged, pollIntervalSeconds: 59, requestTimeoutMs: 20});
 
@@ -85,6 +94,15 @@ describe("Options", () => {
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
+  it("AutoPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
+
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
+
+    assert.isDefined(options);
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+  });
+
   it("LazyLoadOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
     expect(() => {
       let options: LazyLoadOptions = new LazyLoadOptions(null, null);
@@ -102,7 +120,7 @@ describe("Options", () => {
   });
 
   it("LazyLoadOptions initialization With parameters works", () => {
-    let fakeLogger = new FakeLogger();
+    let fakeLogger: FakeLogger = new FakeLogger();
     let configChanged = function(){ };
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: fakeLogger, cacheTimeToLiveSeconds:59, requestTimeoutMs: 20});
 
@@ -125,6 +143,15 @@ describe("Options", () => {
     expect(() => {
       let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {requestTimeoutMs: -1});
     }).to.throw("Invalid 'requestTimeoutMs' value");
+  });
+
+  it("LazyLoadOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
+
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
+
+    assert.isDefined(options);
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
   });
 });
 
