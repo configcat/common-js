@@ -1,5 +1,5 @@
 import { IConfigFetcher, ICache, IConfigCatKernel } from ".";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions } from "./ConfigCatClientOptions";
+import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { InMemoryCache } from "./Cache";
@@ -20,11 +20,14 @@ export interface IConfigCatClient {
 
     /** Refresh the configuration */
     forceRefresh(callback: () => void): void;
+
+    getAllKeys(callback: (value: string[]) => void);
 }
 
 export class ConfigCatClient implements IConfigCatClient {
     private configService: IConfigService;
     private evaluator: IRolloutEvaluator;
+    private options: OptionsBase;
 
     constructor(
         options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
@@ -33,6 +36,8 @@ export class ConfigCatClient implements IConfigCatClient {
         if (!options) {
             throw new Error("Invalid 'options' value");
         }
+
+        this.options = options;
 
         if (!configCatKernel) {
             throw new Error("Invalid 'configCatKernel' value");
@@ -48,7 +53,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
         this.evaluator = new RolloutEvaluator(options.logger);
 
-        if (options && options instanceof LazyLoadOptions) {                        
+        if (options && options instanceof LazyLoadOptions) {
             this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, configCatKernel.cache, <LazyLoadOptions>options);
         } else if (options && options instanceof ManualPollOptions) {
             this.configService = new ManualPollService(configCatKernel.configFetcher, configCatKernel.cache, <ManualPollOptions>options);
@@ -72,5 +77,16 @@ export class ConfigCatClient implements IConfigCatClient {
 
     forceRefresh(callback: () => void): void {
         this.configService.refreshConfig(callback);
+    }
+
+    getAllKeys(callback: (value: string[]) => void) {
+        this.configService.getConfig((value) => {
+            if (!value || !value.ConfigJSON) {
+                this.options.logger.error("JSONConfig is not present, returning empty array");
+                callback([]);
+            }
+
+            callback(Object.keys(value.ConfigJSON));
+        });
     }
 }
