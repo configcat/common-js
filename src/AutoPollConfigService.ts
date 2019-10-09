@@ -11,10 +11,10 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     constructor(configFetcher: IConfigFetcher, cache: ICache, autoPollConfig: AutoPollOptions) {
 
         super(configFetcher, cache, autoPollConfig);
-
+        
+        this.configChanged = autoPollConfig.configChanged;
         this.refreshConfig();
         this.timer = setInterval(() => this.refreshConfig(), autoPollConfig.pollIntervalSeconds * 1000);
-        this.configChanged = autoPollConfig.configChanged;
     }
 
     getConfig(callback: (value: ProjectConfig) => void): void {
