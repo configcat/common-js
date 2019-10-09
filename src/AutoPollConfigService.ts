@@ -12,6 +12,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
         super(configFetcher, cache, autoPollConfig);
 
+        this.refreshConfig();
         this.timer = setInterval(() => this.refreshConfig(), autoPollConfig.pollIntervalSeconds * 1000);
         this.configChanged = autoPollConfig.configChanged;
     }
