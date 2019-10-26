@@ -13,6 +13,7 @@ describe("ConfigCatClient", () => {
     expect(() => {
       let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
       let options: ManualPollOptions = new ManualPollOptions(null, null)
+      let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     }).to.throw("Invalid 'apiKey' value");
   });
 
@@ -20,6 +21,7 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
+      let client: IConfigCatClient = new ConfigCatClient(null, configCatKernel);
     }).to.throw("Invalid 'options' value");
   });
 
@@ -27,6 +29,7 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
+      let client: IConfigCatClient = new ConfigCatClient(options, null);
     }).to.throw("Invalid 'configCatKernel' value");
   });
 
@@ -34,6 +37,7 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
+      let client: IConfigCatClient = new ConfigCatClient(options, { configFetcher: null, cache: new InMemoryCache() });
     }).to.throw("Invalid 'configCatKernel.configFetcher' value");
   });
 
@@ -41,6 +45,7 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
+      let client: IConfigCatClient = new ConfigCatClient(options, { configFetcher: new FakeConfigFetcher(), cache: null });
     }).to.throw("Invalid 'configCatKernel.cache' value");
   });
 
