@@ -4,7 +4,8 @@
     "module": "commonjs",
     "outDir": "./lib",
     "sourceMap": false,
-    "declaration": true
+    "declaration": true,
+    "lib": ["es2015"]
   },
   "include": [
     "src/**/*.ts"

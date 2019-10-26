@@ -1,15 +1,11 @@
-import { IConfigFetcher, ICache, IConfigCatKernel } from ".";
+import { IConfigCatKernel } from ".";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
-import { InMemoryCache } from "./Cache";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
 
-declare const require: any;
-
-const VERSION: string = require("../package.json").version;
 export const CONFIG_CHANGE_EVENT_NAME: string = "changed";
 
 /** Client for ConfigCat platform */
@@ -17,6 +13,8 @@ export interface IConfigCatClient {
 
     /** Return a value of the key (Key for programs) */
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
+
+    getValueAsync(key: string, defaultValue: any, user?: User): Promise<any>;
 
     /** Refresh the configuration */
     forceRefresh(callback: () => void): void;
@@ -75,8 +73,28 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
+    getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
+        return new Promise((resolve, reject) => {
+            if (key == undefined) reject(new Error('No key was passed in.'))
+            if (defaultValue == undefined) reject(new Error('No default value was passed in.'))
+            this.configService.getConfig((value) => {
+                var result: any = defaultValue;
+    
+                result = this.evaluator.Evaluate(value, key, defaultValue, user);
+    
+                resolve(result);
+            });
+        });
+    }
+
     forceRefresh(callback: () => void): void {
         this.configService.refreshConfig(callback);
+    }
+
+    forceRefreshAsync(): Promise<any> {
+        return new Promise((resolve) => {
+            this.configService.refreshConfig(resolve);
+        });
     }
 
     getAllKeys(callback: (value: string[]) => void) {

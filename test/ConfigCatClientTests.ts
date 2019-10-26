@@ -6,7 +6,6 @@ import { ProjectConfig } from "../src/ConfigServiceBase";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { InMemoryCache } from "../src/Cache";
 import { User } from "../src/RolloutEvaluator";
-import { doesNotReject } from "assert";
 
 describe("ConfigCatClient", () => {
   it("Initialization With NULL 'apiKey' ShouldThrowError", () => {
@@ -14,7 +13,6 @@ describe("ConfigCatClient", () => {
     expect(() => {
       let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
       let options: ManualPollOptions = new ManualPollOptions(null, null)
-      let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     }).to.throw("Invalid 'apiKey' value");
   });
 
@@ -22,7 +20,6 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
-      let client: IConfigCatClient = new ConfigCatClient(null, configCatKernel);
     }).to.throw("Invalid 'options' value");
   });
 
@@ -30,7 +27,6 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
-      let client: IConfigCatClient = new ConfigCatClient(options, null);
     }).to.throw("Invalid 'configCatKernel' value");
   });
 
@@ -38,7 +34,6 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
-      let client: IConfigCatClient = new ConfigCatClient(options, { configFetcher: null, cache: new InMemoryCache() });
     }).to.throw("Invalid 'configCatKernel.configFetcher' value");
   });
 
@@ -46,7 +41,6 @@ describe("ConfigCatClient", () => {
 
     expect(() => {
       let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
-      let client: IConfigCatClient = new ConfigCatClient(options, { configFetcher: new FakeConfigFetcher(), cache: null });
     }).to.throw("Invalid 'configCatKernel.cache' value");
   });
 
@@ -83,7 +77,22 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("Initialization With LazyLoadOptions should create an instance", (done) => {
+  it("Initialization With AutoPollOptions should create an instance, getValueAsync works", async () => {
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    client.forceRefresh(async function () {
+      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+      assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
+    });
+  });
+
+  it("Initialization With LazyLoadOptions should create an instance, GetValue works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null })
@@ -110,7 +119,22 @@ describe("ConfigCatClient", () => {
     }, new User("identifier"));
   });
 
-  it("Initialization With ManualPollOptions should create an instance", (done) => {
+  it("Initialization With LazyLoadOptions should create an instance, GetValueAsync works", async () => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null })
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
+    client.forceRefresh(async function () {
+      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    });
+  });
+
+  it("Initialization With ManualPollOptions should create an instance, GetValue works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
@@ -140,6 +164,22 @@ describe("ConfigCatClient", () => {
         });
 
       }, new User("identifier"));
+    });
+  });
+
+  it("Initialization With ManualPollOptions should create an instance, GetValueAsync works", async () => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    assert.equal(false, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(false, await client.getValueAsync("debug", false, new User("identifier")));
+    client.forceRefresh(async function () {
+      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+      assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
     });
   });
 
