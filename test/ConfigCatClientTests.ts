@@ -90,11 +90,10 @@ describe("ConfigCatClient", () => {
 
     assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
     assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
-    client.forceRefresh(async function () {
-      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
-      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
-      assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
-    });
+    await client.forceRefreshAsync();
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
   });
 
   it("Initialization With LazyLoadOptions should create an instance, GetValue works", (done) => {
@@ -134,9 +133,8 @@ describe("ConfigCatClient", () => {
     assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
     assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
     assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
-    client.forceRefresh(async function () {
-      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
-    });
+    await client.forceRefreshAsync();
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
   });
 
   it("Initialization With ManualPollOptions should create an instance, GetValue works", (done) => {
@@ -181,11 +179,10 @@ describe("ConfigCatClient", () => {
 
     assert.equal(false, await client.getValueAsync("debug", false, new User("identifier")));
     assert.equal(false, await client.getValueAsync("debug", false, new User("identifier")));
-    client.forceRefresh(async function () {
-      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
-      assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
-      assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
-    });
+    await client.forceRefreshAsync();
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
+    assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
   });
 
   it("Initialization With ManualPollOptions should create an instance", (done) => {
@@ -227,7 +224,7 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("ConfigCatClient.getValue works without optional user info", (done) => {
+  it("getValue() works without userObject", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache() };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
@@ -238,12 +235,21 @@ describe("ConfigCatClient", () => {
     client.getValue("debug", false, function (value) {
       assert.equal(false, value);
       done();
-    },
-      myUser);
+    });
   });
 
+  it("getValueAsync() works without userObject", async () => {
 
-  it("Get all keys works", (done) => {
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache() };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+
+    const value = await client.getValueAsync("debug", false);
+    assert.equal(false, value);
+  });
+
+  it("getAllKeys() works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys(), cache: new InMemoryCache() };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
@@ -257,7 +263,19 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("Get all keys works - without config", (done) => {
+  it("getAllKeysAsync() works", async () => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys(), cache: new InMemoryCache() };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+    const keys = await client.getAllKeysAsync();
+    assert.equal(keys.length, 2);
+    assert.equal(keys[0], 'debug');
+    assert.equal(keys[1], 'debug2');
+  });
+
+  it("getAllKeys() works - without config", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache() };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
@@ -269,6 +287,15 @@ describe("ConfigCatClient", () => {
     });
   });
 
+  it("getAllKeysAsync() works - without config", async () => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache() };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    assert.isDefined(client);
+    const keys = await client.getAllKeysAsync();
+    assert.equal(keys.length, 0);
+  });
 });
 
 export class FakeConfigFetcher implements IConfigFetcher {

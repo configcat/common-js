@@ -8,12 +8,12 @@ export class ManualPollService extends ConfigServiceBase implements IConfigServi
 
         super(configFetcher, cache, config);
     }
-
-    getConfig(callback: (value: ProjectConfig) => void): void {
-
-        callback(this.cache.Get(this.baseConfig.apiKey));
-    }
     
+    getConfig(): Promise<ProjectConfig> {
+
+        return new Promise(resolve => resolve(this.cache.Get(this.baseConfig.apiKey)));
+    }
+
     refreshConfig(callback?: (value: ProjectConfig) => void): void {
 
         this.refreshLogicBase(this.cache.Get(this.baseConfig.apiKey), (newConfig) => {
@@ -21,5 +21,10 @@ export class ManualPollService extends ConfigServiceBase implements IConfigServi
                 callback(newConfig);
             }
         });
+    }
+
+    refreshConfigAsync(): Promise<ProjectConfig> {
+        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+        return this.refreshLogicBaseAsync(p)
     }
 }

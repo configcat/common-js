@@ -1,6 +1,6 @@
 import { IConfigCatKernel } from ".";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
-import { IConfigService } from "./ConfigServiceBase";
+import { IConfigService, ProjectConfig } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
@@ -8,18 +8,25 @@ import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
 
 export const CONFIG_CHANGE_EVENT_NAME: string = "changed";
 
-/** Client for ConfigCat platform */
 export interface IConfigCatClient {
 
-    /** Return a value of the key (Key for programs) */
+    /** Returns the value of a feature flag or setting based on it's key */
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
 
+    /** Returns the value of a feature flag or setting based on it's key */
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any>;
 
-    /** Refresh the configuration */
+    /** Downloads the latest feature flag and configuration values */
     forceRefresh(callback: () => void): void;
 
+    /** Downloads the latest feature flag and configuration values */    
+    forceRefreshAsync(): Promise<ProjectConfig>;
+
+    /** Gets a list of keys for all your feature flags and settings */
     getAllKeys(callback: (value: string[]) => void);
+    
+    /** Gets a list of keys for all your feature flags and settings */
+    getAllKeysAsync(): Promise<string[]>;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
@@ -63,8 +70,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
-
-        this.configService.getConfig((value) => {
+        this.configService.getConfig().then(value => {
             var result: any = defaultValue;
 
             result = this.evaluator.Evaluate(value, key, defaultValue, user);
@@ -74,16 +80,11 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
-        return new Promise((resolve, reject) => {
-            if (key == undefined) reject(new Error('No key was passed in.'))
-            if (defaultValue == undefined) reject(new Error('No default value was passed in.'))
-            this.configService.getConfig((value) => {
-                var result: any = defaultValue;
-    
-                result = this.evaluator.Evaluate(value, key, defaultValue, user);
-    
-                resolve(result);
-            });
+        return new Promise(async (resolve) => {
+            const config = await this.configService.getConfig();
+            var result: any = defaultValue;
+            result = this.evaluator.Evaluate(config, key, defaultValue, user);
+            resolve(result);
         });
     }
 
@@ -91,20 +92,31 @@ export class ConfigCatClient implements IConfigCatClient {
         this.configService.refreshConfig(callback);
     }
 
-    forceRefreshAsync(): Promise<any> {
-        return new Promise((resolve) => {
-            this.configService.refreshConfig(resolve);
-        });
+    forceRefreshAsync(): Promise<ProjectConfig> {
+        return this.configService.refreshConfigAsync();
     }
 
     getAllKeys(callback: (value: string[]) => void) {
-        this.configService.getConfig((value) => {
+        this.configService.getConfig().then(value => {
             if (!value || !value.ConfigJSON) {
                 this.options.logger.error("JSONConfig is not present, returning empty array");
                 callback([]);
             }
 
             callback(Object.keys(value.ConfigJSON));
+        });
+    }
+
+    getAllKeysAsync(): Promise<string[]> {
+        return new Promise(async (resolve) => {
+            const config = await this.configService.getConfig();
+
+            if (!config || !config.ConfigJSON) {
+                this.options.logger.error("JSONConfig is not present, returning empty array");
+                resolve([]);
+            }
+
+            resolve(Object.keys(config.ConfigJSON));
         });
     }
 }

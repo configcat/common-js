@@ -11,39 +11,46 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     constructor(configFetcher: IConfigFetcher, cache: ICache, autoPollConfig: AutoPollOptions) {
 
         super(configFetcher, cache, autoPollConfig);
-        
+
         this.configChanged = autoPollConfig.configChanged;
         this.refreshConfig();
         this.timer = setInterval(() => this.refreshConfig(), autoPollConfig.pollIntervalSeconds * 1000);
     }
 
-    getConfig(callback: (value: ProjectConfig) => void): void {
+    getConfig(): Promise<ProjectConfig> {
 
         var p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
 
         if (!p) {
-            this.refreshLogic(callback);
+            return this.refreshLogic();
         } else {
-            callback(p);
+            return new Promise(resolve => resolve(p))
         }
     }
 
     refreshConfig(callback?: (value: ProjectConfig) => void): void {
-        this.refreshLogic(callback);
+        this.refreshLogic().then(value => {
+            if (callback) {
+                callback(value);
+            }
+        });
     }
 
-    private refreshLogic(callback?: (value: ProjectConfig) => void): void {
-        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+    refreshConfigAsync(): Promise<ProjectConfig> {
+        return this.refreshLogic();
+    }
 
-        this.refreshLogicBase(p, (newConfig) => {
+    private refreshLogic(): Promise<ProjectConfig> {
+        return new Promise(async resolve => {
 
-            if (callback) {
-                callback(newConfig);
-            }
-
+            let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+            const newConfig = await this.refreshLogicBaseAsync(p)
+            
             if (!p || p.HttpETag !== newConfig.HttpETag) {
                 this.configChanged();
             }
+
+            resolve(newConfig)
         });
     }
 }
