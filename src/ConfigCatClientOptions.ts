@@ -7,6 +7,7 @@ export interface IOptions {
     logger?: IConfigCatLogger;
     requestTimeoutMs?: number;
     baseUrl?: string;
+    proxy?: string;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -20,6 +21,8 @@ export abstract class OptionsBase implements IOptions {
     public requestTimeoutMs: number = 30000;
 
     public baseUrl: string = "https://cdn.configcat.com";
+
+    public proxy: string = '';
 
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
@@ -45,6 +48,10 @@ export abstract class OptionsBase implements IOptions {
 
             if (options.baseUrl) {
                 this.baseUrl = options.baseUrl;
+            }
+
+            if (options.proxy) {
+                this.proxy = options.proxy;
             }
         }
     }

@@ -31,7 +31,7 @@ describe("Options", () => {
   it("ManualPollOptions initialization With parameters works", () => {
     let fakeLogger: FakeLogger = new FakeLogger();
     let configChanged = function(){ };
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: fakeLogger, requestTimeoutMs: 10});
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: fakeLogger, requestTimeoutMs: 10, proxy: "http://fake-proxy.com:8080"});
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
@@ -39,8 +39,9 @@ describe("Options", () => {
     assert.equal(10, options.requestTimeoutMs);
     assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
     assert.equal("m", options.clientVersion[0]);
+    assert.equal("http://fake-proxy.com:8080", options.proxy);
   });
-  
+
   it("ManualPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
@@ -76,7 +77,7 @@ describe("Options", () => {
   it("AutoPollOptions initialization With parameters works", () => {
     let fakeLogger: FakeLogger = new FakeLogger();
     let configChanged = function(){ };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: fakeLogger, configChanged: configChanged, pollIntervalSeconds: 59, requestTimeoutMs: 20});
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: fakeLogger, configChanged: configChanged, pollIntervalSeconds: 59, requestTimeoutMs: 20, proxy: "http://fake-proxy.com:8080"});
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
@@ -86,6 +87,7 @@ describe("Options", () => {
     assert.equal(20, options.requestTimeoutMs);
     assert.equal(configChanged, options.configChanged);
     assert.equal("a", options.clientVersion[0]);
+    assert.equal("http://fake-proxy.com:8080", options.proxy);
   });
 
   it("AutoPollOptions initialization With -1 'pollIntervalSeconds' ShouldThrowError", () => {
@@ -122,7 +124,7 @@ describe("Options", () => {
   it("LazyLoadOptions initialization With parameters works", () => {
     let fakeLogger: FakeLogger = new FakeLogger();
     let configChanged = function(){ };
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: fakeLogger, cacheTimeToLiveSeconds:59, requestTimeoutMs: 20});
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: fakeLogger, cacheTimeToLiveSeconds:59, requestTimeoutMs: 20, proxy: "http://fake-proxy.com:8080"});
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
@@ -131,6 +133,7 @@ describe("Options", () => {
     assert.equal(59, options.cacheTimeToLiveSeconds);
     assert.equal("l", options.clientVersion[0]);
     assert.equal(20, options.requestTimeoutMs);
+    assert.equal("http://fake-proxy.com:8080", options.proxy);
   });
 
   it("LazyLoadOptions initialization With -1 'cacheTimeToLiveSeconds' ShouldThrowError", () => {
@@ -158,7 +161,7 @@ describe("Options", () => {
 export class FakeLogger implements IConfigCatLogger {
   log(message: string): void {
   }
-  
+
   error(message: string): void {
   }
 }
