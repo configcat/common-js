@@ -52,7 +52,9 @@ describe("ConfigCatClient", () => {
         assert.isDefined(client);
 
         client.getAllVariationIds((variationIds) => {
-            assert.equal(variationIds, 'debug-true,debug2-true');
+            assert.equal(variationIds.length, 2);
+            assert.equal(variationIds[0], 'debug-true');
+            assert.equal(variationIds[1], 'debug2-true');
             done();
         });
     });
@@ -63,6 +65,9 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
         assert.isDefined(client);
 
-        assert.equal(await client.getAllVariationIdsAsync(), 'debug-true,debug2-true');
+        const variationIds = await client.getAllVariationIdsAsync();
+        assert.equal(variationIds.length, 2);
+        assert.equal(variationIds[0], 'debug-true');
+        assert.equal(variationIds[1], 'debug2-true');
     });
 });
