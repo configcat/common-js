@@ -150,7 +150,7 @@ export class ConfigCatClient implements IConfigCatClient {
                     case 'number':
                         let numberString = value < 0 ? '-' : '';
                         numberString += Math.trunc(value);
-                        if (value % 1 != 0) {
+                        if (value % 1 !== 0) {
                             numberString += '.' + Math.trunc((value % 1) * 1000000);
                         }
                         variationId += sha1(numberString);
