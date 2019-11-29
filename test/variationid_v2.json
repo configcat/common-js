@@ -1,0 +1,123 @@
+{
+    "boolean": {
+      "Value": false,
+      "SettingType": 0,
+      "RolloutPercentageItems": [
+        {
+          "Order": 0,
+          "Value": true,
+          "Percentage": 50
+        },
+        {
+          "Order": 1,
+          "Value": false,
+          "Percentage": 50
+        }
+      ],
+      "RolloutRules": [
+        {
+          "Order": 0,
+          "ComparisonAttribute": "Email",
+          "Comparator": 2,
+          "ComparisonValue": "@configcat.com",
+          "Value": true
+        }
+      ]
+    },
+    "text": {
+      "Value": "c",
+      "SettingType": 1,
+      "RolloutPercentageItems": [
+        {
+          "Order": 0,
+          "Value": "a",
+          "Percentage": 50
+        },
+        {
+          "Order": 1,
+          "Value": "b",
+          "Percentage": 50
+        }
+      ],
+      "RolloutRules": [
+        {
+          "Order": 0,
+          "ComparisonAttribute": "Email",
+          "Comparator": 2,
+          "ComparisonValue": "@configcat.com",
+          "Value": "true"
+        },
+        {
+          "Order": 1,
+          "ComparisonAttribute": "Email",
+          "Comparator": 2,
+          "ComparisonValue": "@test.com",
+          "Value": "false"
+        }
+      ]
+    },
+    "whole": {
+      "Value": 999999,
+      "SettingType": 2,
+      "RolloutPercentageItems": [
+        {
+          "Order": 0,
+          "Value": 0,
+          "Percentage": 50
+        },
+        {
+          "Order": 1,
+          "Value": -1,
+          "Percentage": 50
+        }
+      ],
+      "RolloutRules": [
+        {
+          "Order": 0,
+          "ComparisonAttribute": "Email",
+          "Comparator": 2,
+          "ComparisonValue": "@configcat.com",
+          "Value": 1
+        }
+      ]
+    },
+    "decimal": {
+      "Value": 0.0,
+      "SettingType": 3,
+      "RolloutPercentageItems": [
+        {
+          "Order": 0,
+          "Value": 1.0,
+          "Percentage": 50
+        },
+        {
+          "Order": 1,
+          "Value": 2.0,
+          "Percentage": 50
+        }
+      ],
+      "RolloutRules": [
+        {
+          "Order": 0,
+          "ComparisonAttribute": "Email",
+          "Comparator": 2,
+          "ComparisonValue": "@configcat.com",
+          "Value": 2147483647.2147484
+        },
+        {
+          "Order": 1,
+          "ComparisonAttribute": "Email",
+          "Comparator": 0,
+          "ComparisonValue": "a@test.com",
+          "Value": 0.12345678912345678
+        },
+        {
+          "Order": 2,
+          "ComparisonAttribute": "Email",
+          "Comparator": 0,
+          "ComparisonValue": "b@test.com",
+          "Value": 0.12345678912
+        }
+      ]
+    }
+  }

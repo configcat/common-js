@@ -4,7 +4,6 @@ import { IConfigFetcher, ICache } from ".";
 
 export class AutoPollConfigService extends ConfigServiceBase implements IConfigService {
 
-    private timer;
     private maxInitWaitExpire: Date;
     private configChanged: () => void;
 
@@ -13,8 +12,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
         super(configFetcher, cache, autoPollConfig);
 
         this.configChanged = autoPollConfig.configChanged;
-        this.refreshConfig();
-        this.timer = setInterval(() => this.refreshConfig(), autoPollConfig.pollIntervalSeconds * 1000);
+        this.setIntervalAsync(() => this.refreshConfigAsync(), autoPollConfig.pollIntervalSeconds * 1000);
     }
 
     getConfig(): Promise<ProjectConfig> {
@@ -28,14 +26,6 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
         }
     }
 
-    refreshConfig(callback?: (value: ProjectConfig) => void): void {
-        this.refreshLogic().then(value => {
-            if (callback) {
-                callback(value);
-            }
-        });
-    }
-
     refreshConfigAsync(): Promise<ProjectConfig> {
         return this.refreshLogic();
     }
@@ -45,7 +35,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
             let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
             const newConfig = await this.refreshLogicBaseAsync(p)
-            
+
             if (!p || p.HttpETag !== newConfig.HttpETag) {
                 this.configChanged();
             }
@@ -53,4 +43,10 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
             resolve(newConfig)
         });
     }
+
+    private setIntervalAsync = (fn, ms) => {
+        fn().then(() => {
+            setTimeout(() => this.setIntervalAsync(fn, ms), ms);
+        });
+    };
 }

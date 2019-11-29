@@ -298,28 +298,33 @@ describe("ConfigCatClient", () => {
   });
 });
 
-export class FakeConfigFetcher implements IConfigFetcher {
+export class FakeConfigFetcherBase implements IConfigFetcher {
+  constructor(private config: string){
+  }
+
   fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void {
-    if (callback) {
-      callback(new ProjectConfig(0, "{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }", ""));
-    }
+      if (callback) {
+          callback(new ProjectConfig(0, this.config, ""));
+      }
+  }
+}
+
+export class FakeConfigFetcher extends FakeConfigFetcherBase {
+  constructor(){
+    super("{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }");
   }
 }
 
 
-export class FakeConfigFetcherWithTwoKeys implements IConfigFetcher {
-  fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void {
-    if (callback) {
-      callback(new ProjectConfig(0, "{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] }, \"debug2\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }", ""));
-    }
+export class FakeConfigFetcherWithTwoKeys extends FakeConfigFetcherBase {
+  constructor(){
+    super("{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] }, \"debug2\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }");
   }
 }
 
-export class FakeConfigFetcherWithNullNewConfig implements IConfigFetcher {
-  fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void {
-    if (callback) {
-      callback(null);
-    }
+export class FakeConfigFetcherWithNullNewConfig extends FakeConfigFetcherBase {
+  constructor(){
+    super(null);
   }
 }
 
