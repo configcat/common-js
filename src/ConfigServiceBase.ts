@@ -19,8 +19,6 @@ export class ProjectConfig {
 export interface IConfigService {
     getConfig() : Promise<ProjectConfig>;
 
-    refreshConfig(callback?: (value: ProjectConfig) => void): void;
-
     refreshConfigAsync(): Promise<ProjectConfig>;
 }
 
@@ -34,23 +32,6 @@ export abstract class ConfigServiceBase {
         this.configFetcher = configFetcher;
         this.cache = cache;
         this.baseConfig = baseConfig;
-    }
-
-    protected refreshLogicBase(lastProjectConfig: ProjectConfig, callback: (value: ProjectConfig) => void): void {
-
-        this.configFetcher.fetchLogic(this.baseConfig, lastProjectConfig, (newConfig) => {
-
-            if (newConfig) {
-
-                this.cache.Set(this.baseConfig.apiKey, newConfig);
-
-                callback(newConfig);
-            }
-            else {
-
-                callback(lastProjectConfig);
-            }
-        });
     }
 
     protected refreshLogicBaseAsync(lastProjectConfig: ProjectConfig): Promise<ProjectConfig> {

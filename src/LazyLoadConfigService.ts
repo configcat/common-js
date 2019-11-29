@@ -1,5 +1,5 @@
 import { IConfigService, ConfigServiceBase, ProjectConfig } from "./ConfigServiceBase";
-import { LazyLoadOptions} from "./ConfigCatClientOptions";
+import { LazyLoadOptions } from "./ConfigCatClientOptions";
 import { IConfigFetcher, ICache } from ".";
 
 export class LazyLoadConfigService extends ConfigServiceBase implements IConfigService {
@@ -24,16 +24,9 @@ export class LazyLoadConfigService extends ConfigServiceBase implements IConfigS
         }
     }
 
-    refreshConfig(callback?: (value: ProjectConfig) => void): void {
-        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
-
-        this.refreshLogicBase(p, (newConfig) => {
-            callback(newConfig);
-        });
-    }
-
     refreshConfigAsync(): Promise<ProjectConfig> {
-        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);            
+
+        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
         return this.refreshLogicBaseAsync(p)
-    }    
+    }
 }
