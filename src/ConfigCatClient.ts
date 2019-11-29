@@ -36,10 +36,10 @@ export interface IConfigCatClient {
     getVariationIdAsync(key: string, defaultValue: any, user?: User): Promise<string>;
 
     /** Returns the Variation IDs (analytics) of all feature flags or settings */
-    getAllVariationIds(callback: (variationIds: string) => void, user?: User): void;
+    getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void;
 
     /** Returns the Variation IDs (analytics) of all feature flags or settings */
-    getAllVariationIdsAsync(user?: User): Promise<string>;
+    getAllVariationIdsAsync(user?: User): Promise<string[]>;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
@@ -140,7 +140,7 @@ export class ConfigCatClient implements IConfigCatClient {
             const value = await this.getValueAsync(key, defaultValue, user);
             let variationId = key + '-';
             if (value === null || value === undefined) {
-                variationId += "null";
+                variationId += 'null';
             }
             else {
                 switch (typeof value) {
@@ -164,25 +164,24 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    getAllVariationIds(callback: (variationId: string) => void, user?: User): void {
+    getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void {
         this.getAllVariationIdsAsync(user).then(variationIds => {
             callback(variationIds);
         });
     }
 
-    getAllVariationIdsAsync(user?: User): Promise<string> {
+    getAllVariationIdsAsync(user?: User): Promise<string[]> {
         return new Promise(async (resolve) => {
             const keys = await this.getAllKeysAsync();
 
             if (keys.length === 0) {
-                resolve('');
+                resolve([]);
                 return;
             }
 
             const promises = keys.map(key => this.getVariationIdAsync(key, null, user));
             const variationIds = await Promise.all(promises);
-            const variationIdsString = variationIds.join(',');
-            resolve(variationIdsString);
+            resolve(variationIds);
         });
     }
 }
