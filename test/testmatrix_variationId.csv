@@ -1,8 +1,8 @@
 Identifier;Email;Country;Custom1;boolean;decimal;text;whole
-##null##;;;;boolean-false;decimal-b6589fc6ab0dc82cf12099d1c2d40ab994e8410c;text-84a516841ba77a5b4648de2cd0dfcb30ea46dbb4;whole-1f5523a8f535289b3401b29958d01b2966ed61d2;
-a@configcat.com;a@configcat.com;Hungary;admin;boolean-true;decimal-a0808bd39a94fd70085bdd703ce0b856d0adde9c;text-5ffe533b830f08a0326348a9160afafc8ada44db;whole-356a192b7913b04c54574d18c28d46e6395428ab;
-b@configcat.com;b@configcat.com;Hungary;admin;boolean-true;decimal-a0808bd39a94fd70085bdd703ce0b856d0adde9c;text-5ffe533b830f08a0326348a9160afafc8ada44db;whole-356a192b7913b04c54574d18c28d46e6395428ab;
-a@test.com;a@test.com;Hungary;admin;boolean-true;decimal-a375cf6b0e42138ee9badbe95ea51d195f35517b;text-7cb6efb98ba5972a9b5090dc2e517fe14d12cb04;whole-b6589fc6ab0dc82cf12099d1c2d40ab994e8410c;
-b@test.com;b@test.com;Hungary;admin;boolean-false;decimal-a375cf6b0e42138ee9badbe95ea51d195f35517b;text-7cb6efb98ba5972a9b5090dc2e517fe14d12cb04;whole-b6589fc6ab0dc82cf12099d1c2d40ab994e8410c;
-cliffordj@aol.com;cliffordj@aol.com;Hungary;admin;boolean-true;decimal-da4b9237bacccdf19c0760cab7aec4a8359010b0;text-e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98;whole-b6589fc6ab0dc82cf12099d1c2d40ab994e8410c;
-bryanw@verizon.net;bryanw@verizon.net;Hungary;;boolean-false;decimal-356a192b7913b04c54574d18c28d46e6395428ab;text-86f7e437faa5a7fce15d1ddcb9eaeaea377667b8;whole-37ad889a1a0b1d6edcd4f0ae078e2889fe6cfd77;
+##null##;;;;boolean_false;decimal_0;text_84a516841ba77a5b4648de2cd0dfcb30ea46dbb4;whole_999999;
+a@configcat.com;a@configcat.com;Hungary;admin;boolean_true;decimal_-2147483647.214748;text_5ffe533b830f08a0326348a9160afafc8ada44db;whole_1;
+b@configcat.com;b@configcat.com;Hungary;admin;boolean_true;decimal_-2147483647.214748;text_5ffe533b830f08a0326348a9160afafc8ada44db;whole_1;
+a@test.com;a@test.com;Hungary;admin;boolean_true;decimal_0.123456;text_7cb6efb98ba5972a9b5090dc2e517fe14d12cb04;whole_0;
+b@test.com;b@test.com;Hungary;admin;boolean_false;decimal_0.123456;text_7cb6efb98ba5972a9b5090dc2e517fe14d12cb04;whole_0;
+cliffordj@aol.com;cliffordj@aol.com;Hungary;admin;boolean_true;decimal_2;text_e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98;whole_0;
+bryanw@verizon.net;bryanw@verizon.net;Hungary;;boolean_false;decimal_1;text_86f7e437faa5a7fce15d1ddcb9eaeaea377667b8;whole_-1;

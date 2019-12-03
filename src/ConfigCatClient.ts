@@ -139,7 +139,7 @@ export class ConfigCatClient implements IConfigCatClient {
     getVariationIdAsync(key: string, defaultValue: any, user?: User): Promise<string> {
         return new Promise(async (resolve) => {
             const value = await this.getValueAsync(key, defaultValue, user);
-            let variationId = key + '-';
+            let variationId = key + '_';
             if (value === null || value === undefined) {
                 variationId += 'null';
             }
@@ -149,12 +149,15 @@ export class ConfigCatClient implements IConfigCatClient {
                         variationId += ('' + value).toLowerCase();
                         break;
                     case 'number':
-                        let numberString = value < 0 ? '-' : '';
-                        numberString += Math.trunc(value);
-                        if (value % 1 !== 0) {
-                            numberString += '.' + Math.trunc((value % 1) * 1000000);
+                        let numberString = '' + Math.trunc(value);
+                        const modulo = Math.abs(value % 1);
+                        if (modulo) {
+                            numberString += '.' + Math.trunc((modulo) * 1000000);
+                            while (numberString.charAt(numberString.length - 1) === '0') {
+                                numberString = numberString.substring(0, numberString.length - 1);
+                            }
                         }
-                        variationId += sha1(numberString);
+                        variationId += numberString;
                         break;
                     default:
                         variationId += sha1('' + value);
