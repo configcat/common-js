@@ -1,4 +1,4 @@
-import { ProjectConfig } from "./ConfigServiceBase";
+import { ProjectConfig } from "./ProjectConfig";
 import { ICache } from ".";
 
 export class InMemoryCache implements ICache {

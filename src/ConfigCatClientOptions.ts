@@ -1,5 +1,5 @@
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
-import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions } from ".";
+import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from ".";
 
 const VERSION: string = require("../package.json").version;
 
@@ -12,7 +12,7 @@ export interface IOptions {
 
 export abstract class OptionsBase implements IOptions {
 
-    public logger: IConfigCatLogger = new ConfigCatConsoleLogger();
+    public logger: IConfigCatLogger = new ConfigCatConsoleLogger(LogLevel.Warn);
 
     public apiKey: string;
 
@@ -22,7 +22,7 @@ export abstract class OptionsBase implements IOptions {
 
     public baseUrl: string = "https://cdn.configcat.com";
 
-    public proxy: string = '';
+    public proxy: string = "";
 
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
@@ -57,7 +57,7 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v2.json";
+        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v3.json";
     }
 }
 

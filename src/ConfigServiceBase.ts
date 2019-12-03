@@ -1,20 +1,6 @@
-import { IConfigFetcher, IConfigCatLogger, ICache } from ".";
+import { IConfigFetcher, ICache} from ".";
 import { OptionsBase } from "./ConfigCatClientOptions";
-
-export class ProjectConfig {
-    /** Entity identifier */
-    HttpETag: string;
-    /** ConfigCat config */
-    ConfigJSON: any;
-    /** Timestamp in milliseconds */
-    Timestamp: number;
-
-    constructor(timeStamp: number, jsonConfig: string, httpETag: string) {
-        this.Timestamp = timeStamp;
-        this.ConfigJSON = JSON.parse(jsonConfig);
-        this.HttpETag = httpETag;
-    }
-}
+import { ProjectConfig } from "./ProjectConfig";
 
 export interface IConfigService {
     getConfig() : Promise<ProjectConfig>;

@@ -1,10 +1,11 @@
 import { IConfigCatKernel } from ".";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
-import { IConfigService, ProjectConfig } from "./ConfigServiceBase";
+import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
+import { ProjectConfig } from "./ProjectConfig";
 import * as sha1 from "js-sha1";
 
 export const CONFIG_CHANGE_EVENT_NAME: string = "changed";

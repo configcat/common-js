@@ -25,6 +25,7 @@
   "author": "ConfigCat",
   "license": "MIT",
   "dependencies": {
+    "@types/semver": "^6.2.0",
     "js-sha1": "^0.6.0"
   },
   "devDependencies": {

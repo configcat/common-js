@@ -26,5 +26,5 @@ If you need help how to use this lib feel free to to contact the ConfigCat Staff
 Contributions are welcome.
 
 ## About ConfigCat
-- [Documentation](https://docs.configcat.com)
-- [Blog](https://blog.configcat.com)
+- [Documentation](https://configcat.com/docs)
+- [Blog](https://configcat.com/blog)

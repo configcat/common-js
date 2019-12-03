@@ -1,7 +1,6 @@
 import { assert } from "chai";
 import "mocha";
 import { RolloutEvaluator, User } from "../src/RolloutEvaluator";
-import { ProjectConfig } from "../src/ConfigServiceBase";
 import * as fs from "fs";
 import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
 import { FakeConfigFetcherBase, FakeConfigCatKernel } from "./ConfigCatClientTests";
@@ -11,7 +10,7 @@ import { IConfigCatClient, ConfigCatClient } from "../src/ConfigCatClient";
 
 describe("MatrixTests", () => {
 
-    const variationid_v2: string = fs.readFileSync("test/variationid_v2.json", "utf8");
+    const variationid_v2: string = fs.readFileSync("test/variationid_v3.json", "utf8");
 
     it("GetVariationId", async () => {
 

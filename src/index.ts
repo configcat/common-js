@@ -1,6 +1,6 @@
 import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsBase } from "./ConfigCatClientOptions";
-import { ProjectConfig } from "./ConfigServiceBase";
+import { ProjectConfig } from "./ProjectConfig";
 
 /**
  * Create an instance of ConfigCatClient and setup AutoPoll mode
@@ -16,18 +16,24 @@ export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfi
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for manualPoll mode
  */
-export function createClientWithManualPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IManualPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new ManualPollOptions(apiKey, options), configCatKernel);
-}
+export function createClientWithManualPoll(
+    apiKey: string,
+    configCatKernel: IConfigCatKernel,
+    options?: IManualPollOptions): IConfigCatClient {
+        return new ConfigCatClient(new ManualPollOptions(apiKey, options), configCatKernel);
+    }
 
 /**
  * Create an instance of ConfigCatClient and setup LazyLoad mode
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for lazyLoad mode
  */
-export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfigCatKernel, options?: ILazyLoadingOptions): IConfigCatClient {
-    return new ConfigCatClient(new LazyLoadOptions(apiKey, options), configCatKernel);
-}
+export function createClientWithLazyLoad(
+    apiKey: string,
+    configCatKernel: IConfigCatKernel,
+    options?: ILazyLoadingOptions): IConfigCatClient {
+        return new ConfigCatClient(new LazyLoadOptions(apiKey, options), configCatKernel);
+    }
 
 export interface IAutoPollOptions extends IOptions {
     pollIntervalSeconds?: number;
@@ -45,10 +51,26 @@ export interface ILazyLoadingOptions extends IOptions {
 export interface IConfigCatLogger {
     log(message: string): void;
 
+    debug(message: string): void;
+
+    info(message: string): void;
+
+    warn(message: string): void;
+
     error(message: string): void;
+
+    isEnable(logLevel: LogLevel): boolean;
 }
 
-export interface IConfigCatKernel{
+export enum LogLevel {       
+    Debug = 4,
+    Info = 3,
+    Warn = 2,
+    Error = 1,
+    Off = -1
+}
+
+export interface IConfigCatKernel {
     configFetcher: IConfigFetcher;
     cache: ICache;
 }

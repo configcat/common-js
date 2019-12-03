@@ -2,7 +2,7 @@ import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert, expect } from "chai";
 import "mocha";
 import { IConfigFetcher, IConfigCatKernel, ICache } from "../src/.";
-import { ProjectConfig } from "../src/ConfigServiceBase";
+import { ProjectConfig } from "../src/ProjectConfig";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { InMemoryCache } from "../src/Cache";
 import { User } from "../src/RolloutEvaluator";
@@ -311,14 +311,14 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
 
 export class FakeConfigFetcher extends FakeConfigFetcherBase {
   constructor(){
-    super("{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }");
+    super("{ \"debug\": { \"v\": true, \"t\": 0, \"p\": [], \"r\": [] } }");
   }
 }
 
 
 export class FakeConfigFetcherWithTwoKeys extends FakeConfigFetcherBase {
   constructor(){
-    super("{ \"debug\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] }, \"debug2\": { \"Value\": true, \"SettingType\": 0, \"RolloutPercentageItems\": [], \"RolloutRules\": [] } }");
+    super("{ \"debug\": { \"v\": true, \"t\": 0, \"p\": [], \"r\": [] }, \"debug2\": { \"v\": true, \"t\": 0, \"p\": [], \"r\": [] } }");
   }
 }
 

@@ -24,20 +24,26 @@ describe("Options", () => {
 
     assert.equal("APIKEY", options.apiKey);
     assert.equal(30000, options.requestTimeoutMs);
-    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
     assert.equal("m", options.clientVersion[0]);
   });
 
   it("ManualPollOptions initialization With parameters works", () => {
     let fakeLogger: FakeLogger = new FakeLogger();
-    let configChanged = function(){ };
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {logger: fakeLogger, requestTimeoutMs: 10, proxy: "http://fake-proxy.com:8080"});
+
+    let options: ManualPollOptions = new ManualPollOptions(
+      "APIKEY",
+      {
+        logger: fakeLogger,
+        requestTimeoutMs: 10,
+        proxy: "http://fake-proxy.com:8080"
+      });
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
     assert.equal("APIKEY", options.apiKey);
     assert.equal(10, options.requestTimeoutMs);
-    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
     assert.equal("m", options.clientVersion[0]);
     assert.equal("http://fake-proxy.com:8080", options.proxy);
   });
@@ -47,8 +53,8 @@ describe("Options", () => {
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
 
     assert.isDefined(options);
-    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v2.json", options.getUrl());
-    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v3.json", options.getUrl());
+    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
   });
 
   it("AutoPollOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
@@ -68,7 +74,7 @@ describe("Options", () => {
     assert.isDefined(options);
     assert.isTrue(options.logger instanceof ConfigCatConsoleLogger);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
     assert.equal(60, options.pollIntervalSeconds);
     assert.equal("a", options.clientVersion[0]);
     assert.equal(30000, options.requestTimeoutMs);
@@ -76,13 +82,20 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With parameters works", () => {
     let fakeLogger: FakeLogger = new FakeLogger();
-    let configChanged = function(){ };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {logger: fakeLogger, configChanged: configChanged, pollIntervalSeconds: 59, requestTimeoutMs: 20, proxy: "http://fake-proxy.com:8080"});
+
+    let configChanged = function() { };
+    let options: AutoPollOptions = new AutoPollOptions(
+      "APIKEY",
+            {logger: fakeLogger,
+            configChanged: configChanged,
+            pollIntervalSeconds: 59,
+            requestTimeoutMs: 20,
+            proxy: "http://fake-proxy.com:8080"});
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
     assert.equal(59, options.pollIntervalSeconds);
     assert.equal(20, options.requestTimeoutMs);
     assert.equal(configChanged, options.configChanged);
@@ -101,8 +114,8 @@ describe("Options", () => {
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
 
     assert.isDefined(options);
-    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v2.json", options.getUrl());
-    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v3.json", options.getUrl());
+    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
   });
 
   it("LazyLoadOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
@@ -115,7 +128,7 @@ describe("Options", () => {
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", null);
     assert.isDefined(options);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
     assert.equal(60, options.cacheTimeToLiveSeconds);
     assert.equal("l", options.clientVersion[0]);
     assert.equal(30000, options.requestTimeoutMs);
@@ -123,13 +136,19 @@ describe("Options", () => {
 
   it("LazyLoadOptions initialization With parameters works", () => {
     let fakeLogger: FakeLogger = new FakeLogger();
-    let configChanged = function(){ };
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {logger: fakeLogger, cacheTimeToLiveSeconds:59, requestTimeoutMs: 20, proxy: "http://fake-proxy.com:8080"});
+    let options: LazyLoadOptions = new LazyLoadOptions(
+      "APIKEY",
+      {
+        logger: fakeLogger,
+        cacheTimeToLiveSeconds:59,
+        requestTimeoutMs: 20,
+        proxy: "http://fake-proxy.com:8080"
+      });
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
     assert.equal(59, options.cacheTimeToLiveSeconds);
     assert.equal("l", options.clientVersion[0]);
     assert.equal(20, options.requestTimeoutMs);
@@ -153,15 +172,29 @@ describe("Options", () => {
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
 
     assert.isDefined(options);
-    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v2.json", options.getUrl());
-    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v2.json", options.getUrl());
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v3.json", options.getUrl());
+    assert.notEqual("https://cdn.configcat.com/configuration-files/APIKEY/config_v3.json", options.getUrl());
   });
 });
 
 export class FakeLogger implements IConfigCatLogger {
+  // tslint:disable-next-line:no-empty
+  debug(message: string): void {    
+  }
+  // tslint:disable-next-line:no-empty
+  info(message: string): void {    
+  }
+  // tslint:disable-next-line:no-empty
+  warn(message: string): void {    
+  }
+  isEnable(logLevel: import("../src").LogLevel): boolean {
+    return false;
+  }
+  // tslint:disable-next-line:no-empty
   log(message: string): void {
   }
 
+  // tslint:disable-next-line:no-empty
   error(message: string): void {
   }
 }
