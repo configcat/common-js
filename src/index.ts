@@ -1,6 +1,7 @@
 import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsBase } from "./ConfigCatClientOptions";
 import { ProjectConfig } from "./ProjectConfig";
+import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 
 /**
  * Create an instance of ConfigCatClient and setup AutoPoll mode
@@ -34,6 +35,14 @@ export function createClientWithLazyLoad(
     options?: ILazyLoadingOptions): IConfigCatClient {
         return new ConfigCatClient(new LazyLoadOptions(apiKey, options), configCatKernel);
     }
+
+/**
+ * Create an instance of ConfigCatConsoleLogger
+ * @param {LogLevel} logLevel - Specifies message's filtering to output for the CofigCatConsoleLogger.
+ */
+export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
+    return new ConfigCatConsoleLogger(logLevel);
+}
 
 export interface IAutoPollOptions extends IOptions {
     pollIntervalSeconds?: number;

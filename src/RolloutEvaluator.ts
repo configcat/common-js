@@ -93,7 +93,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         }
 
         if (result.Value == null) {
-            result.EvaluateLog.ReturnValue = defaultValue;
+            result.EvaluateLog.ReturnValue = config.ConfigJSON[key][Setting.Value];
         }
 
         this.logger.info(result.EvaluateLog.GetLog());
