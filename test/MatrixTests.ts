@@ -24,6 +24,10 @@ describe("MatrixTests", () => {
         Helper.RunMatrixTest("test/sample_semantic_v3.json", "test/testmatrix_semantic.csv", done);
     }) 
 
+    it("GetValue semver operators", (done) =>{
+        Helper.RunMatrixTest("test/sample_semantic_2_v3.json", "test/testmatrix_semantic_2.csv", done);
+    }) 
+
     class Helper {
 
         public static CreateUser(row: string, headers: string[]): User {
