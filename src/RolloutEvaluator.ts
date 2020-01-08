@@ -1,7 +1,7 @@
 import * as sha1 from "js-sha1";
 import { IConfigCatLogger } from ".";
 import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
-import * as semver from "semver";
+import * as semver from "semver/preload";
 import { isUndefined } from "util";
 
 export interface IRolloutEvaluator {
