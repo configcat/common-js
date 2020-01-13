@@ -20,32 +20,26 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
         this.info(message);        
     }
 
-    debug(message: string): void {
-        if (this.isEnable(LogLevel.Debug)){
-            console.log(this.SOURCE + " - DEBUG - " + message);
-        }
-    }
-
     info(message: string): void {
-        if (this.isEnable(LogLevel.Info)) {
+        if (this.isLogLevelEnabled(LogLevel.Info)) {
             console.info(this.SOURCE + " - INFO - " + message);
         }
     }
 
     warn(message: string): void {
-        if (this.isEnable(LogLevel.Warn)) {
+        if (this.isLogLevelEnabled(LogLevel.Warn)) {
             console.warn(this.SOURCE + " - WARN - " + message);
         }
     }
 
     error(message: string): void {
 
-        if (this.isEnable(LogLevel.Error)) {
+        if (this.isLogLevelEnabled(LogLevel.Error)) {
             console.error(this.SOURCE + " - ERROR - " + message);
         }
     }
 
-    isEnable(logLevel: LogLevel): boolean {
+    isLogLevelEnabled(logLevel: LogLevel): boolean {
         return this.level >= logLevel;
     }    
 }

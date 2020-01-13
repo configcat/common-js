@@ -60,19 +60,14 @@ export interface ILazyLoadingOptions extends IOptions {
 export interface IConfigCatLogger {
     log(message: string): void;
 
-    debug(message: string): void;
-
     info(message: string): void;
 
     warn(message: string): void;
 
     error(message: string): void;
-
-    isEnable(logLevel: LogLevel): boolean;
 }
 
-export enum LogLevel {       
-    Debug = 4,
+export enum LogLevel {    
     Info = 3,
     Warn = 2,
     Error = 1,

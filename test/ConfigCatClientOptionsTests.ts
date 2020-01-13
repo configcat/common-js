@@ -178,16 +178,14 @@ describe("Options", () => {
 });
 
 export class FakeLogger implements IConfigCatLogger {
-  // tslint:disable-next-line:no-empty
-  debug(message: string): void {    
-  }
+
   // tslint:disable-next-line:no-empty
   info(message: string): void {    
   }
   // tslint:disable-next-line:no-empty
   warn(message: string): void {    
   }
-  isEnable(logLevel: import("../src").LogLevel): boolean {
+  isLogLevelEnabled(logLevel: import("../src").LogLevel): boolean {
     return false;
   }
   // tslint:disable-next-line:no-empty
