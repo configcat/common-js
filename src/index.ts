@@ -67,8 +67,7 @@ export interface IConfigCatLogger {
     error(message: string): void;
 }
 
-export enum LogLevel {       
-    Debug = 4,
+export enum LogLevel {    
     Info = 3,
     Warn = 2,
     Error = 1,

@@ -122,7 +122,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                 let comparisonValue: string = rule[RolloutRules.ComparisonValue];
 
-                let log: string = "Evaluate rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
+                let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
 
                 switch (comparator) {
                     case 0: // in
