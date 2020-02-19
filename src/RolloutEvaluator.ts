@@ -127,7 +127,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                 let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
 
                 switch (comparator) {
-                    case 0: // in
+                    case 0: // is one of
 
                         let cvs: string[] = comparisonValue.split(",");
 
@@ -149,7 +149,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                         break;
 
-                    case 1: // notIn
+                    case 1: // is not one of
 
                         if (!comparisonValue.split(",").some(e => {
                             if (e.trim() === comparisonAttribute) {
@@ -249,7 +249,52 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                         log += "no match";
 
                         break;
+                    case 16: // is one of (sensitive)
+                        let values: string[] = comparisonValue.split(",");
 
+                        for (let ci: number = 0; ci < values.length; ci++) {
+
+                            if (values[ci].trim() === sha1(comparisonAttribute)) {
+                                log += "MATCH";
+
+                                eLog.OpAppendLine(log);
+
+                                result.Value = eLog.ReturnValue = rule[RolloutRules.Value];
+                                result.EvaluateLog = eLog;
+
+                                return result;
+                            }
+                        }
+
+                        log += "no match";
+
+                        break;
+
+                    case 17: // is not one of (sensitive)
+                        if (!comparisonValue.split(",").some(e => {
+                            console.log(e);
+                            
+                            console.log(sha1(e.trim()));
+                            
+                            if (e.trim() === sha1(comparisonAttribute)) {
+                                return true;
+                            }
+
+                            return false;
+                        })) {
+                            log += "MATCH";
+
+                            eLog.OpAppendLine(log);
+
+                            result.Value = eLog.ReturnValue = rule[RolloutRules.Value];
+                            result.EvaluateLog = eLog;
+
+                            return result;
+                        }
+
+                        log += "no match";
+
+                        break;
                     default:
                         break;
                 }
@@ -450,6 +495,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                 return "> (Number)";
             case 15:
                 return ">= (Number)";
+            case 16:
+                return "IS ONE OF (Sensitive)";
+            case 17:
+                return "IS NOT ONE OF (Sensitive)";
             default:
                 return <string><any>rule;
         }
