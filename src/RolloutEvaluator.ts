@@ -1,7 +1,7 @@
-import * as sha1 from "js-sha1";
 import { IConfigCatLogger } from ".";
 import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
-import * as semver from "semver/preload";
+import { sha1 } from "./Sha1";
+import * as semver from "./Semver";
 import { isUndefined } from "util";
 
 export interface IRolloutEvaluator {
@@ -385,14 +385,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                     if (!sv[ci] || isUndefined(sv[ci]) || sv[ci].trim() === "") {
                         continue;
                     }
-
-                    if (semver.valid(sv[ci].trim()) == null) {
-                        return false;
-                    }
-
-                    if (!found) {
-                        found = semver.eq(v1, sv[ci].trim(), true);
-                    }
+                  
+                   if (semver.valid(sv[ci].trim()) == null) {
+                       return false;
+                   }
+                    
+                   if (!found) {
+                        found = semver.looseeq(v1, sv[ci].trim());
+                   }
                 }
 
                 return found;
