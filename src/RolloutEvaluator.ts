@@ -272,10 +272,6 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                     case 17: // is not one of (sensitive)
                         if (!comparisonValue.split(",").some(e => {
-                            console.log(e);
-                            
-                            console.log(sha1(e.trim()));
-                            
                             if (e.trim() === sha1(comparisonAttribute)) {
                                 return true;
                             }
