@@ -1,6 +1,14 @@
-## Deploy steps
+# How to deploy
 
+## Via shell script
 
+1. Run `./deploy.sh`
+
+2. Update `common-js` in `js-sdk` and `node-sdk` and re-deploy both packages.
+
+or
+
+## Manually
 1. Run tests
    ```PowerShell
     npm test
@@ -24,5 +32,4 @@ Increase version number by using `npm version patch | minor | major`
 
     You can follow the build status here -> https://travis-ci.com/configcat/common-js
 
-2. Update dependant packages
-    Update `common-js` version number in `js-sdk` and `node-sdk`'s `package.json` and re-deploy both packages.
+2. Update `common-js` in `js-sdk` and `node-sdk` and re-deploy both packages.
