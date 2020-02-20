@@ -36,7 +36,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     private logger: IConfigCatLogger;
 
     constructor(logger: IConfigCatLogger) {
-        
+
         this.logger = logger;
     }
 
@@ -53,7 +53,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             let s: string = "Evaluating getValue('" + key + "') failed. Returning default value: '" + defaultValue + "'.";
             s += " Here are the available keys: {" + Object.keys(config.ConfigJSON).join() + "}.";
-            
+
             this.logger.error(s);
 
             return defaultValue;
@@ -74,16 +74,18 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             if (result.Value == null) {
 
-                result.Value = result.EvaluateLog.ReturnValue = this.EvaluateVariations(config.ConfigJSON[key][Setting.RolloutPercentageItems], key, user);               
+                result.Value = result.EvaluateLog.ReturnValue = this.EvaluateVariations(config.ConfigJSON[key][Setting.RolloutPercentageItems], key, user);
 
-                result.EvaluateLog.OpAppendLine("Evaluate % option => " + (result.Value == null ? "user not targeted" : "user targeted"));
+                if (config.ConfigJSON[key][Setting.RolloutPercentageItems].length > 0) {
+                    result.EvaluateLog.OpAppendLine("Evaluating % options => " + (result.Value == null ? "user not targeted" : "user targeted"));
+                }
+
             }
         }
         else {
 
             if ((config.ConfigJSON[key][Setting.RolloutRules] && config.ConfigJSON[key][Setting.RolloutRules].length > 0) ||
-            (config.ConfigJSON[key][Setting.RolloutPercentageItems] && config.ConfigJSON[key][Setting.RolloutPercentageItems].length > 0))
-            {
+                (config.ConfigJSON[key][Setting.RolloutPercentageItems] && config.ConfigJSON[key][Setting.RolloutPercentageItems].length > 0)) {
                 let s: string = "Evaluating getValue('" + key + "'). "
                 s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
                 s += "Read more: https://configcat.com/docs/advanced/user-object";
@@ -125,14 +127,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                 let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
 
                 switch (comparator) {
-                    case 0: // in
+                    case 0: // is one of
 
                         let cvs: string[] = comparisonValue.split(",");
 
                         for (let ci: number = 0; ci < cvs.length; ci++) {
 
                             if (cvs[ci].trim() === comparisonAttribute) {
-                                log+= "MATCH";
+                                log += "MATCH";
 
                                 eLog.OpAppendLine(log);
 
@@ -143,11 +145,11 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             }
                         }
 
-                        log+= "no match";
+                        log += "no match";
 
                         break;
 
-                    case 1: // notIn
+                    case 1: // is not one of
 
                         if (!comparisonValue.split(",").some(e => {
                             if (e.trim() === comparisonAttribute) {
@@ -210,8 +212,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                     case 7:
                     case 8:
                     case 9:
-                        
-                        if (this.EvaluateSemver(comparisonAttribute, comparisonValue, comparator)){
+
+                        if (this.EvaluateSemver(comparisonAttribute, comparisonValue, comparator)) {
                             log += "MATCH";
 
                             eLog.OpAppendLine(log);
@@ -232,8 +234,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                     case 13:
                     case 14:
                     case 15:
-                                    
-                        if (this.EvaluateNumber(comparisonAttribute, comparisonValue, comparator)){
+
+                        if (this.EvaluateNumber(comparisonAttribute, comparisonValue, comparator)) {
                             log += "MATCH";
 
                             eLog.OpAppendLine(log);
@@ -245,9 +247,54 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                         }
 
                         log += "no match";
-            
+
+                        break;
+                    case 16: // is one of (sensitive)
+                        let values: string[] = comparisonValue.split(",");
+
+                        for (let ci: number = 0; ci < values.length; ci++) {
+
+                            if (values[ci].trim() === sha1(comparisonAttribute)) {
+                                log += "MATCH";
+
+                                eLog.OpAppendLine(log);
+
+                                result.Value = eLog.ReturnValue = rule[RolloutRules.Value];
+                                result.EvaluateLog = eLog;
+
+                                return result;
+                            }
+                        }
+
+                        log += "no match";
+
                         break;
 
+                    case 17: // is not one of (sensitive)
+                        if (!comparisonValue.split(",").some(e => {
+                            console.log(e);
+                            
+                            console.log(sha1(e.trim()));
+                            
+                            if (e.trim() === sha1(comparisonAttribute)) {
+                                return true;
+                            }
+
+                            return false;
+                        })) {
+                            log += "MATCH";
+
+                            eLog.OpAppendLine(log);
+
+                            result.Value = eLog.ReturnValue = rule[RolloutRules.Value];
+                            result.EvaluateLog = eLog;
+
+                            return result;
+                        }
+
+                        log += "no match";
+
+                        break;
                     default:
                         break;
                 }
@@ -256,10 +303,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             }
         }
         result.EvaluateLog = eLog;
-    
+
         return result;
     }
-    
+
     private EvaluateVariations(rolloutPercentageItems: any, key: string, User: User): any {
 
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
@@ -286,19 +333,19 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         let n1: number, n2: number;
 
-        if (v1 && !Number.isNaN(Number.parseFloat(v1.replace(',', '.')))) {            
+        if (v1 && !Number.isNaN(Number.parseFloat(v1.replace(',', '.')))) {
             n1 = Number.parseFloat(v1.replace(',', '.'));
         }
-        else{
+        else {
             return false;
-        }   
+        }
 
-        if (v2 && !Number.isNaN(Number.parseFloat(v2.replace(',', '.')))) {            
+        if (v2 && !Number.isNaN(Number.parseFloat(v2.replace(',', '.')))) {
             n2 = Number.parseFloat(v2.replace(',', '.'));
         }
-        else{            
+        else {
             return false;
-        }   
+        }
 
         switch (comparator) {
             case 10:
@@ -314,31 +361,31 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             case 15:
                 return n1 >= n2;
             default:
-                break;                
+                break;
         }
 
         return false;
     }
 
-    private EvaluateSemver(v1: string, v2: string, comparator: number): boolean {        
+    private EvaluateSemver(v1: string, v2: string, comparator: number): boolean {
 
         if (semver.valid(v1) == null || isUndefined(v2)) {
             return false;
         }
 
         v2 = v2.trim();
-        
-        switch(comparator) {
+
+        switch (comparator) {
             case 4:
                 // in
                 let sv: string[] = v2.split(",");
                 let found: boolean = false;
-                for (let ci: number = 0; ci < sv.length; ci++) {                   
+                for (let ci: number = 0; ci < sv.length; ci++) {
 
-                    if(!sv[ci] || isUndefined(sv[ci]) || sv[ci].trim() === "") {
+                    if (!sv[ci] || isUndefined(sv[ci]) || sv[ci].trim() === "") {
                         continue;
                     }
-
+                  
                    if (semver.valid(sv[ci].trim()) == null) {
                        return false;
                    }
@@ -353,8 +400,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             case 5:
                 // not in
                 return !v2.split(",").some(e => {
-                    
-                    if(!e || isUndefined(e) || e.trim() === "") {
+
+                    if (!e || isUndefined(e) || e.trim() === "") {
                         return false;
                     }
 
@@ -375,7 +422,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                 return semver.lt(v1, v2);
             case 7:
-                
+
                 if (semver.valid(v2) == null) {
                     return false;
                 }
@@ -417,38 +464,48 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     private RuleToString(rule: number): string {
         switch (rule) {
             case 0:
-            case 4:
-                return "IN";
+                return "IS ONE OF"
             case 1:
-            case 5:
-                return "NOT IN";
+                return "IS NOT ONE OF";
             case 2:
                 return "CONTAINS";
             case 3:
-                return "NOT CONTAINS";
+                return "DOES NOT CONTAIN"
+            case 4:
+                return "IS ONE OF (SemVer)";
+            case 5:
+                return "IS NOT ONE OF (SemVer)";
             case 6:
-            case 12:
-                return "<";
+                return "< (SemVer)"
             case 7:
-            case 13:
-                return "<=";
+                return "<= (SemVer)"
             case 8:
-            case 14:
-                return ">";
+                return "> (SemVer)"
             case 9:
-            case 15:
-                return ">=";
+                return ">= (SemVer)"
             case 10:
-                return "=";
+                return "= (Number)";
             case 11:
-                return "!=";
+                return "!= (Number)";
+            case 12:
+                return "< (Number)";
+            case 13:
+                return "<= (Number)";
+            case 14:
+                return "> (Number)";
+            case 15:
+                return ">= (Number)";
+            case 16:
+                return "IS ONE OF (Sensitive)";
+            case 17:
+                return "IS NOT ONE OF (Sensitive)";
             default:
                 return <string><any>rule;
         }
     }
 }
 
-class EvaluateResult{
+class EvaluateResult {
     public Value: any;
 
     public EvaluateLog: EvaluateLogger;
@@ -463,12 +520,12 @@ class EvaluateLogger {
 
     public Operations: string = "";
 
-    public OpAppendLine(s:string): void {
+    public OpAppendLine(s: string): void {
         this.Operations += " " + s + "\n";
     }
 
     public GetLog(): string {
-        return "Evaluate '" + this.KeyName + "'" 
+        return "Evaluate '" + this.KeyName + "'"
             + "\n User : " + JSON.stringify(this.User)
             + "\n" + this.Operations
             + " Returning value : " + this.ReturnValue;
