@@ -12,45 +12,49 @@ describe("MatrixTests", () => {
     let logger: IConfigCatLogger = new ConfigCatConsoleLogger(LogLevel.Off);
     let evaluator: RolloutEvaluator = new RolloutEvaluator(logger);
 
-    it("GetValue basic operators", (done) =>{
+    it("GetValue basic operators", (done) => {
         Helper.RunMatrixTest("test/sample_v3.json", "test/testmatrix.csv", done);
     })
 
-    it("GetValue numeric operators", (done) =>{
+    it("GetValue numeric operators", (done) => {
         Helper.RunMatrixTest("test/sample_number_v3.json", "test/testmatrix_number.csv", done);
     })
 
-    it("GetValue semver operators", (done) =>{
+    it("GetValue semver operators", (done) => {
         Helper.RunMatrixTest("test/sample_semantic_v3.json", "test/testmatrix_semantic.csv", done);
-    }) 
+    })
 
-    it("GetValue semver operators", (done) =>{
+    it("GetValue semver operators", (done) => {
         Helper.RunMatrixTest("test/sample_semantic_2_v3.json", "test/testmatrix_semantic_2.csv", done);
-    }) 
+    })
+
+    it("GetValue sensitive operators", (done) => {
+        Helper.RunMatrixTest("test/sample_sensitive_v3.json", "test/testmatrix_sensitive.csv", done);
+    })
 
     class Helper {
 
         public static CreateUser(row: string, headers: string[]): User {
 
-            let up: string[] = row.split(";");
-            const USERNULL:string = "##null##";
+            let column: string[] = row.split(";");
+            const USERNULL: string = "##null##";
 
-            if (up[0] === USERNULL) {
+            if (column[0] === USERNULL) {
                 return null;
             }
 
-            let result: User = new User(up[0]);
+            let result: User = new User(column[0]);
 
-            if (up[1] !== USERNULL){
-                result.email = up[1];
+            if (column[1] !== USERNULL) {
+                result.email = column[1];
             }
 
-            if (up[2] !== USERNULL){
-                result.country = up[2];
+            if (column[2] !== USERNULL) {
+                result.country = column[2];
             }
 
-            if (up[3] !== USERNULL){
-                result.custom[headers[3]] = up[3];
+            if (column[3] !== USERNULL) {
+                result.custom[headers[3]] = column[3];
             }
 
             return result;
@@ -74,13 +78,12 @@ describe("MatrixTests", () => {
         }
 
         public static RunMatrixTest(sampleFilePath: string, matrixFilePath: string, complete: () => void) {
-            
+
             const ENCODING: string = "utf8";
             const SAMPLE: string = fs.readFileSync(sampleFilePath, ENCODING);
-            const CONFIG: ProjectConfig = new ProjectConfig(0, SAMPLE, null);            
+            const CONFIG: ProjectConfig = new ProjectConfig(0, SAMPLE, null);
 
-            let header: string[];
-            let rowNo: number = 1;        
+            let rowNo: number = 1;
 
             fs.readFile(matrixFilePath, ENCODING, (e, data) => {
 
@@ -89,40 +92,31 @@ describe("MatrixTests", () => {
                 }
 
                 var lines: string[] = data.toString().split(EOL);
-                lines.forEach(function (line: string): void {
+                let header: string[] = lines.shift().split(";");
 
-                    if (header) {
+                lines.forEach((line: string): void => {
 
-                        if (!line) {
-                            return;
-                        }
-
-                        let user: User = Helper.CreateUser(line, header);
-
-                        for (let i: number = 4; i < header.length; i++) {
-
-                            let key: string = header[i];
-
-                            let actual: any = evaluator.Evaluate(CONFIG, key, null, user);
-
-                            let expected: any = Helper.GetTypedValue(line.split(";")[i], key);
-
-                            if (actual !== expected) {
-
-                                // tslint:disable-next-line:max-line-length
-                                let l: string = <string><any>rowNo + "." + " User -  " + user + "(" + <string>key + ") " + <string><any>actual + " === " + <string><any>expected + " = " + <string><any>(actual === expected);
-
-                                console.log(l);
-                            }
-
-                            // assert
-                            assert.strictEqual(actual, expected);
-                        }
-
-                    } else {
-                        header = line.split(";");
+                    if (!line) {
+                        return;
                     }
-                    
+
+                    let user: User = Helper.CreateUser(line, header);
+
+                    for (let i = 4; i < header.length; i++) {
+
+                        let key: string = header[i];
+                        let actual: any = evaluator.Evaluate(CONFIG, key, null, user);
+                        let expected: any = Helper.GetTypedValue(line.split(";")[i], key);
+
+                        if (actual !== expected) {
+
+                            let l = `Matrix test failed in line ${rowNo}. User: ${JSON.stringify(user)}, Key: ${key}, Actual: ${actual}, Expected: ${expected}`;
+                            console.log(l);
+                        }
+
+                        assert.strictEqual(actual, expected);
+                    }
+
                     rowNo++;
                 }, complete());
             });
