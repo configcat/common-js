@@ -13,23 +13,23 @@ describe("MatrixTests", () => {
     let evaluator: RolloutEvaluator = new RolloutEvaluator(logger);
 
     it("GetValue basic operators", (done) => {
-        Helper.RunMatrixTest("test/sample_v3.json", "test/testmatrix.csv", done);
+        Helper.RunMatrixTest("test/sample_v4.json", "test/testmatrix.csv", done);
     })
 
     it("GetValue numeric operators", (done) => {
-        Helper.RunMatrixTest("test/sample_number_v3.json", "test/testmatrix_number.csv", done);
+        Helper.RunMatrixTest("test/sample_number_v4.json", "test/testmatrix_number.csv", done);
     })
 
     it("GetValue semver operators", (done) => {
-        Helper.RunMatrixTest("test/sample_semantic_v3.json", "test/testmatrix_semantic.csv", done);
+        Helper.RunMatrixTest("test/sample_semantic_v4.json", "test/testmatrix_semantic.csv", done);
     })
 
     it("GetValue semver operators", (done) => {
-        Helper.RunMatrixTest("test/sample_semantic_2_v3.json", "test/testmatrix_semantic_2.csv", done);
+        Helper.RunMatrixTest("test/sample_semantic_2_v4.json", "test/testmatrix_semantic_2.csv", done);
     })
 
     it("GetValue sensitive operators", (done) => {
-        Helper.RunMatrixTest("test/sample_sensitive_v3.json", "test/testmatrix_sensitive.csv", done);
+        Helper.RunMatrixTest("test/sample_sensitive_v4.json", "test/testmatrix_sensitive.csv", done);
     })
 
     class Helper {
