@@ -30,10 +30,10 @@ export interface IConfigCatClient {
     getAllKeysAsync(): Promise<string[]>;
 
     /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key */
-    getVariationId(key: string, defaultValue: any, callback: (variationId: string) => void, user?: User): void;
+    getVariationId(key: string, defaultVariationId: any, callback: (variationId: string) => void, user?: User): void;
 
     /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key */
-    getVariationIdAsync(key: string, defaultValue: any, user?: User): Promise<string>;
+    getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string>;
 
     /** Returns the Variation IDs (analytics) of all feature flags or settings */
     getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void;
@@ -92,7 +92,7 @@ export class ConfigCatClient implements IConfigCatClient {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
             var result: any = defaultValue;
-            result = this.evaluator.Evaluate(config, key, defaultValue, user);
+            result = this.evaluator.Evaluate(config, key, defaultValue, user).Value;
             resolve(result);
         });
     }
@@ -129,41 +129,18 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    getVariationId(key: string, defaultValue: any, callback: (variationId: string) => void, user?: User): void {
-        this.getVariationIdAsync(key, defaultValue, user).then(variationId => {
+    getVariationId(key: string, defaultVariationId: any, callback: (variationId: string) => void, user?: User): void {
+        this.getVariationIdAsync(key, defaultVariationId, user).then(variationId => {
             callback(variationId);
         });
     }
 
-    getVariationIdAsync(key: string, defaultValue: any, user?: User): Promise<string> {
+    getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
         return new Promise(async (resolve) => {
-            const value = await this.getValueAsync(key, defaultValue, user);
-            let variationId = key + '_';
-            if (value === null || value === undefined) {
-                variationId += 'null';
-            }
-            else {
-                switch (typeof value) {
-                    case 'boolean':
-                        variationId += ('' + value).toLowerCase();
-                        break;
-                    case 'number':
-                        let numberString = '' + Math.trunc(value);
-                        const modulo = Math.abs(value % 1);
-                        if (modulo) {
-                            numberString += '.' + Math.trunc((modulo) * 1000000);
-                            while (numberString.charAt(numberString.length - 1) === '0') {
-                                numberString = numberString.substring(0, numberString.length - 1);
-                            }
-                        }
-                        variationId += numberString;
-                        break;
-                    default:
-                        variationId += sha1('' + value);
-                        break;
-                }
-            }
-            resolve(variationId);
+            const config = await this.configService.getConfig();
+            var result: any = defaultVariationId;
+            result = this.evaluator.Evaluate(config, key, null, user, defaultVariationId).VariationId;
+            resolve(result);
         });
     }
 

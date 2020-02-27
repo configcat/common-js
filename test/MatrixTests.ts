@@ -105,7 +105,7 @@ describe("MatrixTests", () => {
                     for (let i = 4; i < header.length; i++) {
 
                         let key: string = header[i];
-                        let actual: any = evaluator.Evaluate(CONFIG, key, null, user);
+                        let actual: any = evaluator.Evaluate(CONFIG, key, null, user).Value;
                         let expected: any = Helper.GetTypedValue(line.split(";")[i], key);
 
                         if (actual !== expected) {
