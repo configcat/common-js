@@ -2,7 +2,7 @@ import { IConfigCatLogger } from ".";
 import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
 import { sha1 } from "./Sha1";
 import * as semver from "./Semver";
-import { isUndefined } from "util";
+import { isUndefined } from "./Utils"
 
 export interface IRolloutEvaluator {
     Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
