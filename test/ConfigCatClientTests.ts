@@ -311,14 +311,14 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
 
 export class FakeConfigFetcher extends FakeConfigFetcherBase {
   constructor(){
-    super("{ \"debug\": { \"v\": true, \"t\": 0, \"p\": [], \"r\": [] } }");
+    super("{ \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } }");
   }
 }
 
 
 export class FakeConfigFetcherWithTwoKeys extends FakeConfigFetcherBase {
   constructor(){
-    super("{ \"debug\": { \"v\": true, \"t\": 0, \"p\": [], \"r\": [] }, \"debug2\": { \"v\": true, \"t\": 0, \"p\": [], \"r\": [] } }");
+    super("{ \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] }, \"debug2\": { \"v\": true, \"i\": \"12345678\", \"t\": 0, \"p\": [], \"r\": [] } }");
   }
 }
 

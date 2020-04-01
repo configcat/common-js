@@ -21,6 +21,8 @@ export class Setting{
     static RolloutPercentageItems : string = "p";
 
     static RolloutRules: string = "r";
+
+    static VariationId: string = "i";
 }
 
 export class RolloutRules{
@@ -33,6 +35,8 @@ export class RolloutRules{
     static ComparisonValue: string = "c";
 
     static Value: string = "v";
+
+    static VariationId: string = "i";
 }
 
 export class RolloutPercentageItems{
@@ -41,4 +45,6 @@ export class RolloutPercentageItems{
     static Value: string = "v";
 
     static Percentage: string = "p";
+
+    static VariationId: string = "i";
 }

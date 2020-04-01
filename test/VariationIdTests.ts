@@ -14,16 +14,16 @@ describe("ConfigCatClient", () => {
         assert.isDefined(client);
 
         client.getVariationId('debug', 'N/A', (variationId) => {
-            assert.equal(variationId, 'debug_true');
+            assert.equal(variationId, 'abcdefgh');
 
             client.getVariationId('debug2', 'N/A', (variationId) => {
-                assert.equal(variationId, 'debug2_true');
+                assert.equal(variationId, '12345678');
 
                 client.getVariationId('notexists', 'N/A', (variationId) => {
-                    assert.equal(variationId, 'notexists_08d2e98e6754af941484848930ccbaddfefe13d6');
+                    assert.equal(variationId, 'N/A');
 
                     client.getVariationId('notexists2', 'N/A', (variationId) => {
-                        assert.equal(variationId, 'notexists2_08d2e98e6754af941484848930ccbaddfefe13d6');
+                        assert.equal(variationId, 'N/A');
 
                         done();
                     });
@@ -38,10 +38,10 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
         assert.isDefined(client);
 
-        assert.equal(await client.getVariationIdAsync('debug', 'N/A'), 'debug_true');
-        assert.equal(await client.getVariationIdAsync('debug2', 'N/A'), 'debug2_true');
-        assert.equal(await client.getVariationIdAsync('notexists', 'N/A'), 'notexists_08d2e98e6754af941484848930ccbaddfefe13d6');
-        assert.equal(await client.getVariationIdAsync('notexists2', 'N/A'), 'notexists2_08d2e98e6754af941484848930ccbaddfefe13d6');
+        assert.equal(await client.getVariationIdAsync('debug', 'N/A'), 'abcdefgh');
+        assert.equal(await client.getVariationIdAsync('debug2', 'N/A'), '12345678');
+        assert.equal(await client.getVariationIdAsync('notexists', 'N/A'), 'N/A');
+        assert.equal(await client.getVariationIdAsync('notexists2', 'N/A'), 'N/A');
     });
 
     it("getAllVariationIds() works", (done) => {
@@ -53,8 +53,8 @@ describe("ConfigCatClient", () => {
 
         client.getAllVariationIds((variationIds) => {
             assert.equal(variationIds.length, 2);
-            assert.equal(variationIds[0], 'debug_true');
-            assert.equal(variationIds[1], 'debug2_true');
+            assert.equal(variationIds[0], 'abcdefgh');
+            assert.equal(variationIds[1], '12345678');
             done();
         });
     });
@@ -67,7 +67,7 @@ describe("ConfigCatClient", () => {
 
         const variationIds = await client.getAllVariationIdsAsync();
         assert.equal(variationIds.length, 2);
-        assert.equal(variationIds[0], 'debug_true');
-        assert.equal(variationIds[1], 'debug2_true');
+        assert.equal(variationIds[0], 'abcdefgh');
+        assert.equal(variationIds[1], '12345678');
     });
 });
