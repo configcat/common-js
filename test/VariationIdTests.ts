@@ -3,7 +3,7 @@ import { assert, expect } from "chai";
 import "mocha";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { InMemoryCache } from "../src/Cache";
-import { FakeConfigCatKernel, FakeConfigFetcherWithTwoKeys } from "./ConfigCatClientTests";
+import { FakeConfigCatKernel, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeConfigFetcherWithNullNewConfig } from "./ConfigCatClientTests";
 
 describe("ConfigCatClient", () => {
     it("getVariationId() works", (done) => {
@@ -69,5 +69,89 @@ describe("ConfigCatClient", () => {
         assert.equal(variationIds.length, 2);
         assert.equal(variationIds[0], 'abcdefgh');
         assert.equal(variationIds[1], '12345678');
+    });
+
+    it("getKeyAndValue() works with default", (done) => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        client.getKeyAndValue("abcdefgh", (result) => {
+            assert.equal(result.settingKey, "debug");
+            assert.equal(result.settingValue, "def");
+            done();
+        });
+    });
+
+    it("getKeyAndValueAsync() works with default", async () => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        let result = await client.getKeyAndValueAsync("abcdefgh");
+        assert.equal(result.settingKey, "debug");
+        assert.equal(result.settingValue, "def");
+    });
+
+    it("getKeyAndValue() works with rollout rules", (done) => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        client.getKeyAndValue("6ada5ff2", (result) => {
+            assert.equal(result.settingKey, "debug");
+            assert.equal(result.settingValue, "value");
+            done();
+        });
+    });
+
+    it("getKeyAndValueAsync() works with rollout rules", async () => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        let result = await client.getKeyAndValueAsync("6ada5ff2");
+        assert.equal(result.settingKey, "debug");
+        assert.equal(result.settingValue, "value");
+    });
+
+    it("getKeyAndValue() works with percentage rules", (done) => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        client.getKeyAndValue("622f5d07", (result) => {
+            assert.equal(result.settingKey, "debug2");
+            assert.equal(result.settingValue, "value2");
+            done();
+        });
+    });
+
+    it("getKeyAndValueAsync() works with percentage rules", async () => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        let result = await client.getKeyAndValueAsync("622f5d07");
+        assert.equal(result.settingKey, "debug2");
+        assert.equal(result.settingValue, "value2");
+    });
+
+    it("getKeyAndValueAsync() with null config", async () => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        let result = await client.getKeyAndValueAsync("622f5d07");
+        assert.isNull(result);
+    });
+
+    it("getKeyAndValueAsync() with non-existing id", async () => {
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules(), cache: new InMemoryCache() };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        let result = await client.getKeyAndValueAsync("non-exisiting");
+        assert.isNull(result);
     });
 });
