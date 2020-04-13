@@ -322,6 +322,12 @@ export class FakeConfigFetcherWithTwoKeys extends FakeConfigFetcherBase {
   }
 }
 
+export class FakeConfigFetcherWithTwoKeysAndRules extends FakeConfigFetcherBase {
+  constructor(){
+    super("{ \"debug\": { \"v\": \"def\", \"i\": \"abcdefgh\", \"t\": 1, \"p\": [], \"r\": [{ \"o\":0, \"a\":\"a\", \"t\":1, \"c\":\"abcd\", \"v\":\"value\", \"i\":\"6ada5ff2\"}] }, \"debug2\": { \"v\": \"def\", \"i\": \"12345678\", \"t\": 1, \"p\": [{\"o\":0, \"v\":\"value1\", \"p\":50, \"i\":\"d227b334\" }, { \"o\":1, \"v\":\"value2\", \"p\":50, \"i\":\"622f5d07\" }], \"r\": [] } }");
+  }
+}
+
 export class FakeConfigFetcherWithNullNewConfig extends FakeConfigFetcherBase {
   constructor(){
     super(null);
