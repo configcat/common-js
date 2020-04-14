@@ -19,8 +19,8 @@ npm install
 npm test
 ```
 
-## Support
-If you need help how to use this lib feel free to to contact the ConfigCat Staff on https://configcat.com. We're happy to help.
+## Need help?
+https://configcat.com/support
 
 ## Contributing
 Contributions are welcome.

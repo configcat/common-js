@@ -32,4 +32,5 @@ Increase version number by using `npm version patch | minor | major`
 
     You can follow the build status here -> https://travis-ci.com/configcat/common-js
 
-2. Update `common-js` in `js-sdk` and `node-sdk` and re-deploy both packages.
+2. Update `common-js` in `js-sdk`, `node-sdk` and `js-ssr-sdk` and re-deploy all packages.
+3. Test all packages manually!
