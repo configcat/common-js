@@ -5,6 +5,7 @@ import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
+import { Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
 
 export const CONFIG_CHANGE_EVENT_NAME: string = "changed";
 
@@ -39,6 +40,12 @@ export interface IConfigCatClient {
 
     /** Returns the Variation IDs (analytics) of all feature flags or settings */
     getAllVariationIdsAsync(user?: User): Promise<string[]>;
+
+    /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
+    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue) => void): void;
+
+    /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
+    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue>;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
@@ -163,4 +170,58 @@ export class ConfigCatClient implements IConfigCatClient {
             resolve(variationIds);
         });
     }
+
+    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue) => void): void {
+        this.getKeyAndValueAsync(variationId).then(settingKeyAndValue => {
+            callback(settingKeyAndValue); 
+        })
+    }
+
+    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue> {
+        return new Promise(async (resolve) => {
+            const config = await this.configService.getConfig();
+            if (!config || !config.ConfigJSON) {
+                this.options.logger.error("JSONConfig is not present, returning null");
+                resolve(null);
+                return;
+            }
+
+            for (let settingKey in config.ConfigJSON) {
+                if (variationId === config.ConfigJSON[settingKey][Setting.VariationId]) {
+                    resolve({ settingKey: settingKey, settingValue: config.ConfigJSON[settingKey][Setting.Value] });
+                    return;
+                }
+
+                const rolloutRules = config.ConfigJSON[settingKey][Setting.RolloutRules];
+                if (rolloutRules && rolloutRules.length > 0) {
+                    for (let i: number = 0; i < rolloutRules.length; i++) {
+                        const rolloutRule: any = rolloutRules[i];
+                        if (variationId === rolloutRule[RolloutRules.VariationId]) {
+                            resolve({ settingKey: settingKey, settingValue: rolloutRule[RolloutRules.Value] });
+                            return;
+                        }
+                    }
+                }
+
+                const percentageItems = config.ConfigJSON[settingKey][Setting.RolloutPercentageItems];
+                if (percentageItems && percentageItems.length > 0) {
+                    for (let i: number = 0; i < percentageItems.length; i++) {
+                        const percentageItem: any = percentageItems[i];
+                        if (variationId === percentageItem[RolloutPercentageItems.VariationId]) {
+                            resolve({ settingKey: settingKey, settingValue: percentageItem[RolloutPercentageItems.Value] });
+                            return;
+                        }
+                    }
+                }
+            }
+
+            this.options.logger.error("Could not find the setting for the given variation ID: " + variationId);
+            resolve(null);
+        });
+    }
+}
+
+export class SettingKeyValue {
+    settingKey: string;
+    settingValue: any;
 }
