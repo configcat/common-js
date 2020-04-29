@@ -5,6 +5,7 @@
     "outDir": "./lib",
     "sourceMap": false,
     "declaration": true,
+    "declarationMap": true,
     "lib": ["es2015"]
   },
   "include": [
