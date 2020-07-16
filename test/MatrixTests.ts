@@ -79,13 +79,12 @@ describe("MatrixTests", () => {
 
         public static RunMatrixTest(sampleFilePath: string, matrixFilePath: string, complete: () => void) {
 
-            const ENCODING: string = "utf8";
-            const SAMPLE: string = fs.readFileSync(sampleFilePath, ENCODING);
+            const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
             const CONFIG: ProjectConfig = new ProjectConfig(0, SAMPLE, null);
 
             let rowNo: number = 1;
 
-            fs.readFile(matrixFilePath, ENCODING, (e, data) => {
+            fs.readFile(matrixFilePath, "utf8", (e, data) => {
 
                 if (e) {
                     throw e;

@@ -1,6 +1,6 @@
 import { AutoPollOptions } from "./ConfigCatClientOptions";
 import { IConfigService, ConfigServiceBase } from "./ConfigServiceBase";
-import { IConfigFetcher, ICache } from ".";
+import { IConfigFetcher, ICache } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class AutoPollConfigService extends ConfigServiceBase implements IConfigService {

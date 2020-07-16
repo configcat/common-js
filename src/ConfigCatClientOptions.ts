@@ -1,7 +1,7 @@
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
-import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from ".";
+import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from "./index";
 
-const VERSION: string = require("../package.json").version;
+const VERSION:string = getVersion();
 
 export interface IOptions {
     logger?: IConfigCatLogger;
@@ -112,4 +112,17 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
             throw new Error("Invalid 'cacheTimeToLiveSeconds' value. Value must be greater than zero.");
         }
     }
+}
+
+function getVersion(): string{
+    let p: any;
+
+    try{
+        p = require("../../package.json");
+    }
+    catch{
+        p = require("../package.json");
+    }
+
+    return p.version;
 }
