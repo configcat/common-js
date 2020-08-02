@@ -1,5 +1,5 @@
 import { ProjectConfig } from "./ProjectConfig";
-import { ICache } from ".";
+import { ICache } from "./index";
 
 export class InMemoryCache implements ICache {
     cache:  { [apiKey: string] : ProjectConfig; } = {};

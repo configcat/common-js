@@ -1,4 +1,4 @@
-import { IConfigCatLogger } from ".";
+import { IConfigCatLogger } from "./index";
 import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
 import { sha1 } from "./Sha1";
 import * as semver from "./Semver";

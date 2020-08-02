@@ -1,4 +1,4 @@
-import { IConfigCatKernel } from ".";
+import { IConfigCatKernel } from "./index";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";

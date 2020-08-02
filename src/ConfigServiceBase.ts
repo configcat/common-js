@@ -1,4 +1,4 @@
-import { IConfigFetcher, ICache} from ".";
+import { IConfigFetcher, ICache} from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
 import { ProjectConfig } from "./ProjectConfig";
 

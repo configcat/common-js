@@ -1,4 +1,4 @@
-import { IConfigCatLogger, LogLevel } from ".";
+import { IConfigCatLogger, LogLevel } from "./index";
 
 export class ConfigCatConsoleLogger implements IConfigCatLogger {  
 

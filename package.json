@@ -2,12 +2,14 @@
   "name": "configcat-common",
   "version": "2.5.1",
   "description": "ConfigCat is a configuration as a service that lets you manage your features and configurations without actually deploying new code.",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "lib/cjs/index.js",
+  "types": "lib/cjs/index.d.ts",
+  "module": "lib/esm/index.js",
   "scripts": {
-    "test": "nyc mocha --require ts-node/register test/**/*.ts --exit --timeout 30000",
-    "build": "tsc",
-    "prepare": "npm run build"
+    "coverage": "nyc npm run test",
+    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
+    "prepare": "npm run build",
+    "test": "mocha --require ts-node/register test/**/*.ts --exit --timeout 30000"
   },
   "keywords": [
     "configcat",
@@ -27,16 +29,15 @@
   "homepage": "https://configcat.com",
   "dependencies": {},
   "devDependencies": {
-    "@types/chai": "4.1.7",
-    "@types/mocha": "^5.2.5",
-    "@types/node": "^10.17.11",
+    "@types/chai": "4.2.12",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^14.0.26",
     "chai": "^4.2.0",
-    "del": "^3.0.0",
     "mocha": "^8.0.1",
-    "nyc": "^14.1.1",
-    "source-map-support": "^0.5.9",
-    "ts-node": "^7.0.1",
-    "typescript": "^2.9.2"
+    "nyc": "^15.1.0",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
   },
   "repository": {
     "type": "git",

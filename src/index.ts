@@ -88,3 +88,11 @@ export interface ICache {
 
     Get(apiKey: string): ProjectConfig;
 }
+
+export { ProjectConfig } from "./ProjectConfig";
+
+export { IConfigCatClient } from "./ConfigCatClient";
+
+export { OptionsBase } from "./ConfigCatClientOptions";
+
+export { User } from "./RolloutEvaluator";

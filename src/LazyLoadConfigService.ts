@@ -1,6 +1,6 @@
 import { IConfigService, ConfigServiceBase} from "./ConfigServiceBase";
 import { LazyLoadOptions} from "./ConfigCatClientOptions";
-import { IConfigFetcher, ICache } from ".";
+import { IConfigFetcher, ICache } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase implements IConfigService {
