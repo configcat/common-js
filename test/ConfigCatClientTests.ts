@@ -175,8 +175,8 @@ describe("ConfigCatClient", () => {
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), cache: new InMemoryCache() };
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null })
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
-    assert.isDefined(client);
-
+    assert.isDefined(client);  
+  
     assert.equal(false, await client.getValueAsync("debug", false, new User("identifier")));
     assert.equal(false, await client.getValueAsync("debug", false, new User("identifier")));
     await client.forceRefreshAsync();
