@@ -7,7 +7,7 @@
   "module": "lib/esm/index.js",
   "scripts": {
     "coverage": "nyc npm run test",
-    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
+    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && gulp",
     "prepare": "npm run build",
     "test": "mocha --require ts-node/register test/**/*.ts --exit --timeout 30000"
   },
@@ -33,6 +33,9 @@
     "@types/mocha": "^8.0.0",
     "@types/node": "^14.0.26",
     "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "gulp-replace": "^1.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
     "mocha": "^8.0.1",
     "nyc": "^15.1.0",
     "source-map-support": "^0.5.19",

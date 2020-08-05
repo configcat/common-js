@@ -1,7 +1,6 @@
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from "./index";
-
-const VERSION:string = "3.0.1";
+import COMMON_VERSION from "./Version";
 
 export interface IOptions {
     logger?: IConfigCatLogger;
@@ -69,7 +68,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
     constructor(apiKey: string, options: IAutoPollOptions) {
 
-        super(apiKey, "a-" + VERSION, options);
+        super(apiKey, "a-" + COMMON_VERSION, options);
 
         if (options) {
 
@@ -90,7 +89,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
     constructor(apiKey: string, options: IManualPollOptions) {
-        super(apiKey, "m-" + VERSION, options);
+        super(apiKey, "m-" + COMMON_VERSION, options);
     }
 }
 
@@ -100,7 +99,7 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
 
     constructor(apiKey: string, options: ILazyLoadingOptions) {
 
-        super(apiKey, "l-" + VERSION, options);
+        super(apiKey, "l-" + COMMON_VERSION, options);
 
         if (options) {
             if (options.cacheTimeToLiveSeconds) {
