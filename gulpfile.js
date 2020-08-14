@@ -4,6 +4,7 @@ var fs = require('fs');
 
 const OUT_CJS = 'lib/cjs';
 const OUT_ESM = 'lib/esm';
+const OUT_LEGACY = 'lib';
 
 function updateVersion(dst){
 
@@ -22,5 +23,9 @@ function updateVersion_esm(){
     return updateVersion(OUT_ESM);
 }
 
+function updateVersion_legacy(){
+    return updateVersion(OUT_LEGACY);
+}
+
 exports.default = gulp.series(    
-    gulp.parallel(updateVersion_esm, updateVersion_cjs));
+    gulp.parallel(updateVersion_esm, updateVersion_cjs, updateVersion_legacy));
