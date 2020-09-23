@@ -2,11 +2,17 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from "./index";
 import COMMON_VERSION from "./Version";
 
+export enum DataGovernance {
+  Global = 0,
+  EuOnly = 1
+}
+
 export interface IOptions {
     logger?: IConfigCatLogger;
     requestTimeoutMs?: number;
     baseUrl?: string;
     proxy?: string;
+    dataGovernance?: DataGovernance;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -19,9 +25,13 @@ export abstract class OptionsBase implements IOptions {
 
     public requestTimeoutMs: number = 30000;
 
-    public baseUrl: string = "https://cdn.configcat.com";
+    public baseUrl: string;
+
+    public baseUrlOverriden: boolean = false;
 
     public proxy: string = "";
+
+    public dataGovernance: DataGovernance;
 
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
@@ -30,6 +40,16 @@ export abstract class OptionsBase implements IOptions {
 
         this.apiKey = apiKey;
         this.clientVersion = clientVersion;
+        this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
+
+        switch (this.dataGovernance){
+            case DataGovernance.EuOnly: 
+                this.baseUrl = "https://cdn-eu.configcat.com";
+                break;
+            default:
+                this.baseUrl = "https://cdn-global.configcat.com";
+                break;
+        }
 
         if (options)
         {
@@ -47,6 +67,7 @@ export abstract class OptionsBase implements IOptions {
 
             if (options.baseUrl) {
                 this.baseUrl = options.baseUrl;
+                this.baseUrlOverriden = true;
             }
 
             if (options.proxy) {
@@ -56,7 +77,7 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v4.json";
+        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v5.json";
     }
 
     getCacheKey(): string {

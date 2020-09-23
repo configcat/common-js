@@ -5,7 +5,7 @@ import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
-import { Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
+import { Setting, RolloutRules, RolloutPercentageItems, ConfigFile } from "./ProjectConfig";
 
 export const CONFIG_CHANGE_EVENT_NAME: string = "changed";
 
@@ -125,13 +125,13 @@ export class ConfigCatClient implements IConfigCatClient {
     getAllKeysAsync(): Promise<string[]> {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
-            if (!config || !config.ConfigJSON) {
+            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
                 this.options.logger.error("JSONConfig is not present, returning empty array");
                 resolve([]);
                 return;
             }
 
-            resolve(Object.keys(config.ConfigJSON));
+            resolve(Object.keys(config.ConfigJSON[ConfigFile.FeatureFlags]));
         });
     }
 
@@ -180,19 +180,20 @@ export class ConfigCatClient implements IConfigCatClient {
     getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue> {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
-            if (!config || !config.ConfigJSON) {
+            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
                 this.options.logger.error("JSONConfig is not present, returning null");
                 resolve(null);
                 return;
             }
 
-            for (let settingKey in config.ConfigJSON) {
-                if (variationId === config.ConfigJSON[settingKey][Setting.VariationId]) {
-                    resolve({ settingKey: settingKey, settingValue: config.ConfigJSON[settingKey][Setting.Value] });
+            const featureFlags = config.ConfigJSON[ConfigFile.FeatureFlags];
+            for (let settingKey in featureFlags) {
+                if (variationId === featureFlags[settingKey][Setting.VariationId]) {
+                    resolve({ settingKey: settingKey, settingValue: featureFlags[settingKey][Setting.Value] });
                     return;
                 }
 
-                const rolloutRules = config.ConfigJSON[settingKey][Setting.RolloutRules];
+                const rolloutRules = featureFlags[settingKey][Setting.RolloutRules];
                 if (rolloutRules && rolloutRules.length > 0) {
                     for (let i: number = 0; i < rolloutRules.length; i++) {
                         const rolloutRule: any = rolloutRules[i];
@@ -203,7 +204,7 @@ export class ConfigCatClient implements IConfigCatClient {
                     }
                 }
 
-                const percentageItems = config.ConfigJSON[settingKey][Setting.RolloutPercentageItems];
+                const percentageItems = featureFlags[settingKey][Setting.RolloutPercentageItems];
                 if (percentageItems && percentageItems.length > 0) {
                     for (let i: number = 0; i < percentageItems.length; i++) {
                         const percentageItem: any = percentageItems[i];
