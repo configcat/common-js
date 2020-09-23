@@ -28,7 +28,7 @@ export abstract class ConfigServiceBase {
 
                 if (newConfig) {
 
-                    this.cache.Set(this.baseConfig.apiKey, newConfig);
+                    this.cache.set(this.baseConfig.getCacheKey(), newConfig);
 
                     resolve(newConfig);
                 }

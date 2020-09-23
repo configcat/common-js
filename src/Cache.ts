@@ -4,11 +4,11 @@ import { ICache } from "./index";
 export class InMemoryCache implements ICache {
     cache:  { [apiKey: string] : ProjectConfig; } = {};
 
-    Set(apiKey: string, config: ProjectConfig): void {
-        this.cache[apiKey] = config;
+    set(key: string, config: ProjectConfig): void {
+        this.cache[key] = config;
     }
 
-    Get(apiKey: string): ProjectConfig {
-        return this.cache[apiKey];
+    get(key: string): ProjectConfig {
+        return this.cache[key];
     }
 }

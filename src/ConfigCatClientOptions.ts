@@ -58,6 +58,10 @@ export abstract class OptionsBase implements IOptions {
     getUrl(): string {
         return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v4.json";
     }
+
+    getCacheKey(): string {
+        return "config_v5_" + this.apiKey;
+    }
 }
 
 export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
