@@ -11,6 +11,7 @@ import { InMemoryCache } from "../src/Cache";
 const globalUrl = "https://cdn-global.configcat.com";
 const euOnlyUrl = "https://cdn-eu.configcat.com";
 const customUrl = "https://cdn-custom.configcat.com";
+const forcedUrl = "https://cdn-forced.configcat.com";
 const testObject = { test: "test" };
 
 describe("DataGovernance", () => {
@@ -99,6 +100,151 @@ describe("DataGovernance", () => {
         configService.validateCallCount(2);
         configService.validateCall(0, euOnlyUrl);
         configService.validateCall(1, euOnlyUrl);
+    });
+
+
+    it("sdk global, custom", async () => {
+        // In this case
+        // the first invocation should call https://custom.configcat.com
+        // and the second should call https://custom.configcat.com
+        // without redirects
+        let configService = new FakeConfigServiceBase(DataGovernance.Global, customUrl);
+        configService.prepareResponse(customUrl, globalUrl, 0, testObject);
+
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(1);
+        configService.validateCall(0, customUrl);
+
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(2);
+        configService.validateCall(0, customUrl);
+        configService.validateCall(1, customUrl);
+    });
+
+    it("sdk euonly, custom", async () => {
+        // In this case
+        // the first invocation should call https://custom.configcat.com
+        // and the second should call https://custom.configcat.com
+        // without redirects
+        let configService = new FakeConfigServiceBase(DataGovernance.EuOnly, customUrl);
+        configService.prepareResponse(customUrl, globalUrl, 0, testObject);
+
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(1);
+        configService.validateCall(0, customUrl);
+
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(2);
+        configService.validateCall(0, customUrl);
+        configService.validateCall(1, customUrl);
+    });
+
+
+    it("sdk global, forced", async () => {
+        // In this case
+        // the first invocation should call https://cdn-global.configcat.com
+        // with an immediate redirect to https://forced.configcat.com
+        // and the second should call https://forced.configcat.com
+        let configService = new FakeConfigServiceBase(DataGovernance.Global);
+        configService.prepareResponse(globalUrl, forcedUrl, 2, null);
+        configService.prepareResponse(forcedUrl, forcedUrl, 2, testObject);
+
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(2);
+        configService.validateCall(0, globalUrl);
+        configService.validateCall(1, forcedUrl);
+
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(3);
+        configService.validateCall(0, globalUrl);
+        configService.validateCall(1, forcedUrl);
+        configService.validateCall(2, forcedUrl);
+    });
+
+
+    it("sdk euonly, forced", async () => {
+        // In this case
+        // the first invocation should call https://cdn-eu.configcat.com
+        // with an immediate redirect to https://forced.configcat.com
+        // and the second should call https://forced.configcat.com
+        let configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
+        configService.prepareResponse(euOnlyUrl, forcedUrl, 2, null);
+        configService.prepareResponse(forcedUrl, forcedUrl, 2, testObject);
+
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(2);
+        configService.validateCall(0, euOnlyUrl);
+        configService.validateCall(1, forcedUrl);
+
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(3);
+        configService.validateCall(0, euOnlyUrl);
+        configService.validateCall(1, forcedUrl);
+        configService.validateCall(2, forcedUrl);
+    });
+
+
+    it("sdk baseurl, forced", async () => {
+        // In this case
+        // the first invocation should call https://cdn-custom.configcat.com
+        // with an immediate redirect to https://forced.configcat.com
+        // and the second should call https://forced.configcat.com
+        let configService = new FakeConfigServiceBase(DataGovernance.EuOnly, customUrl);
+        configService.prepareResponse(customUrl, forcedUrl, 2, null);
+        configService.prepareResponse(forcedUrl, forcedUrl, 2, testObject);
+
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(2);
+        configService.validateCall(0, customUrl);
+        configService.validateCall(1, forcedUrl);
+
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
+        configService.validateCallCount(3);
+        configService.validateCall(0, customUrl);
+        configService.validateCall(1, forcedUrl);
+        configService.validateCall(2, forcedUrl);
+    });
+
+
+    it("sdk redirect loop", async () => {
+        // In this case
+        // the first invocation should call https://cdn-global.configcat.com
+        // with an immediate redirect to https://cdn-eu.configcat.com
+        // with an immediate redirect to https://cdn-global.configcat.com
+        // the second invocation should call https://cdn-eu.configcat.com
+        // with an immediate redirect to https://cdn-global.configcat.com
+        // with an immediate redirect to https://cdn-eu.configcat.com
+        let configService = new FakeConfigServiceBase(DataGovernance.Global);
+        configService.prepareResponse(globalUrl, euOnlyUrl, 1, null);
+        configService.prepareResponse(euOnlyUrl, globalUrl, 1, null);
+
+        let config = await configService.refreshLogicAsync();
+        assert.isNull(config.ConfigJSON["f"]);
+        configService.validateCallCount(3);
+        configService.validateCall(0, globalUrl);
+        configService.validateCall(1, euOnlyUrl);
+        configService.validateCall(2, globalUrl);
+
+        config = await configService.refreshLogicAsync();
+        assert.isNull(config.ConfigJSON["f"]);
+        configService.validateCallCount(6);
+        configService.validateCall(0, globalUrl);
+        configService.validateCall(1, euOnlyUrl);
+        configService.validateCall(2, globalUrl);
+
+        configService.validateCall(3, euOnlyUrl);
+        configService.validateCall(4, globalUrl);
+        configService.validateCall(5, euOnlyUrl);
     });
 });
 

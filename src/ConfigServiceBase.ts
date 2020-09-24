@@ -91,7 +91,7 @@ export abstract class ConfigServiceBase {
                     return;
                 }
 
-                this.fetchLogic(options, lastProjectConfig, retries++, callback);
+                this.fetchLogic(options, lastProjectConfig, ++retries, callback);
                 return;
             }
             else {
