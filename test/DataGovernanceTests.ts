@@ -23,11 +23,13 @@ describe("DataGovernance", () => {
         let configService = new FakeConfigServiceBase();
         configService.prepareResponse(globalUrl, globalUrl, 0, testObject);
 
-        await configService.refreshLogicAsync();
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(1);
         configService.validateCall(0, globalUrl);
 
-        await configService.refreshLogicAsync();
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(2);
         configService.validateCall(0, globalUrl);
         configService.validateCall(1, globalUrl);
@@ -42,11 +44,13 @@ describe("DataGovernance", () => {
         configService.prepareResponse(euOnlyUrl, globalUrl, 0, testObject);
         configService.prepareResponse(globalUrl, globalUrl, 0, testObject);
 
-        await configService.refreshLogicAsync();
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(1);
         configService.validateCall(0, euOnlyUrl);
 
-        await configService.refreshLogicAsync();
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(2);
         configService.validateCall(0, euOnlyUrl);
         configService.validateCall(1, globalUrl);
@@ -61,14 +65,16 @@ describe("DataGovernance", () => {
 
         let configService = new FakeConfigServiceBase(DataGovernance.Global);
         configService.prepareResponse(euOnlyUrl, euOnlyUrl, 0, testObject);
-        configService.prepareResponse(globalUrl, euOnlyUrl, 1, testObject);
+        configService.prepareResponse(globalUrl, euOnlyUrl, 1, null);
 
-        await configService.refreshLogicAsync();
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(2);
         configService.validateCall(0, globalUrl);
         configService.validateCall(1, euOnlyUrl);
 
-        await configService.refreshLogicAsync();
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(3);
         configService.validateCall(0, globalUrl);
         configService.validateCall(1, euOnlyUrl);
@@ -83,11 +89,13 @@ describe("DataGovernance", () => {
         let configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
         configService.prepareResponse(euOnlyUrl, euOnlyUrl, 0, testObject);
 
-        await configService.refreshLogicAsync();
+        let config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(1);
         configService.validateCall(0, euOnlyUrl);
 
-        await configService.refreshLogicAsync();
+        config = await configService.refreshLogicAsync();
+        assert.equal(JSON.stringify(config.ConfigJSON["f"]), JSON.stringify(testObject));
         configService.validateCallCount(2);
         configService.validateCall(0, euOnlyUrl);
         configService.validateCall(1, euOnlyUrl);
