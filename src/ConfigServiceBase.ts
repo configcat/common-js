@@ -45,8 +45,9 @@ export abstract class ConfigServiceBase {
 
                 const preferences = newConfig.ConfigJSON[ConfigFile.Preferences];
                 if (!preferences) {
-                    
+
                     callback(newConfig);
+                    return;
                 }
 
                 const baseUrl = preferences[Preferences.BaseUrl];
@@ -55,6 +56,7 @@ export abstract class ConfigServiceBase {
                 if (!baseUrl || baseUrl == options.baseUrl) {
 
                     callback(newConfig);
+                    return;
                 }
 
                 const redirect = preferences[Preferences.Redirect];
@@ -63,6 +65,7 @@ export abstract class ConfigServiceBase {
                 // the SDK should not redirect the calls and it just have to return the response.
                 if (options.baseUrlOverriden && redirect !== 2) {
                     callback(newConfig);
+                    return;
                 }
 
                 options.baseUrl = baseUrl;
@@ -70,6 +73,7 @@ export abstract class ConfigServiceBase {
                 if (redirect === 0) {
 
                     callback(newConfig);
+                    return;
                 }
 
                 if (redirect === 1) {
@@ -81,8 +85,10 @@ export abstract class ConfigServiceBase {
                         "for the correct setting.");
                 }
 
-                if (retries >= 2){
+                if (retries >= 2) {
                     options.logger.error("Redirect loop during config.json fetch. Please contact support@configcat.com.");
+                    callback(newConfig);
+                    return;
                 }
 
                 this.fetchLogic(options, lastProjectConfig, retries++, callback);
@@ -91,6 +97,7 @@ export abstract class ConfigServiceBase {
             else {
 
                 callback(lastProjectConfig);
+                return;
             }
         });
     }

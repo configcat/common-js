@@ -3,8 +3,8 @@ import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOpt
 import COMMON_VERSION from "./Version";
 
 export enum DataGovernance {
-  Global = 0,
-  EuOnly = 1
+    Global = 0,
+    EuOnly = 1
 }
 
 export interface IOptions {
@@ -42,8 +42,8 @@ export abstract class OptionsBase implements IOptions {
         this.clientVersion = clientVersion;
         this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
 
-        switch (this.dataGovernance){
-            case DataGovernance.EuOnly: 
+        switch (this.dataGovernance) {
+            case DataGovernance.EuOnly:
                 this.baseUrl = "https://cdn-eu.configcat.com";
                 break;
             default:
@@ -51,13 +51,12 @@ export abstract class OptionsBase implements IOptions {
                 break;
         }
 
-        if (options)
-        {
+        if (options) {
             if (options.logger) {
                 this.logger = options.logger;
             }
 
-            if (options.requestTimeoutMs ) {
+            if (options.requestTimeoutMs) {
                 if (options.requestTimeoutMs < 0) {
                     throw new Error("Invalid 'requestTimeoutMs' value");
                 }
