@@ -93,6 +93,6 @@ export { ProjectConfig } from "./ProjectConfig";
 
 export { IConfigCatClient } from "./ConfigCatClient";
 
-export { OptionsBase } from "./ConfigCatClientOptions";
+export { OptionsBase, DataGovernance } from "./ConfigCatClientOptions";
 
 export { User } from "./RolloutEvaluator";
