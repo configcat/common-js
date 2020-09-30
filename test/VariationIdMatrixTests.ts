@@ -10,11 +10,11 @@ import { IConfigCatClient, ConfigCatClient } from "../src/ConfigCatClient";
 
 describe("MatrixTests", () => {
 
-    const variationid_v4: string = fs.readFileSync("test/variationid_v4.json", "utf8");
+    const variationid_v5: string = fs.readFileSync("test/variationid_v5.json", "utf8");
 
     it("GetVariationId", async () => {
 
-        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v4), cache: new InMemoryCache() };
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v5), cache: new InMemoryCache() };
         let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
@@ -65,7 +65,7 @@ describe("MatrixTests", () => {
     /*
         it("GetVariationId_Create", async () => {
     
-            let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v4), cache: new InMemoryCache() };
+            let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v5), cache: new InMemoryCache() };
             let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
             let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
