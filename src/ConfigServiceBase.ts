@@ -84,7 +84,7 @@ export abstract class ConfigServiceBase {
                 options.logger.warn("Your dataGovernance parameter at ConfigCatClient initialization is not in sync " +
                     "with your preferences on the ConfigCat Dashboard: " +
                     "https://app.configcat.com/organization/data-governance. " +
-                    "Only Organization Admins can set this preference.");
+                    "Only Organization Admins can access this preference.");
             }
 
             if (retries >= 2) {
