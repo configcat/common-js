@@ -84,15 +84,15 @@ export interface IConfigFetcher {
 }
 
 export interface ICache {
-    Set(apiKey: string, config: ProjectConfig): void;
+    set(key: string, config: ProjectConfig): void;
 
-    Get(apiKey: string): ProjectConfig;
+    get(key: string): ProjectConfig;
 }
 
 export { ProjectConfig } from "./ProjectConfig";
 
 export { IConfigCatClient } from "./ConfigCatClient";
 
-export { OptionsBase } from "./ConfigCatClientOptions";
+export { OptionsBase, DataGovernance } from "./ConfigCatClientOptions";
 
 export { User } from "./RolloutEvaluator";

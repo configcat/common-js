@@ -16,7 +16,7 @@ export class LazyLoadConfigService extends ConfigServiceBase implements IConfigS
 
     getConfig(): Promise<ProjectConfig> {
 
-        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+        let p: ProjectConfig = this.cache.get(this.baseConfig.getCacheKey());
 
         if (p && p.Timestamp + (this.cacheTimeToLiveSeconds * 1000) > new Date().getTime()) {
             return new Promise(resolve => resolve(p));
@@ -27,7 +27,7 @@ export class LazyLoadConfigService extends ConfigServiceBase implements IConfigS
 
     refreshConfigAsync(): Promise<ProjectConfig> {
 
-        let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+        let p: ProjectConfig = this.cache.get(this.baseConfig.getCacheKey());
         return this.refreshLogicBaseAsync(p)
     }
 }

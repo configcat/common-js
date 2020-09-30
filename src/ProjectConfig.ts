@@ -13,6 +13,18 @@ export class ProjectConfig {
     }
 }
 
+export class ConfigFile {
+    static Preferences: string = "p";
+
+    static FeatureFlags: string = "f";
+}
+
+export class Preferences {
+    static BaseUrl: string = "u";
+
+    static Redirect: string = "r";
+}
+
 export class Setting{
     static Value: string = "v";
 

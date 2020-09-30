@@ -1,5 +1,5 @@
 import { IConfigCatLogger } from "./index";
-import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems } from "./ProjectConfig";
+import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems, ConfigFile } from "./ProjectConfig";
 import { sha1 } from "./Sha1";
 import * as semver from "./Semver";
 import { isUndefined } from "./Utils"
@@ -42,22 +42,26 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
 
-        if (!config || !config.ConfigJSON) {
+        if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
 
             this.logger.error("JSONConfig is not present. Returning default value: '" + defaultValue + "'.");
 
             return { Value: defaultValue, VariationId: defaultVariationId };
         }
 
-        if (!config.ConfigJSON[key]) {
+        const featureFlags = config.ConfigJSON[ConfigFile.FeatureFlags];
+
+        if (!featureFlags[key]) {
 
             let s: string = "Evaluating getValue('" + key + "') failed. Returning default value: '" + defaultValue + "'.";
-            s += " Here are the available keys: {" + Object.keys(config.ConfigJSON).join() + "}.";
+            s += " Here are the available keys: {" + Object.keys(featureFlags).join() + "}.";
 
             this.logger.error(s);
 
             return { Value: defaultValue, VariationId: defaultVariationId };
         }
+
+        const featureFlag = featureFlags[key];
 
         let eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -70,15 +74,15 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         if (user) {
 
-            result = this.EvaluateRules(config.ConfigJSON[key][Setting.RolloutRules], user, eLog);
+            result = this.EvaluateRules(featureFlag[Setting.RolloutRules], user, eLog);
 
             if (result.ValueAndVariationId == null) {
 
-                result.ValueAndVariationId = this.EvaluateVariations(config.ConfigJSON[key][Setting.RolloutPercentageItems], key, user);
+                result.ValueAndVariationId = this.EvaluateVariations(featureFlag[Setting.RolloutPercentageItems], key, user);
                 if (result.ValueAndVariationId) {
                     result.EvaluateLog.ReturnValue = result.ValueAndVariationId.Value;
                 }
-                if (config.ConfigJSON[key][Setting.RolloutPercentageItems].length > 0) {
+                if (featureFlag[Setting.RolloutPercentageItems].length > 0) {
                     result.EvaluateLog.OpAppendLine("Evaluating % options => " + (result.ValueAndVariationId == null ? "user not targeted" : "user targeted"));
                 }
 
@@ -86,8 +90,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         }
         else {
 
-            if ((config.ConfigJSON[key][Setting.RolloutRules] && config.ConfigJSON[key][Setting.RolloutRules].length > 0) ||
-                (config.ConfigJSON[key][Setting.RolloutPercentageItems] && config.ConfigJSON[key][Setting.RolloutPercentageItems].length > 0)) {
+            if ((featureFlag[Setting.RolloutRules] && featureFlag[Setting.RolloutRules].length > 0) ||
+                (featureFlag[Setting.RolloutPercentageItems] && featureFlag[Setting.RolloutPercentageItems].length > 0)) {
                 let s: string = "Evaluating getValue('" + key + "'). "
                 s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
                 s += "Read more: https://configcat.com/docs/advanced/user-object";
@@ -98,8 +102,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         if (result.ValueAndVariationId == null) {
             result.ValueAndVariationId = {
-                Value: config.ConfigJSON[key][Setting.Value],
-                VariationId: config.ConfigJSON[key][Setting.VariationId],
+                Value: featureFlag[Setting.Value],
+                VariationId: featureFlag[Setting.VariationId],
             }
             result.EvaluateLog.ReturnValue = result.ValueAndVariationId.Value;
         }

@@ -18,7 +18,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
     getConfig(): Promise<ProjectConfig> {
 
-        var p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+        var p: ProjectConfig = this.cache.get(this.baseConfig.getCacheKey());
 
         if (!p) {
             return this.refreshLogic();
@@ -34,7 +34,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     private refreshLogic(): Promise<ProjectConfig> {
         return new Promise(async resolve => {
 
-            let p: ProjectConfig = this.cache.Get(this.baseConfig.apiKey);
+            let p: ProjectConfig = this.cache.get(this.baseConfig.getCacheKey());
             const newConfig = await this.refreshLogicBaseAsync(p)
 
             if (!p || p.HttpETag !== newConfig.HttpETag) {

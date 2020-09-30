@@ -2,14 +2,29 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from "./index";
 import COMMON_VERSION from "./Version";
 
+
+/** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
+export enum DataGovernance {
+    /** Select this if your feature flags are published to all global CDN nodes. */
+    Global = 0,
+    /** Select this if your feature flags are published to CDN nodes only in the EU. */
+    EuOnly = 1
+}
+
 export interface IOptions {
     logger?: IConfigCatLogger;
     requestTimeoutMs?: number;
     baseUrl?: string;
+    /** You can set a base_url if you want to use a proxy server between your application and ConfigCat */
     proxy?: string;
+    /** Default: Global. Set this parameter to be in sync with the Data Governance preference on the Dashboard: 
+     * https://app.configcat.com/organization/data-governance (Only Organization Admins have access) */
+    dataGovernance?: DataGovernance;
 }
 
 export abstract class OptionsBase implements IOptions {
+
+    private configFileName = "config_v5";
 
     public logger: IConfigCatLogger = new ConfigCatConsoleLogger(LogLevel.Warn);
 
@@ -19,9 +34,13 @@ export abstract class OptionsBase implements IOptions {
 
     public requestTimeoutMs: number = 30000;
 
-    public baseUrl: string = "https://cdn.configcat.com";
+    public baseUrl: string;
+
+    public baseUrlOverriden: boolean = false;
 
     public proxy: string = "";
+
+    public dataGovernance: DataGovernance;
 
     constructor(apiKey: string, clientVersion: string, options: IOptions) {
         if (!apiKey) {
@@ -30,14 +49,23 @@ export abstract class OptionsBase implements IOptions {
 
         this.apiKey = apiKey;
         this.clientVersion = clientVersion;
+        this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
 
-        if (options)
-        {
+        switch (this.dataGovernance) {
+            case DataGovernance.EuOnly:
+                this.baseUrl = "https://cdn-eu.configcat.com";
+                break;
+            default:
+                this.baseUrl = "https://cdn-global.configcat.com";
+                break;
+        }
+
+        if (options) {
             if (options.logger) {
                 this.logger = options.logger;
             }
 
-            if (options.requestTimeoutMs ) {
+            if (options.requestTimeoutMs) {
                 if (options.requestTimeoutMs < 0) {
                     throw new Error("Invalid 'requestTimeoutMs' value");
                 }
@@ -47,6 +75,7 @@ export abstract class OptionsBase implements IOptions {
 
             if (options.baseUrl) {
                 this.baseUrl = options.baseUrl;
+                this.baseUrlOverriden = true;
             }
 
             if (options.proxy) {
@@ -56,14 +85,20 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v4.json";
+        return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + this.configFileName + ".json";
+    }
+
+    getCacheKey(): string {
+        return "js_" + this.configFileName + "_" + this.apiKey;
     }
 }
 
 export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
+    /** The client's poll interval in seconds. Default: 60 seconds. */
     public pollIntervalSeconds: number = 60;
 
+    /** You can subscribe to configuration changes with this callback */
     public configChanged: () => void = () => { };
 
     constructor(apiKey: string, options: IAutoPollOptions) {
@@ -95,6 +130,7 @@ export class ManualPollOptions extends OptionsBase implements IManualPollOptions
 
 export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions {
 
+    /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
     constructor(apiKey: string, options: ILazyLoadingOptions) {

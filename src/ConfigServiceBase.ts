@@ -1,9 +1,9 @@
-import { IConfigFetcher, ICache} from "./index";
+import { IConfigFetcher, ICache } from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
-import { ProjectConfig } from "./ProjectConfig";
+import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
 export interface IConfigService {
-    getConfig() : Promise<ProjectConfig>;
+    getConfig(): Promise<ProjectConfig>;
 
     refreshConfigAsync(): Promise<ProjectConfig>;
 }
@@ -24,12 +24,10 @@ export abstract class ConfigServiceBase {
 
         return new Promise(resolve => {
 
-            this.configFetcher.fetchLogic(this.baseConfig, lastProjectConfig, (newConfig) => {
+            this.fetchLogic(this.baseConfig, lastProjectConfig, 0, (newConfig) => {
 
-                if (newConfig) {
-
-                    this.cache.Set(this.baseConfig.apiKey, newConfig);
-
+                if (newConfig && newConfig.ConfigJSON) {
+                    this.cache.set(this.baseConfig.getCacheKey(), newConfig);
                     resolve(newConfig);
                 }
                 else {
@@ -38,5 +36,66 @@ export abstract class ConfigServiceBase {
                 }
             });
         });
+    }
+
+    private fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, retries: number, callback: (newProjectConfig: ProjectConfig) => void): void {
+        this.configFetcher.fetchLogic(this.baseConfig, lastProjectConfig, (newConfig) => {
+
+            if (!newConfig || !newConfig.ConfigJSON) {
+                callback(null);
+                return;
+            }
+
+            const preferences = newConfig.ConfigJSON[ConfigFile.Preferences];
+            if (!preferences) {
+
+                callback(newConfig);
+                return;
+            }
+
+            const baseUrl = preferences[Preferences.BaseUrl];
+
+            // If the base_url is the same as the last called one, just return the response.
+            if (!baseUrl || baseUrl == options.baseUrl) {
+
+                callback(newConfig);
+                return;
+            }
+
+            const redirect = preferences[Preferences.Redirect];
+
+            // If the base_url is overridden, and the redirect parameter is not 2 (force),
+            // the SDK should not redirect the calls and it just have to return the response.
+            if (options.baseUrlOverriden && redirect !== 2) {
+                callback(newConfig);
+                return;
+            }
+
+            options.baseUrl = baseUrl;
+
+            if (redirect === 0) {
+
+                callback(newConfig);
+                return;
+            }
+
+            if (redirect === 1) {
+
+                options.logger.warn("Your dataGovernance parameter at ConfigCatClient initialization is not in sync " +
+                    "with your preferences on the ConfigCat Dashboard: " +
+                    "https://app.configcat.com/organization/data-governance. " +
+                    "Only Organization Admins can access this preference.");
+            }
+
+            if (retries >= 2) {
+                options.logger.error("Redirect loop during config.json fetch. Please contact support@configcat.com.");
+                callback(newConfig);
+                return;
+            }
+
+            this.fetchLogic(options, lastProjectConfig, ++retries, callback);
+            return;
+        }
+        );
     }
 }
