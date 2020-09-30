@@ -17,6 +17,8 @@ export interface IOptions {
 
 export abstract class OptionsBase implements IOptions {
 
+    private configFileName = "config_v5";
+
     public logger: IConfigCatLogger = new ConfigCatConsoleLogger(LogLevel.Warn);
 
     public apiKey: string;
@@ -76,11 +78,11 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        return this.baseUrl + "/configuration-files/" + this.apiKey + "/config_v5.json";
+        return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + this.configFileName + ".json";
     }
 
     getCacheKey(): string {
-        return "config_v5_" + this.apiKey;
+        return "js_" + this.configFileName + "_" + this.apiKey;
     }
 }
 
