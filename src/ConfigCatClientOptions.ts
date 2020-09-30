@@ -3,7 +3,7 @@ import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOpt
 import COMMON_VERSION from "./Version";
 
 
-/** Restrict the location of your feature flag and setting data within the ConfigCat CDN. */
+/** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
 export enum DataGovernance {
     /** Your data will be published to all ConfigCat CDN nodes to guarantee lowest response times. */
     Global = 0,
