@@ -2,8 +2,12 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from "./index";
 import COMMON_VERSION from "./Version";
 
+
+/** Restrict the location of your feature flag and setting data within the ConfigCat CDN. */
 export enum DataGovernance {
+    /** Your data will be published to all ConfigCat CDN nodes to guarantee lowest response times. */
     Global = 0,
+    /** Your data will be published to CDN nodes only in the EU. */
     EuOnly = 1
 }
 
@@ -11,7 +15,11 @@ export interface IOptions {
     logger?: IConfigCatLogger;
     requestTimeoutMs?: number;
     baseUrl?: string;
+    /** You can set a base_url if you want to use a proxy server between your application and ConfigCat */
     proxy?: string;
+    /** Set this parameter to restrict the location of your feature flag and setting data within the ConfigCat CDN.
+    Default: Global, This parameter must be in sync with the preferences on:
+    https://app.configcat.com/organization/data-governance (Only Organization Admins can set this preference.) */
     dataGovernance?: DataGovernance;
 }
 
@@ -88,8 +96,10 @@ export abstract class OptionsBase implements IOptions {
 
 export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
+    /** The client's poll interval in seconds. Default: 60 seconds. */
     public pollIntervalSeconds: number = 60;
 
+    /** You can subscribe to configuration changes with this callback */
     public configChanged: () => void = () => { };
 
     constructor(apiKey: string, options: IAutoPollOptions) {
@@ -121,6 +131,7 @@ export class ManualPollOptions extends OptionsBase implements IManualPollOptions
 
 export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions {
 
+    /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
     constructor(apiKey: string, options: ILazyLoadingOptions) {
