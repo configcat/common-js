@@ -5,9 +5,9 @@ import COMMON_VERSION from "./Version";
 
 /** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
 export enum DataGovernance {
-    /** Your data will be published to all ConfigCat CDN nodes to guarantee lowest response times. */
+    /** If your data is published to all global ConfigCat CDN nodes. */
     Global = 0,
-    /** Your data will be published to CDN nodes only in the EU. */
+    /** If your data is published to CDN nodes only in the EU. */
     EuOnly = 1
 }
 
