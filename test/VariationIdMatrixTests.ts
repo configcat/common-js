@@ -1,8 +1,7 @@
 import { assert } from "chai";
 import "mocha";
-import { RolloutEvaluator, User } from "../src/RolloutEvaluator";
+import { User } from "../src/RolloutEvaluator";
 import * as fs from "fs";
-import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
 import { FakeConfigFetcherBase, FakeConfigCatKernel } from "./ConfigCatClientTests";
 import { InMemoryCache } from "../src/Cache";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
@@ -10,7 +9,7 @@ import { IConfigCatClient, ConfigCatClient } from "../src/ConfigCatClient";
 
 describe("MatrixTests", () => {
 
-    const variationid_v5: string = fs.readFileSync("test/variationid_v5.json", "utf8");
+    const variationid_v5: string = fs.readFileSync("test/data/sample_variationid_v5.json", "utf8");
 
     it("GetVariationId", async () => {
 
@@ -21,9 +20,7 @@ describe("MatrixTests", () => {
         let header: string[];
         let rowNo: number = 1;
 
-        var endOfLine: string = require("os").EOL;
-
-        const data = fs.readFileSync("test/testmatrix_variationId.csv", "utf8");
+        const data = fs.readFileSync("test/data/testmatrix_variationId.csv", "utf8");
 
         var lines: string[] = data.toString().split(require("os").EOL);
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -61,54 +58,6 @@ describe("MatrixTests", () => {
             rowNo++;
         }
     });
-
-    /*
-        it("GetVariationId_Create", async () => {
-    
-            let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v5), cache: new InMemoryCache() };
-            let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
-            let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
-    
-            let header: string[];
-            let rowNo: number = 1;
-    
-            var endOfLine: string = require("os").EOL;
-            const outFileName = "test/testmatrix_variationId_out.csv";
-    
-            fs.writeFileSync(outFileName, "");
-    
-            const data = fs.readFileSync("test/testmatrix_variationId.csv", "utf8");
-    
-            var lines: string[] = data.toString().split(require("os").EOL);
-            for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-                let line = lines[lineIndex];
-    
-                if (header) {
-    
-                    if (!line) {
-                        return;
-                    }
-    
-                    let user: User = Helper.CreateUser(line, header);
-    
-                    let lineToWrite = line.split(";").splice(0, 4).join(';') + ';';
-                    for (let i: number = 4; i < header.length; i++) {
-    
-                        let key: string = header[i];
-    
-                        lineToWrite += (await client.getVariationIdAsync(key, null, user)) + ';';
-                    }
-    
-                    fs.appendFileSync(outFileName, lineToWrite + require("os").EOL);
-                } else {
-                    header = line.split(";");
-                    fs.appendFileSync(outFileName, line + require("os").EOL);
-                }
-    
-                rowNo++;
-            }
-        });
-*/
 
     class Helper {
 

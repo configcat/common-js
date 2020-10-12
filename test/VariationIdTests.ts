@@ -1,7 +1,7 @@
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import "mocha";
-import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
+import { AutoPollOptions } from "../src/ConfigCatClientOptions";
 import { InMemoryCache } from "../src/Cache";
 import { FakeConfigCatKernel, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeConfigFetcherWithNullNewConfig } from "./ConfigCatClientTests";
 
@@ -139,7 +139,7 @@ describe("ConfigCatClient", () => {
 
     it("getKeyAndValueAsync() with null config", async () => {
         let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), cache: new InMemoryCache() };
-        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null, maxInitWaitTimeSeconds: 0 })
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         let result = await client.getKeyAndValueAsync("622f5d07");

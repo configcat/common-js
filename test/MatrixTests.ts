@@ -13,23 +13,23 @@ describe("MatrixTests", () => {
     let evaluator: RolloutEvaluator = new RolloutEvaluator(logger);
 
     it("GetValue basic operators", (done) => {
-        Helper.RunMatrixTest("test/sample_v5.json", "test/testmatrix.csv", done);
+        Helper.RunMatrixTest("test/data/sample_v5.json", "test/data/testmatrix.csv", done);
     })
 
     it("GetValue numeric operators", (done) => {
-        Helper.RunMatrixTest("test/sample_number_v5.json", "test/testmatrix_number.csv", done);
+        Helper.RunMatrixTest("test/data/sample_number_v5.json", "test/data/testmatrix_number.csv", done);
     })
 
     it("GetValue semver operators", (done) => {
-        Helper.RunMatrixTest("test/sample_semantic_v5.json", "test/testmatrix_semantic.csv", done);
+        Helper.RunMatrixTest("test/data/sample_semantic_v5.json", "test/data/testmatrix_semantic.csv", done);
     })
 
     it("GetValue semver operators", (done) => {
-        Helper.RunMatrixTest("test/sample_semantic_2_v5.json", "test/testmatrix_semantic_2.csv", done);
+        Helper.RunMatrixTest("test/data/sample_semantic_2_v5.json", "test/data/testmatrix_semantic_2.csv", done);
     })
 
     it("GetValue sensitive operators", (done) => {
-        Helper.RunMatrixTest("test/sample_sensitive_v5.json", "test/testmatrix_sensitive.csv", done);
+        Helper.RunMatrixTest("test/data/sample_sensitive_v5.json", "test/data/testmatrix_sensitive.csv", done);
     })
 
     class Helper {
@@ -109,7 +109,7 @@ describe("MatrixTests", () => {
 
                         if (actual !== expected) {
 
-                            let l = `Matrix test failed in line ${rowNo}. User: ${JSON.stringify(user)}, Key: ${key}, Actual: ${actual}, Expected: ${expected}`;
+                            let l = `Matrix test failed in line ${rowNo}.\n User: ${JSON.stringify(user)},\n Key: ${key},\n Actual: ${actual}, Expected: ${expected}`;
                             console.log(l);
                         }
 

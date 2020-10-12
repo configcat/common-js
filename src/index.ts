@@ -47,6 +47,8 @@ export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
 export interface IAutoPollOptions extends IOptions {
     pollIntervalSeconds?: number;
 
+    maxInitWaitTimeSeconds?: number;
+
     configChanged?: () => void;
 }
 
