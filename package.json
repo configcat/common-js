@@ -1,6 +1,6 @@
 {
   "name": "configcat-common",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "ConfigCat is a configuration as a service that lets you manage your features and configurations without actually deploying new code.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && tsc -p tsconfig.legacy.json && gulp",
     "prepare": "npm run build",
     "test": "mocha --require ts-node/register test/**/*.ts --exit --timeout 30000",
-    "test-debug": "mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register test/**/*.ts --exit --timeout 30000"    
+    "test-debug": "mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register test/**/*.ts --exit --timeout 30000"
   },
   "keywords": [
     "configcat",
