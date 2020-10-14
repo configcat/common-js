@@ -39,6 +39,7 @@ export abstract class ConfigServiceBase {
     }
 
     private fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, retries: number, callback: (newProjectConfig: ProjectConfig) => void): void {
+        const calledBaseUrl = this.baseConfig.baseUrl;
         this.configFetcher.fetchLogic(this.baseConfig, lastProjectConfig, (newConfig) => {
 
             if (!newConfig || !newConfig.ConfigJSON) {
@@ -56,7 +57,7 @@ export abstract class ConfigServiceBase {
             const baseUrl = preferences[Preferences.BaseUrl];
 
             // If the base_url is the same as the last called one, just return the response.
-            if (!baseUrl || baseUrl == options.baseUrl) {
+            if (!baseUrl || baseUrl == calledBaseUrl) {
 
                 callback(newConfig);
                 return;
