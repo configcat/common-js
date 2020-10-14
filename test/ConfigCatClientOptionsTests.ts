@@ -105,7 +105,13 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With -1 'pollIntervalSeconds' ShouldThrowError", () => {
     expect(() => {
-      let options: AutoPollOptions = new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1});
+      new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1});
+    }).to.throw("Invalid 'pollIntervalSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With 0 'pollIntervalSeconds' ShouldThrowError", () => {
+    expect(() => {
+      new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1});
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
@@ -118,9 +124,31 @@ describe("Options", () => {
     assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json", options.getUrl());
   });
 
+  it("AutoPollOptions initialization With -1 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
+    expect(() => {
+      new AutoPollOptions("APIKEY", {maxInitWaitTimeSeconds: -1});
+    }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With 0 'maxInitWaitTimeSeconds' Should create an instance with passed value", () => {
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {maxInitWaitTimeSeconds: 0});
+
+    assert.isDefined(options);
+    assert.isNotNull(options);    
+    assert.equal(options.maxInitWaitTimeSeconds, 0);
+  });
+
+  it("AutoPollOptions initialization Without 'maxInitWaitTimeSeconds' Should create an instance with default value(5)", () => {
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {});
+
+    assert.isDefined(options);
+    assert.isNotNull(options);    
+    assert.equal(options.maxInitWaitTimeSeconds, 5);
+  });
+
   it("LazyLoadOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
     expect(() => {
-      let options: LazyLoadOptions = new LazyLoadOptions(null, null);
+      new LazyLoadOptions(null, null);
     }).to.throw("Invalid 'apiKey' value");
   });
 
@@ -157,13 +185,13 @@ describe("Options", () => {
 
   it("LazyLoadOptions initialization With -1 'cacheTimeToLiveSeconds' ShouldThrowError", () => {
     expect(() => {
-      let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {cacheTimeToLiveSeconds: -1});
+      new LazyLoadOptions("APIKEY", {cacheTimeToLiveSeconds: -1});
     }).to.throw("Invalid 'cacheTimeToLiveSeconds' value");
   });
 
   it("LazyLoadOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
-      let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {requestTimeoutMs: -1});
+      new LazyLoadOptions("APIKEY", {requestTimeoutMs: -1});
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 

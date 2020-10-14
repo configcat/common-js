@@ -349,11 +349,11 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return result;
     }
 
-    private EvaluateVariations(rolloutPercentageItems: any, key: string, User: User): ValueAndVariationId {
+    private EvaluateVariations(rolloutPercentageItems: any, key: string, user: User): ValueAndVariationId {
 
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
-            let hashCandidate: string = key + User.identifier;
+            let hashCandidate: string = key + ((user.identifier === null || user.identifier === undefined) ? '' : user.identifier);
             let hashValue: any = sha1(hashCandidate).substring(0, 7);
             let hashScale: number = parseInt(hashValue, 16) % 100;
             let bucket: number = 0;

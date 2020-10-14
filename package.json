@@ -9,7 +9,8 @@
     "coverage": "nyc npm run test",
     "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && tsc -p tsconfig.legacy.json && gulp",
     "prepare": "npm run build",
-    "test": "mocha --require ts-node/register test/**/*.ts --exit --timeout 30000"
+    "test": "mocha --require ts-node/register test/**/*.ts --exit --timeout 30000",
+    "test-debug": "mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register test/**/*.ts --exit --timeout 30000"    
   },
   "keywords": [
     "configcat",
@@ -59,5 +60,6 @@
     "include": [
       "src"
     ]
-  }
+  },
+  "sideEffects": false
 }

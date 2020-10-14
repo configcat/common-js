@@ -11,6 +11,20 @@ export class ProjectConfig {
         this.ConfigJSON = JSON.parse(jsonConfig);
         this.HttpETag = httpETag;
     }
+
+    public Equals(projectConfig: ProjectConfig): boolean {
+        if (!projectConfig) return false;
+
+        return (this.EnsureStrictEtag(projectConfig.HttpETag) === this.EnsureStrictEtag(this.HttpETag));
+    }
+
+    private EnsureStrictEtag(etag: string): string {
+        if (etag.length > 2 && etag.substr(0,2).toLocaleUpperCase() === "W/"){
+            return etag.substring(2);
+        }
+
+        return etag;
+    }
 }
 
 export class ConfigFile {

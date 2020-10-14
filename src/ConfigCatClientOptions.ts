@@ -98,8 +98,11 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** The client's poll interval in seconds. Default: 60 seconds. */
     public pollIntervalSeconds: number = 60;
 
-    /** You can subscribe to configuration changes with this callback */
+    /** You can subscribe to configuration changes with this callback. */
     public configChanged: () => void = () => { };
+
+    /** Maximum waiting time between the client initialization and the first config acquisition in secconds. */
+    public maxInitWaitTimeSeconds: number = 5;
 
     constructor(apiKey: string, options: IAutoPollOptions) {
 
@@ -107,17 +110,25 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
         if (options) {
 
-            if (options.pollIntervalSeconds) {
+            if (options.pollIntervalSeconds !== undefined && options.pollIntervalSeconds !== null) {
                 this.pollIntervalSeconds = options.pollIntervalSeconds;
             }
 
             if (options.configChanged) {
                 this.configChanged = options.configChanged;
             }
+
+            if (options.maxInitWaitTimeSeconds !== undefined && options.maxInitWaitTimeSeconds !== null) {
+                this.maxInitWaitTimeSeconds = options.maxInitWaitTimeSeconds;
+            }
         }
 
-        if (!this.pollIntervalSeconds || this.pollIntervalSeconds < 1) {
+        if (this.pollIntervalSeconds < 1) {
             throw new Error("Invalid 'pollIntervalSeconds' value");
+        }
+
+        if (this.maxInitWaitTimeSeconds < 0) {
+            throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
         }
     }
 }

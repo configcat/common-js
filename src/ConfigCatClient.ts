@@ -7,8 +7,6 @@ import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
 import { Setting, RolloutRules, RolloutPercentageItems, ConfigFile } from "./ProjectConfig";
 
-export const CONFIG_CHANGE_EVENT_NAME: string = "changed";
-
 export interface IConfigCatClient {
 
     /** Returns the value of a feature flag or setting based on it's key */
@@ -46,6 +44,9 @@ export interface IConfigCatClient {
 
     /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
     getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue>;
+
+    /** Releases all resources used by IConfigCatClient */
+    dispose(): void;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
@@ -88,6 +89,12 @@ export class ConfigCatClient implements IConfigCatClient {
         }
     }
 
+    dispose(): void {
+        if (this.configService instanceof AutoPollConfigService){
+            this.configService.dispose();
+        }
+    }
+
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
         this.getValueAsync(key, defaultValue, user).then(value => {
             callback(value);
@@ -95,8 +102,8 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
-        return new Promise(async (resolve) => {
-            const config = await this.configService.getConfig();
+        return new Promise(async (resolve) => {            
+            const config = await this.configService.getConfig();            
             var result: any = defaultValue;
             result = this.evaluator.Evaluate(config, key, defaultValue, user).Value;
             resolve(result);

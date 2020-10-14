@@ -1,9 +1,7 @@
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import "mocha";
-import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase, DataGovernance } from "../src/ConfigCatClientOptions";
-import { IConfigCatLogger, IConfigFetcher, ProjectConfig } from "../src";
-import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
-import { AutoPollConfigService } from "../src/AutoPollConfigService";
+import { OptionsBase, DataGovernance } from "../src/ConfigCatClientOptions";
+import { IConfigFetcher, ProjectConfig } from "../src";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { InMemoryCache } from "../src/Cache";
 
