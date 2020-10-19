@@ -12,14 +12,22 @@ export class ProjectConfig {
         this.HttpETag = httpETag;
     }
 
-    public Equals(projectConfig: ProjectConfig): boolean {
-        if (!projectConfig) return false;
+    
+    /**
+     * Determines whether the specified ProjectConfig instances are considered equal.
+     */
+    public static equals(projectConfig1: ProjectConfig, projectConfig2: ProjectConfig): boolean {
+        if (!projectConfig1 || !projectConfig2) return false;
 
-        return (this.EnsureStrictEtag(projectConfig.HttpETag) === this.EnsureStrictEtag(this.HttpETag));
+        return (this.ensureStrictEtag(projectConfig1.HttpETag) === this.ensureStrictEtag(projectConfig2.HttpETag));
     }
 
-    private EnsureStrictEtag(etag: string): string {
-        if (etag.length > 2 && etag.substr(0,2).toLocaleUpperCase() === "W/"){
+    private static ensureStrictEtag(etag: string): string {
+        if (!etag) {
+            return etag;
+        }
+
+        if (etag.length > 2 && etag.substr(0,2).toLocaleUpperCase() === "W/") {
             return etag.substring(2);
         }
 
