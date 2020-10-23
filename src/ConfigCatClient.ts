@@ -68,22 +68,18 @@ export class ConfigCatClient implements IConfigCatClient {
             throw new Error("Invalid 'configCatKernel' value");
         }
 
-        if (!configCatKernel.cache) {
-            throw new Error("Invalid 'configCatKernel.cache' value");
-        }
-
         if (!configCatKernel.configFetcher) {
             throw new Error("Invalid 'configCatKernel.configFetcher' value");
-        }
+        }      
 
         this.evaluator = new RolloutEvaluator(options.logger);
 
         if (options && options instanceof LazyLoadOptions) {
-            this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, configCatKernel.cache, <LazyLoadOptions>options);
+            this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, options);
         } else if (options && options instanceof ManualPollOptions) {
-            this.configService = new ManualPollService(configCatKernel.configFetcher, configCatKernel.cache, <ManualPollOptions>options);
+            this.configService = new ManualPollService(configCatKernel.configFetcher, options);
         } else if (options && options instanceof AutoPollOptions) {
-            this.configService = new AutoPollConfigService(configCatKernel.configFetcher, configCatKernel.cache, <AutoPollOptions>options);
+            this.configService = new AutoPollConfigService(configCatKernel.configFetcher, options);
         } else {
             throw new Error("Invalid 'options' value");
         }
@@ -104,8 +100,7 @@ export class ConfigCatClient implements IConfigCatClient {
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
         return new Promise(async (resolve) => {            
             const config = await this.configService.getConfig();            
-            var result: any = defaultValue;
-            result = this.evaluator.Evaluate(config, key, defaultValue, user).Value;
+            var result:any = this.evaluator.Evaluate(config, key, defaultValue, user).Value;
             resolve(result);
         });
     }
@@ -151,8 +146,7 @@ export class ConfigCatClient implements IConfigCatClient {
     getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
-            var result: any = defaultVariationId;
-            result = this.evaluator.Evaluate(config, key, null, user, defaultVariationId).VariationId;
+            var result: any = this.evaluator.Evaluate(config, key, null, user, defaultVariationId).VariationId;
             resolve(result);
         });
     }

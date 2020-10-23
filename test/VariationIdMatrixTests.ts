@@ -3,7 +3,6 @@ import "mocha";
 import { User } from "../src/RolloutEvaluator";
 import * as fs from "fs";
 import { FakeConfigFetcherBase, FakeConfigCatKernel } from "./ConfigCatClientTests";
-import { InMemoryCache } from "../src/Cache";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
 import { IConfigCatClient, ConfigCatClient } from "../src/ConfigCatClient";
 
@@ -13,8 +12,8 @@ describe("MatrixTests", () => {
 
     it("GetVariationId", async () => {
 
-        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v5), cache: new InMemoryCache() };
-        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null })
+        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v5) };
+        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null)
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         let header: string[];

@@ -4,11 +4,10 @@ export function sha1 (msg) {
         return t4;
     };
     function lsb_hex(val) {
-        var str="";
-        var i;
+        var str="";        
         var vh;
         var vl;
-        for( i=0; i<=6; i+=2 ) {
+        for(var i=0; i<=6; i+=2 ) {
             vh = (val>>>(i*4+4))&0x0f;
             vl = (val>>>(i*4))&0x0f;
             str += vh.toString(16) + vl.toString(16);
@@ -16,10 +15,9 @@ export function sha1 (msg) {
         return str;
     };
     function cvt_hex(val) {
-        var str="";
-        var i;
+        var str="";        
         var v;
-        for( i=7; i>=0; i-- ) {
+        for(var i=7; i>=0; i-- ) {
             v = (val>>>(i*4))&0x0f;
             str += v.toString(16);
         }

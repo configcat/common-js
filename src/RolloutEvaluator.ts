@@ -493,16 +493,16 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return false;
     }
 
-    private GetUserAttribute(User: User, attribute: string): string {
+    private GetUserAttribute(user: User, attribute: string): string {
         switch (attribute) {
             case "Identifier":
-                return User.identifier;
+                return user.identifier;
             case "Email":
-                return User.email;
+                return user.email;
             case "Country":
-                return User.country;
+                return user.country;
             default:
-                return (User.custom || {})[attribute];
+                return (user.custom || {})[attribute];
         }
     }
 
