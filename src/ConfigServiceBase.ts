@@ -1,4 +1,4 @@
-import { IConfigFetcher, ICache } from "./index";
+import { IConfigFetcher } from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
@@ -9,14 +9,12 @@ export interface IConfigService {
 }
 
 export abstract class ConfigServiceBase {
-    protected configFetcher: IConfigFetcher;
-    protected cache: ICache;
+    protected configFetcher: IConfigFetcher;    
     protected baseConfig: OptionsBase;
 
-    constructor(configFetcher: IConfigFetcher, cache: ICache, baseConfig: OptionsBase) {
+    constructor(configFetcher: IConfigFetcher, baseConfig: OptionsBase) {
 
-        this.configFetcher = configFetcher;
-        this.cache = cache;
+        this.configFetcher = configFetcher;        
         this.baseConfig = baseConfig;
     }
 
@@ -27,11 +25,10 @@ export abstract class ConfigServiceBase {
             this.fetchLogic(this.baseConfig, lastProjectConfig, 0, (newConfig) => {
 
                 if (newConfig && newConfig.ConfigJSON) {
-                    this.cache.set(this.baseConfig.getCacheKey(), newConfig);
+                    this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
                     resolve(newConfig);
                 }
                 else {
-
                     resolve(lastProjectConfig);
                 }
             });

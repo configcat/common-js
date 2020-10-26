@@ -1,6 +1,6 @@
 import { AutoPollOptions } from "./ConfigCatClientOptions";
 import { IConfigService, ConfigServiceBase } from "./ConfigServiceBase";
-import { IConfigFetcher, ICache } from "./index";
+import { IConfigFetcher } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class AutoPollConfigService extends ConfigServiceBase implements IConfigService {
@@ -9,9 +9,9 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     private configChanged: () => void;
     private timerId: any;
 
-    constructor(configFetcher: IConfigFetcher, cache: ICache, autoPollConfig: AutoPollOptions) {
+    constructor(configFetcher: IConfigFetcher, autoPollConfig: AutoPollOptions) {
 
-        super(configFetcher, cache, autoPollConfig);
+        super(configFetcher, autoPollConfig);
 
         this.configChanged = autoPollConfig.configChanged;        
         this.startRefreshWorker(autoPollConfig.pollIntervalSeconds * 1000); 
@@ -39,7 +39,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
         
         return new Promise(async resolve => {
 
-            let cachedConfig: ProjectConfig = this.cache.get(this.baseConfig.getCacheKey());
+            let cachedConfig: ProjectConfig = this.baseConfig.cache.get(this.baseConfig.getCacheKey());
             
             const newConfig = await this.refreshLogicBaseAsync(cachedConfig)
             
@@ -64,7 +64,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
     private async tryReadFromCache(tries: number): Promise<ProjectConfig> {
         
-        var p: ProjectConfig = this.cache.get(this.baseConfig.getCacheKey());
+        var p: ProjectConfig = this.baseConfig.cache.get(this.baseConfig.getCacheKey());
 
         if (this.maxInitWaitTimeStamp > new Date().getTime() && !p) {
             

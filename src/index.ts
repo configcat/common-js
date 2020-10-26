@@ -9,7 +9,7 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
  * @param config - Configuration for autoPoll mode
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new AutoPollOptions(apiKey, options), configCatKernel);
+    return new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
@@ -21,7 +21,7 @@ export function createClientWithManualPoll(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: IManualPollOptions): IConfigCatClient {
-        return new ConfigCatClient(new ManualPollOptions(apiKey, options), configCatKernel);
+        return new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
     }
 
 /**
@@ -33,7 +33,7 @@ export function createClientWithLazyLoad(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: ILazyLoadingOptions): IConfigCatClient {
-        return new ConfigCatClient(new LazyLoadOptions(apiKey, options), configCatKernel);
+        return new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
     }
 
 /**
@@ -78,7 +78,10 @@ export enum LogLevel {
 
 export interface IConfigCatKernel {
     configFetcher: IConfigFetcher;
-    cache: ICache;
+    /**
+     * Default ICache implementation.
+     */
+    cache?: ICache;
 }
 
 export interface IConfigFetcher {

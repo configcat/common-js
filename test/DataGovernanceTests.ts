@@ -266,13 +266,13 @@ export class FakeConfigFetcher implements IConfigFetcher {
 
 export class FakeOptions extends OptionsBase {
     constructor(baseUrl?: string, dataGovernance?: DataGovernance) {
-        super("API_KEY", "TEST", { baseUrl, dataGovernance });
+        super("API_KEY", "TEST", { baseUrl, dataGovernance }, null);
     }
 }
 
 export class FakeConfigServiceBase extends ConfigServiceBase {
     constructor(dataGovernance?: DataGovernance, baseUrl?: string) {
-        super(new FakeConfigFetcher(), new InMemoryCache(), new FakeOptions(baseUrl, dataGovernance));
+        super(new FakeConfigFetcher(), new FakeOptions(baseUrl, dataGovernance));
     }
 
     refreshLogicAsync(): Promise<ProjectConfig> {

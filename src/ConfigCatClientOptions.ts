@@ -1,5 +1,6 @@
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
-import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel } from "./index";
+import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache } from "./index";
+import { InMemoryCache } from "./Cache";
 import COMMON_VERSION from "./Version";
 
 
@@ -20,6 +21,10 @@ export interface IOptions {
     /** Default: Global. Set this parameter to be in sync with the Data Governance preference on the Dashboard: 
      * https://app.configcat.com/organization/data-governance (Only Organization Admins have access) */
     dataGovernance?: DataGovernance;
+    /**
+     * ICache instance for cache the config.
+     */
+    cache?: ICache;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -42,14 +47,21 @@ export abstract class OptionsBase implements IOptions {
 
     public dataGovernance: DataGovernance;
 
-    constructor(apiKey: string, clientVersion: string, options: IOptions) {
+    public cache: ICache;
+
+    constructor(apiKey: string, clientVersion: string, options: IOptions, defaultCache: ICache) {
         if (!apiKey) {
             throw new Error("Invalid 'apiKey' value");
+        }
+
+        if (!defaultCache){
+            defaultCache = new InMemoryCache();
         }
 
         this.apiKey = apiKey;
         this.clientVersion = clientVersion;
         this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
+        this.cache = defaultCache;
 
         switch (this.dataGovernance) {
             case DataGovernance.EuOnly:
@@ -81,6 +93,10 @@ export abstract class OptionsBase implements IOptions {
             if (options.proxy) {
                 this.proxy = options.proxy;
             }
+
+            if (options.cache) {
+                this.cache = options.cache;
+            }
         }
     }
 
@@ -104,9 +120,9 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** Maximum waiting time between the client initialization and the first config acquisition in secconds. */
     public maxInitWaitTimeSeconds: number = 5;
 
-    constructor(apiKey: string, options: IAutoPollOptions) {
+    constructor(apiKey: string, options: IAutoPollOptions, defaultCache: ICache) {
 
-        super(apiKey, "a-" + COMMON_VERSION, options);
+        super(apiKey, "a-" + COMMON_VERSION, options, defaultCache);
 
         if (options) {
 
@@ -134,8 +150,8 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 }
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-    constructor(apiKey: string, options: IManualPollOptions) {
-        super(apiKey, "m-" + COMMON_VERSION, options);
+    constructor(apiKey: string, options: IManualPollOptions, defaultCache: ICache) {
+        super(apiKey, "m-" + COMMON_VERSION, options, defaultCache);
     }
 }
 
@@ -144,9 +160,9 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
     /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
-    constructor(apiKey: string, options: ILazyLoadingOptions) {
+    constructor(apiKey: string, options: ILazyLoadingOptions, defaultCache: ICache) {
 
-        super(apiKey, "l-" + COMMON_VERSION, options);
+        super(apiKey, "l-" + COMMON_VERSION, options, defaultCache);
 
         if (options) {
             if (options.cacheTimeToLiveSeconds) {

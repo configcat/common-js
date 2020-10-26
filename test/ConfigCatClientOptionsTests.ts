@@ -1,25 +1,33 @@
 import { assert, expect } from "chai";
 import "mocha";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
-import { IConfigCatLogger } from "../src";
+import { ICache, IConfigCatLogger, LogLevel, OptionsBase, ProjectConfig } from "../src";
 import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
+import { InMemoryCache } from "../src/Cache";
 
 describe("Options", () => {
 
   it("ManualPollOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
     expect(() => {
-      let options: ManualPollOptions = new ManualPollOptions(null, null);
+      new ManualPollOptions(null, null, null);
     }).to.throw("Invalid 'apiKey' value");
   });
 
   it("ManualPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
-      let options: ManualPollOptions = new ManualPollOptions("APIKEY", {requestTimeoutMs: -1});
+      new ManualPollOptions("APIKEY", {requestTimeoutMs: -1}, null);
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 
+  it("ManualPollOptions initialization With NULL 'defaultCache' Should init with InMemoryCache", () => {
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", null, null);
+    
+    assert.isNotNull(options.cache);
+    assert.instanceOf(options.cache, InMemoryCache)
+  });
+
   it("ManualPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", null);
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", null, null);
     assert.isDefined(options);
 
     assert.equal("APIKEY", options.apiKey);
@@ -37,7 +45,8 @@ describe("Options", () => {
         logger: fakeLogger,
         requestTimeoutMs: 10,
         proxy: "http://fake-proxy.com:8080"
-      });
+      },
+      null);
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
@@ -50,7 +59,7 @@ describe("Options", () => {
 
   it("ManualPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"}, null);
 
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json", options.getUrl());
@@ -59,18 +68,18 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
     expect(() => {
-      let options: AutoPollOptions = new AutoPollOptions(null, null);
+      let options: AutoPollOptions = new AutoPollOptions(null, null, null);
     }).to.throw("Invalid 'apiKey' value");
   });
 
   it("AutoPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
-      let options: AutoPollOptions = new AutoPollOptions("APIKEY", {requestTimeoutMs: -1});
+      let options: AutoPollOptions = new AutoPollOptions("APIKEY", {requestTimeoutMs: -1}, null);
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 
   it("AutoPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", null);
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", null, null);
     assert.isDefined(options);
     assert.isTrue(options.logger instanceof ConfigCatConsoleLogger);
     assert.equal("APIKEY", options.apiKey);
@@ -78,6 +87,7 @@ describe("Options", () => {
     assert.equal(60, options.pollIntervalSeconds);
     assert.equal("a", options.clientVersion[0]);
     assert.equal(30000, options.requestTimeoutMs);
+    assert.isDefined(options.cache);
   });
 
   it("AutoPollOptions initialization With parameters works", () => {
@@ -86,11 +96,14 @@ describe("Options", () => {
     let configChanged = function() { };
     let options: AutoPollOptions = new AutoPollOptions(
       "APIKEY",
-            {logger: fakeLogger,
-            configChanged: configChanged,
-            pollIntervalSeconds: 59,
-            requestTimeoutMs: 20,
-            proxy: "http://fake-proxy.com:8080"});
+      {
+        logger: fakeLogger,
+        configChanged: configChanged,
+        pollIntervalSeconds: 59,
+        requestTimeoutMs: 20,
+        proxy: "http://fake-proxy.com:8080"
+      },
+      null);
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
@@ -105,19 +118,27 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With -1 'pollIntervalSeconds' ShouldThrowError", () => {
     expect(() => {
-      new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1});
+      new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1}, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
   it("AutoPollOptions initialization With 0 'pollIntervalSeconds' ShouldThrowError", () => {
     expect(() => {
-      new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1});
+      new AutoPollOptions("APIKEY", {pollIntervalSeconds: -1}, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With NULL 'defaultCache' Should set to InMemoryCache", () => {
+   
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", null, null);
+    
+    assert.isNotNull(options.cache);
+    assert.instanceOf(options.cache, InMemoryCache);
   });
 
   it("AutoPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { baseUrl: "https://mycdn.example.org"}, null);
 
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json", options.getUrl());
@@ -126,12 +147,12 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With -1 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     expect(() => {
-      new AutoPollOptions("APIKEY", {maxInitWaitTimeSeconds: -1});
+      new AutoPollOptions("APIKEY", {maxInitWaitTimeSeconds: -1}, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
   it("AutoPollOptions initialization With 0 'maxInitWaitTimeSeconds' Should create an instance with passed value", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {maxInitWaitTimeSeconds: 0});
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {maxInitWaitTimeSeconds: 0}, null);
 
     assert.isDefined(options);
     assert.isNotNull(options);    
@@ -139,7 +160,7 @@ describe("Options", () => {
   });
 
   it("AutoPollOptions initialization Without 'maxInitWaitTimeSeconds' Should create an instance with default value(5)", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {});
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {}, null);
 
     assert.isDefined(options);
     assert.isNotNull(options);    
@@ -148,12 +169,12 @@ describe("Options", () => {
 
   it("LazyLoadOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
     expect(() => {
-      new LazyLoadOptions(null, null);
+      new LazyLoadOptions(null, null, null);
     }).to.throw("Invalid 'apiKey' value");
   });
 
   it("LazyLoadOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", null);
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", null, null);
     assert.isDefined(options);
     assert.equal("APIKEY", options.apiKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json", options.getUrl());
@@ -171,7 +192,8 @@ describe("Options", () => {
         cacheTimeToLiveSeconds:59,
         requestTimeoutMs: 20,
         proxy: "http://fake-proxy.com:8080"
-      });
+      },
+      null);
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger);
@@ -185,25 +207,75 @@ describe("Options", () => {
 
   it("LazyLoadOptions initialization With -1 'cacheTimeToLiveSeconds' ShouldThrowError", () => {
     expect(() => {
-      new LazyLoadOptions("APIKEY", {cacheTimeToLiveSeconds: -1});
+      new LazyLoadOptions("APIKEY", {cacheTimeToLiveSeconds: -1}, null);
     }).to.throw("Invalid 'cacheTimeToLiveSeconds' value");
   });
 
   it("LazyLoadOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
-      new LazyLoadOptions("APIKEY", {requestTimeoutMs: -1});
+      new LazyLoadOptions("APIKEY", {requestTimeoutMs: -1}, null);
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 
+  it("LazyLoadOptions initialization With NULL 'defaultCache' Should set to InMemoryCache", () => {
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {}, null);
+    
+    assert.isNotNull(options.cache);
+    assert.instanceOf(options.cache, InMemoryCache);
+  }); 
+
   it("LazyLoadOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { baseUrl: "https://mycdn.example.org"});
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { baseUrl: "https://mycdn.example.org"}, null);
 
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json", options.getUrl());
     assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json", options.getUrl());
   });
+
+  it("Options initialization With 'defaultCache' Should set option cache to passed instance", () => {
+
+    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { }, new FakeCache());
+
+    assert.instanceOf(options.cache, FakeCache);
+    assert.notInstanceOf(options.cache, InMemoryCache);
+  });
+
+  it("Options initialization With 'options.cache' Should overwrite defaultCache", () => {
+
+    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: new FakeCache() }, new InMemoryCache());
+
+    assert.instanceOf(options.cache, FakeCache);
+    assert.notInstanceOf(options.cache, InMemoryCache);
+  });
+
+  it("Options initialization With NULL 'cache' Should set InMemoryCache", () => {
+
+    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { }, null);
+
+    assert.isDefined(options.cache);
+    assert.instanceOf(options.cache, InMemoryCache);
+  });
+
+  it("Options initialization With NULL 'options.cache' Should set InMemoryCache", () => {
+
+    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: null }, null);
+
+    assert.isDefined(options.cache);
+    assert.instanceOf(options.cache, InMemoryCache);
+  });
 });
+
+class FakeOptionsBase extends OptionsBase { }
+
+class FakeCache implements ICache {
+  set(key: string, config: ProjectConfig): void {
+    throw new Error("Method not implemented.");
+  }
+  get(key: string): ProjectConfig {
+    throw new Error("Method not implemented.");
+  }
+}
 
 export class FakeLogger implements IConfigCatLogger {
 
@@ -213,7 +285,7 @@ export class FakeLogger implements IConfigCatLogger {
   // tslint:disable-next-line:no-empty
   warn(message: string): void {    
   }
-  isLogLevelEnabled(logLevel: import("../src").LogLevel): boolean {
+  isLogLevelEnabled(logLevel: LogLevel): boolean {
     return false;
   }
   // tslint:disable-next-line:no-empty
