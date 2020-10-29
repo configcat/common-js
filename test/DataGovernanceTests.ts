@@ -3,8 +3,6 @@ import "mocha";
 import { OptionsBase, DataGovernance } from "../src/ConfigCatClientOptions";
 import { IConfigFetcher, ProjectConfig } from "../src";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
-import { InMemoryCache } from "../src/Cache";
-
 
 const globalUrl = "https://cdn-global.configcat.com";
 const euOnlyUrl = "https://cdn-eu.configcat.com";
@@ -55,7 +53,6 @@ describe("DataGovernance", () => {
         configService.validateCall(1, globalUrl);
     });
 
-
     it("sdk global, organization euonly", async () => {
         // In this case
         // the first invocation should call https://cdn-global.configcat.com
@@ -100,7 +97,6 @@ describe("DataGovernance", () => {
         configService.validateCall(1, euOnlyUrl);
     });
 
-
     it("sdk global, custom", async () => {
         // In this case
         // the first invocation should call https://custom.configcat.com
@@ -141,7 +137,6 @@ describe("DataGovernance", () => {
         configService.validateCall(1, customUrl);
     });
 
-
     it("sdk global, forced", async () => {
         // In this case
         // the first invocation should call https://cdn-global.configcat.com
@@ -164,7 +159,6 @@ describe("DataGovernance", () => {
         configService.validateCall(1, forcedUrl);
         configService.validateCall(2, forcedUrl);
     });
-
 
     it("sdk euonly, forced", async () => {
         // In this case
@@ -189,7 +183,6 @@ describe("DataGovernance", () => {
         configService.validateCall(2, forcedUrl);
     });
 
-
     it("sdk baseurl, forced", async () => {
         // In this case
         // the first invocation should call https://cdn-custom.configcat.com
@@ -212,7 +205,6 @@ describe("DataGovernance", () => {
         configService.validateCall(1, forcedUrl);
         configService.validateCall(2, forcedUrl);
     });
-
 
     it("sdk redirect loop", async () => {
         // In this case

@@ -18,14 +18,18 @@ export abstract class ConfigServiceBase {
         this.baseConfig = baseConfig;
     }
 
-    protected refreshLogicBaseAsync(lastProjectConfig: ProjectConfig): Promise<ProjectConfig> {
+    protected refreshLogicBaseAsync(lastProjectConfig: ProjectConfig, forceUpdateCache: boolean = true): Promise<ProjectConfig> {
 
         return new Promise(resolve => {
 
             this.fetchLogic(this.baseConfig, lastProjectConfig, 0, (newConfig) => {
 
                 if (newConfig && newConfig.ConfigJSON) {
-                    this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
+                    
+                    if (forceUpdateCache || !ProjectConfig.equals(newConfig, lastProjectConfig)) {
+                        this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
+                    }
+                    
                     resolve(newConfig);
                 }
                 else {
