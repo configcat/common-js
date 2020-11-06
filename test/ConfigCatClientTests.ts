@@ -40,7 +40,7 @@ describe("ConfigCatClient", () => {
     }).to.throw("Invalid 'configCatKernel.configFetcher' value");
   });
 
-  it("Initialization With AutoPollOptions should create an instance, GetValue works", (done) => {
+  it("Initialization With AutoPollOptions should create an instance, getValue works", (done) => {
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -86,7 +86,7 @@ describe("ConfigCatClient", () => {
     assert.equal(false, await client.getValueAsync("NOT_EXISTS", false, new User("identifier")));
   });
 
-  it("Initialization With LazyLoadOptions should create an instance, GetValue works", (done) => {
+  it("Initialization With LazyLoadOptions should create an instance, getValue works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null }, null);
@@ -113,7 +113,7 @@ describe("ConfigCatClient", () => {
     }, new User("identifier"));
   });
 
-  it("Initialization With LazyLoadOptions should create an instance, GetValueAsync works", async () => {
+  it("Initialization With LazyLoadOptions should create an instance, getValueAsync works", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null }, null);
@@ -127,7 +127,7 @@ describe("ConfigCatClient", () => {
     assert.equal(true, await client.getValueAsync("debug", false, new User("identifier")));
   });
 
-  it("Initialization With ManualPollOptions should create an instance, GetValue works", (done) => {
+  it("Initialization With ManualPollOptions should create an instance, getValue works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
@@ -160,7 +160,7 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("Initialization With ManualPollOptions should create an instance, GetValueAsync works", async () => {
+  it("Initialization With ManualPollOptions should create an instance, getValueAsync works", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
@@ -340,7 +340,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actualValue, false);
   });
 
-  it("GetValue - User.Identifier is 'null' - should return evaluated value", async() => {
+  it("getValueAsync - User.Identifier is 'null' - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };    
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
@@ -353,7 +353,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actual, "value2");    
   });
 
-  it("GetValue - User.Identifier is 'undefinied' - should return evaluated value", async() => {
+  it("getValueAsync - User.Identifier is 'undefinied' - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
@@ -366,7 +366,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actual, "value2");    
   });
 
-  it("GetValue - User.Identifier is an empty string - should return evaluated value", async() => {
+  it("getValueAsync - User.Identifier is an empty string - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };    
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
@@ -379,7 +379,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actual, "value2");    
   });
 
-  it("GetValue - User.Identifier can be non empty string - should return evaluated value", async() => {
+  it("getValueAsync - User.Identifier can be non empty string - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };    
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
@@ -392,7 +392,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actual, "value1");
   });
 
-  it("GetValue - case sensitive key tests", async() => {
+  it("getValueAsync - case sensitive key tests", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoCaseSensitiveKeys() };    
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
@@ -409,7 +409,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actual, "DEBUG");
   });
 
-  it("GetValue - case sensitive attribute tests", async() => {
+  it("getValueAsync - case sensitive attribute tests", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoCaseSensitiveKeys() };    
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);

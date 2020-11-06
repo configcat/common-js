@@ -21,27 +21,27 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     async getConfig(): Promise<ProjectConfig> {        
         var p: ProjectConfig = await this.tryReadFromCache(0);        
         if (!p) {
-            return this.refreshLogic();
+            return this.refreshLogic(true);
         } else {
             return new Promise(resolve => resolve(p))
         }
     }
 
     refreshConfigAsync(): Promise<ProjectConfig> {
-        return this.refreshLogic();
+        return this.refreshLogic(true);
     }
 
     dispose(): void {
         clearTimeout(this.timerId);
     }
 
-    private refreshLogic(): Promise<ProjectConfig> {
+    private refreshLogic(forceUpdateCache: boolean): Promise<ProjectConfig> {
         
         return new Promise(async resolve => {
 
             let cachedConfig: ProjectConfig = this.baseConfig.cache.get(this.baseConfig.getCacheKey());
             
-            const newConfig = await this.refreshLogicBaseAsync(cachedConfig)
+            const newConfig = await this.refreshLogicBaseAsync(cachedConfig, forceUpdateCache)
             
             if (!cachedConfig || !ProjectConfig.equals(cachedConfig, newConfig)) {
                 
@@ -53,7 +53,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     }
 
     private startRefreshWorker(delay: number){
-        this.refreshLogic().then((_) =>{
+        this.refreshLogic(false).then((_) =>{
             this.timerId = setTimeout(
                 () => {
                     this.startRefreshWorker(delay);
