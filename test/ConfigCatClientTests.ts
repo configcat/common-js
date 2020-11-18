@@ -430,6 +430,41 @@ describe("ConfigCatClient", () => {
 
     assert.equal(actual, "UPPER-VALUE");
   });
+
+  it("getAllValuesAsync - works", async() => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys() };    
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    let actual = await client.getAllValuesAsync();
+    
+    assert.equal(actual.length, 2);    
+  });
+
+  it("getAllValues - works", (done) => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys() };    
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    client.getAllValues(actual => {
+      assert.equal(actual.length, 2);    
+      done();
+    });
+  });
+
+  it("getAllValuesAsync - without config - return empty array", async() => {
+
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig() };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    let actual = await client.getAllValuesAsync();
+    
+    assert.isDefined(actual);
+    assert.equal(actual.length, 0);    
+  });
 });
 
 export class FakeConfigFetcherBase implements IConfigFetcher {

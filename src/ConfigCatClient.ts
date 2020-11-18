@@ -47,6 +47,12 @@ export interface IConfigCatClient {
 
     /** Releases all resources used by IConfigCatClient */
     dispose(): void;
+
+    /** Returns all values of a feature flag or setting */
+    getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void;
+
+    /** Returns all values of a feature flag or setting */
+    getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
@@ -128,7 +134,7 @@ export class ConfigCatClient implements IConfigCatClient {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
             if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
-                this.options.logger.error("JSONConfig is not present, returning empty array");
+                this.options.logger.error("config.json is not present, returning empty array");
                 resolve([]);
                 return;
             }
@@ -182,7 +188,7 @@ export class ConfigCatClient implements IConfigCatClient {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
             if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
-                this.options.logger.error("JSONConfig is not present, returning null");
+                this.options.logger.error("config.json is not present, returning empty array");
                 resolve(null);
                 return;
             }
@@ -220,6 +226,36 @@ export class ConfigCatClient implements IConfigCatClient {
             this.options.logger.error("Could not find the setting for the given variation ID: " + variationId);
             resolve(null);
         });
+    }
+
+    getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {        
+        this.getAllValuesAsync(user).then(value => {
+            callback(value);
+        });
+    }
+    
+    getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
+        return new Promise(async (resolve) => {
+            const config = await this.configService.getConfig();
+            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
+                this.options.logger.error("config.json is not present, returning empty array");
+                resolve([]);
+                return;
+            }
+
+            const keys: string[] = Object.keys(config.ConfigJSON[ConfigFile.FeatureFlags]);
+
+            let result: SettingKeyValue[] = [];
+
+            keys.forEach(key => {
+                result.push({
+                    settingKey: key,
+                    settingValue: this.evaluator.Evaluate(config, key, undefined, user).Value
+                });
+            });
+            
+            resolve(result);
+        });       
     }
 }
 
