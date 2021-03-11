@@ -16,3 +16,4 @@ tsconfig*.json
 deploy.sh
 tslint.json
 DEPLOY.md
+.github/
