@@ -24,13 +24,13 @@ Increase version number by using `npm version patch | minor | major`
 
 1. Push tag to remote
     
-    If you tag the commit, TravisCI automatically publishes the package to NPM. 
+    If you tag the commit, a GitHub action automatically publishes the package to NPM. 
     ```PowerShell
     git push origin <new version>
     ```
     *Example: git push origin v1.1.15*
 
-    You can follow the build status here -> https://travis-ci.com/configcat/common-js
+    You can follow the build status [here](https://github.com/configcat/common-js/actions/workflows/common-js-ci.yml).
 
 2. Update `common-js` in `js-sdk`, `node-sdk` and `js-ssr-sdk` and re-deploy all packages.
 3. Test all packages manually!
