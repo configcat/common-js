@@ -43,8 +43,10 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
             
             const newConfig = await this.refreshLogicBaseAsync(cachedConfig, forceUpdateCache)
             
-            if (!cachedConfig || !ProjectConfig.equals(cachedConfig, newConfig)) {
-                
+            let weDontHaveCachedYetButHaveNew = !cachedConfig && newConfig;
+            let weHaveBothButTheyDiffers = cachedConfig && newConfig && !ProjectConfig.equals(cachedConfig, newConfig);
+
+            if (weDontHaveCachedYetButHaveNew || weHaveBothButTheyDiffers) {                
                 this.configChanged();
             }
 
