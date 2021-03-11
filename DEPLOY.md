@@ -4,7 +4,7 @@
 
 1. Run `./deploy.sh`
 
-2. Update `common-js` in `js-sdk` and `node-sdk` and re-deploy both packages.
+2. Update `common-js` in `js-sdk` and `node-sdk` and `js-ssr-sdk` and re-deploy both packages.
 
 or
 
