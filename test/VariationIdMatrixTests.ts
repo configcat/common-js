@@ -13,7 +13,7 @@ describe("MatrixTests", () => {
     it("GetVariationId", async () => {
 
         let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(variationid_v5) };
-        let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null)
+        let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null)
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         let header: string[];

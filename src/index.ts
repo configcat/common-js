@@ -5,35 +5,35 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 
 /**
  * Create an instance of ConfigCatClient and setup AutoPoll mode
- * @param {string} apiKey - ApiKey to access your configuration.
+ * @param {string} sdkKey - SdkKey to access your configuration.
  * @param config - Configuration for autoPoll mode
  */
-export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+export function createClientWithAutoPoll(sdkKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
+    return new ConfigCatClient(new AutoPollOptions(sdkKey, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
  * Create an instance of ConfigCatClient and setup ManualPoll mode
- * @param {string} apiKey - ApiKey to access your configuration.
+ * @param {string} sdkKey - SdkKey to access your configuration.
  * @param config - Configuration for manualPoll mode
  */
 export function createClientWithManualPoll(
-    apiKey: string,
+    sdkKey: string,
     configCatKernel: IConfigCatKernel,
     options?: IManualPollOptions): IConfigCatClient {
-        return new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+        return new ConfigCatClient(new ManualPollOptions(sdkKey, options, configCatKernel.cache), configCatKernel);
     }
 
 /**
  * Create an instance of ConfigCatClient and setup LazyLoad mode
- * @param {string} apiKey - ApiKey to access your configuration.
+ * @param {string} sdkKey - SdkKey to access your configuration.
  * @param config - Configuration for lazyLoad mode
  */
 export function createClientWithLazyLoad(
-    apiKey: string,
+    sdkKey: string,
     configCatKernel: IConfigCatKernel,
     options?: ILazyLoadingOptions): IConfigCatClient {
-        return new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+        return new ConfigCatClient(new LazyLoadOptions(sdkKey, options, configCatKernel.cache), configCatKernel);
     }
 
 /**

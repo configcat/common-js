@@ -2,7 +2,7 @@ import { ProjectConfig } from "./ProjectConfig";
 import { ICache } from "./index";
 
 export class InMemoryCache implements ICache {
-    cache:  { [apiKey: string] : ProjectConfig; } = {};
+    cache:  { [sdkKey: string] : ProjectConfig; } = {};
 
     set(key: string, config: ProjectConfig): void {
         this.cache[key] = config;

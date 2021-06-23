@@ -33,7 +33,7 @@ export abstract class OptionsBase implements IOptions {
 
     public logger: IConfigCatLogger = new ConfigCatConsoleLogger(LogLevel.Warn);
 
-    public apiKey: string;
+    public sdkKey: string;
 
     public clientVersion: string;
 
@@ -49,16 +49,16 @@ export abstract class OptionsBase implements IOptions {
 
     public cache: ICache;
 
-    constructor(apiKey: string, clientVersion: string, options: IOptions, defaultCache: ICache) {
-        if (!apiKey) {
-            throw new Error("Invalid 'apiKey' value");
+    constructor(sdkKey: string, clientVersion: string, options: IOptions, defaultCache: ICache) {
+        if (!sdkKey) {
+            throw new Error("Invalid 'sdkKey' value");
         }
 
         if (!defaultCache){
             defaultCache = new InMemoryCache();
         }
 
-        this.apiKey = apiKey;
+        this.sdkKey = sdkKey;
         this.clientVersion = clientVersion;
         this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
         this.cache = defaultCache;
@@ -101,11 +101,11 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + this.configFileName + ".json";
+        return this.baseUrl + "/configuration-files/" + this.sdkKey + "/" + this.configFileName + ".json";
     }
 
     getCacheKey(): string {
-        return "js_" + this.configFileName + "_" + this.apiKey;
+        return "js_" + this.configFileName + "_" + this.sdkKey;
     }
 }
 
@@ -120,9 +120,9 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** Maximum waiting time between the client initialization and the first config acquisition in secconds. */
     public maxInitWaitTimeSeconds: number = 5;
 
-    constructor(apiKey: string, options: IAutoPollOptions, defaultCache: ICache) {
+    constructor(sdkKey: string, options: IAutoPollOptions, defaultCache: ICache) {
 
-        super(apiKey, "a-" + COMMON_VERSION, options, defaultCache);
+        super(sdkKey, "a-" + COMMON_VERSION, options, defaultCache);
 
         if (options) {
 
@@ -150,8 +150,8 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 }
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-    constructor(apiKey: string, options: IManualPollOptions, defaultCache: ICache) {
-        super(apiKey, "m-" + COMMON_VERSION, options, defaultCache);
+    constructor(sdkKey: string, options: IManualPollOptions, defaultCache: ICache) {
+        super(sdkKey, "m-" + COMMON_VERSION, options, defaultCache);
     }
 }
 
@@ -160,9 +160,9 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
     /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
-    constructor(apiKey: string, options: ILazyLoadingOptions, defaultCache: ICache) {
+    constructor(sdkKey: string, options: ILazyLoadingOptions, defaultCache: ICache) {
 
-        super(apiKey, "l-" + COMMON_VERSION, options, defaultCache);
+        super(sdkKey, "l-" + COMMON_VERSION, options, defaultCache);
 
         if (options) {
             if (options.cacheTimeToLiveSeconds) {

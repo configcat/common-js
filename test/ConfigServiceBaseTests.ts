@@ -32,7 +32,7 @@ describe("ConfigServiceBaseTests", () => {
         const _: ConfigServiceBase = new AutoPollConfigService(
             fetcherMock.object(),
             new AutoPollOptions(
-                "APIKEY",
+                "SDKKEY",
                 { pollIntervalSeconds: 1 },
                 cacheMock.object()));
         
@@ -67,7 +67,7 @@ describe("ConfigServiceBaseTests", () => {
         const service : AutoPollConfigService = new AutoPollConfigService(
             fetcherMock.object(),
             new AutoPollOptions(
-                "APIKEY",
+                "SDKKEY",
                 { pollIntervalSeconds: 1 },
                 cacheMock.object()));
         
@@ -99,7 +99,7 @@ describe("ConfigServiceBaseTests", () => {
         const service : AutoPollConfigService = new AutoPollConfigService(
             fetcherMock.object(),
             new AutoPollOptions(
-                "APIKEY",
+                "SDKKEY",
                 { pollIntervalSeconds: 1 },
                 cacheMock.object()));
         
@@ -136,7 +136,7 @@ describe("ConfigServiceBaseTests", () => {
         const service : LazyLoadConfigService = new LazyLoadConfigService(
             fetcherMock.object(),
             new LazyLoadOptions(
-                "APIKEY",
+                "SDKKEY",
                 { cacheTimeToLiveSeconds: cacheTimeToLiveSeconds },
                 cacheMock.object()));
 
@@ -168,7 +168,7 @@ describe("ConfigServiceBaseTests", () => {
         const service : LazyLoadConfigService = new LazyLoadConfigService(
             fetcherMock.object(),
             new LazyLoadOptions(
-                "APIKEY",
+                "SDKKEY",
                 { },
                 cacheMock.object()));
 
@@ -203,7 +203,7 @@ describe("ConfigServiceBaseTests", () => {
         const service : LazyLoadConfigService = new LazyLoadConfigService(
             fetcherMock.object(),
             new LazyLoadOptions(
-                "APIKEY",
+                "SDKKEY",
                 { },
                 cacheMock.object()));
 

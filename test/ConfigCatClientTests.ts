@@ -7,13 +7,13 @@ import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from
 import { User } from "../src/RolloutEvaluator";
 
 describe("ConfigCatClient", () => {
-  it("Initialization With NULL 'apiKey' ShouldThrowError", () => {
+  it("Initialization With NULL 'sdkKey' ShouldThrowError", () => {
 
     expect(() => {
       let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
       let options: ManualPollOptions = new ManualPollOptions(null, null, null);
       new ConfigCatClient(options, configCatKernel);
-    }).to.throw("Invalid 'apiKey' value");
+    }).to.throw("Invalid 'sdkKey' value");
   });
 
   it("Initialization With NULL 'configuration' ShouldThrowError", () => {
@@ -27,7 +27,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With NULL 'configCatKernel' ShouldThrowError", () => {
 
     expect(() => {
-      let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
+      let options: ManualPollOptions = new ManualPollOptions("SDKKEY", { logger: null }, null);
       new ConfigCatClient(options, null);
     }).to.throw("Invalid 'configCatKernel' value");
   });
@@ -35,14 +35,14 @@ describe("ConfigCatClient", () => {
   it("Initialization With NULL 'configCatKernel.configFetcher' ShouldThrowError", () => {
 
     expect(() => {
-      let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
+      let options: ManualPollOptions = new ManualPollOptions("SDKKEY", { logger: null }, null);
       new ConfigCatClient(options, { configFetcher: null });
     }).to.throw("Invalid 'configCatKernel.configFetcher' value");
   });
 
   it("Initialization With AutoPollOptions should create an instance, getValue works", (done) => {
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -74,7 +74,7 @@ describe("ConfigCatClient", () => {
 
   it("Initialization With AutoPollOptions should create an instance, getValueAsync works", async () => {
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -89,7 +89,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With LazyLoadOptions should create an instance, getValue works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null }, null);
+    let options: LazyLoadOptions = new LazyLoadOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -116,7 +116,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With LazyLoadOptions should create an instance, getValueAsync works", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null }, null);
+    let options: LazyLoadOptions = new LazyLoadOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -130,7 +130,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With ManualPollOptions should create an instance, getValue works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
+    let options: ManualPollOptions = new ManualPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -163,7 +163,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With ManualPollOptions should create an instance, getValueAsync works", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
+    let options: ManualPollOptions = new ManualPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);  
   
@@ -178,7 +178,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With ManualPollOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", { logger: null }, null);
+    let options: ManualPollOptions = new ManualPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
     client.forceRefresh(() => {
@@ -191,7 +191,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -204,7 +204,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With LazyLoadOptions should create an instance", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig() };
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", { logger: null }, null);
+    let options: LazyLoadOptions = new LazyLoadOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -216,7 +216,7 @@ describe("ConfigCatClient", () => {
 
   it("getValue() works without userObject", (done) => {    
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     assert.isDefined(client);
@@ -230,7 +230,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync() works without userObject", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
@@ -241,7 +241,7 @@ describe("ConfigCatClient", () => {
   it("getAllKeys() works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
     client.getAllKeys(function (keys) {
@@ -255,7 +255,7 @@ describe("ConfigCatClient", () => {
   it("getAllKeysAsync() works", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
     const keys = await client.getAllKeysAsync();
@@ -267,7 +267,7 @@ describe("ConfigCatClient", () => {
   it("getAllKeys() works - without config", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
     client.getAllKeys(function (keys) {
@@ -279,7 +279,7 @@ describe("ConfigCatClient", () => {
   it("getAllKeysAsync() works - without config", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
     const keys = await client.getAllKeysAsync();
@@ -290,7 +290,7 @@ describe("ConfigCatClient", () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithAlwaysVariableEtag() };
     let counter: number = 0;
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null, pollIntervalSeconds: 1, configChanged: () => {counter++;} }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null, pollIntervalSeconds: 1, configChanged: () => {counter++;} }, null);
     new ConfigCatClient(options, configCatKernel);
     
     function act(): Promise<boolean>  {
@@ -311,7 +311,7 @@ describe("ConfigCatClient", () => {
     const maxInitWaitTimeSeconds: number = 2;
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(500) };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     var startDate:number = new Date().getTime();
@@ -328,7 +328,7 @@ describe("ConfigCatClient", () => {
     const maxInitWaitTimeSeconds: number = 1;
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     var startDate:number = new Date().getTime();
@@ -343,7 +343,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync - User.Identifier is 'null' - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     const user: User = new User(null);
@@ -356,7 +356,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync - User.Identifier is 'undefinied' - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     const user: User = new User(undefined);
@@ -369,7 +369,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync - User.Identifier is an empty string - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     const user: User = new User('');
@@ -382,7 +382,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync - User.Identifier can be non empty string - should return evaluated value", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeysAndRules() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     
     const user: User = new User('userId');
@@ -395,7 +395,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync - case sensitive key tests", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoCaseSensitiveKeys() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     var actual = await client.getValueAsync("debug", "N/A");
@@ -412,7 +412,7 @@ describe("ConfigCatClient", () => {
   it("getValueAsync - case sensitive attribute tests", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoCaseSensitiveKeys() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     let user: User = new User(null, null, null, {"CUSTOM" : "c"})
@@ -434,7 +434,7 @@ describe("ConfigCatClient", () => {
   it("getAllValuesAsync - works", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     let actual = await client.getAllValuesAsync();
@@ -445,7 +445,7 @@ describe("ConfigCatClient", () => {
   it("getAllValues - works", (done) => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoKeys() };    
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     client.getAllValues(actual => {
@@ -457,7 +457,7 @@ describe("ConfigCatClient", () => {
   it("getAllValuesAsync - without config - return empty array", async() => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig() };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
+    let options: AutoPollOptions = new AutoPollOptions("SDKKEY", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     let actual = await client.getAllValuesAsync();
