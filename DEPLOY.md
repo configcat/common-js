@@ -4,10 +4,13 @@
 
 1. Run `./deploy.sh`
 
+2. Add release notes: https://github.com/configcat/common-js/releases
+
 2. Update `common-js` in `js-sdk` and `node-sdk` and `js-ssr-sdk` and re-deploy both packages.
 
 3. Test all packages manually!
-or
+
+### or
 
 ## Manually
 1. Run tests
@@ -33,5 +36,6 @@ Increase version number by using `npm version patch | minor | major`
 
     You can follow the build status [here](https://github.com/configcat/common-js/actions/workflows/common-js-ci.yml).
 
+2. Add release notes: https://github.com/configcat/common-js/releases
 2. Update `common-js` in `js-sdk`, `node-sdk` and `js-ssr-sdk` and re-deploy all packages.
 3. Test all packages manually!
