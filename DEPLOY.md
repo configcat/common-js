@@ -2,7 +2,7 @@
 
 ## Before deployment
 
-Make sure the CI is running: https://github.com/configcat/common-js/actions
+Make sure the CI is running: https://github.com/configcat/common-js/actions/workflows/common-js-ci.yml
 
 ## Via shell script
 
