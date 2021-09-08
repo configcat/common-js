@@ -1,5 +1,9 @@
 # How to deploy
 
+## Before deployment
+
+Make sure the CI is running: https://github.com/configcat/common-js/actions
+
 ## Via shell script
 
 1. Run `./deploy.sh`
