@@ -22,12 +22,12 @@ export abstract class ConfigServiceBase {
 
         return new Promise(resolve => {
 
-            this.fetchLogic(this.baseConfig, lastProjectConfig, 0, (newConfig) => {
+            this.fetchLogic(this.baseConfig, lastProjectConfig, 0, async (newConfig) => {
 
                 if (newConfig && newConfig.ConfigJSON) {
                     
                     if (forceUpdateCache || !ProjectConfig.equals(newConfig, lastProjectConfig)) {
-                        this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
+                        await this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
                     }
                     
                     resolve(newConfig);

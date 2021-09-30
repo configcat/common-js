@@ -3,11 +3,27 @@ import { OptionsBase, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatC
 import { ICache, IConfigFetcher, ProjectConfig } from "../src";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
-import { Mock, It, Times } from 'moq.ts';
+import { Mock, It, Times, EqualMatchingInjectorConfig, ResolvedPromiseFactory, RejectedPromiseFactory } from 'moq.ts';
+import { ReturnsAsyncPresetFactory, ThrowsAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, MimicsRejectedAsyncPresetFactory, RootMockProvider, Presets } from "moq.ts/internal";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { assert } from "chai";
 
 describe("ConfigServiceBaseTests", () => {
+
+    const asyncInjectorServiceConfig = {
+        injectorConfig: new EqualMatchingInjectorConfig([], [
+            {
+                provide: ReturnsAsyncPresetFactory,
+                useClass: MimicsResolvedAsyncPresetFactory,
+                deps: [RootMockProvider, Presets, ResolvedPromiseFactory]
+            },
+            {
+                provide: ThrowsAsyncPresetFactory,
+                useClass: MimicsRejectedAsyncPresetFactory,
+                deps: [RootMockProvider, Presets, RejectedPromiseFactory]
+            },
+        ])
+    };
 
     it("AutoPollConfigService - backgroundworker only - config doesn't exits in the cache - invokes 'cache.set' operation only once", async () => {
 
@@ -108,6 +124,35 @@ describe("ConfigServiceBaseTests", () => {
         // Assert
 
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Never());        
+    });
+
+    it("AutoPollConfigService - Async cache is supported", async () => {
+        // Arrange
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(CreateProjectConfig()));
+
+        const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
+        .setup(async m => m.get(It.IsAny<string>()))
+        .returnsAsync(CreateProjectConfig())
+        .setup(async m => m.set(It.IsAny<string>(), CreateProjectConfig()))
+        .returnsAsync();
+
+        // Act
+
+        const service : AutoPollConfigService = new AutoPollConfigService(
+            fetcherMock.object(),
+            new AutoPollOptions(
+                "APIKEY",
+                { pollIntervalSeconds: 1 },
+                cacheMock.object()));
+
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Assert
+
+        cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Never());
     });
 
     it("LazyLoadConfigService - ProjectConfig is older in the cache - should fetch a new config and put into cache", async () => {
@@ -216,6 +261,42 @@ describe("ConfigServiceBaseTests", () => {
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
         
         fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()), Times.Once());             
+        cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
+    });
+
+    it("LazyLoadConfigService - refreshConfigAsync - should invoke fetch and cache.set operation - async cache supported", async () => {
+
+        // Arrange
+
+        const config: ProjectConfig = CreateProjectConfig();
+        config.Timestamp = new Date().getTime();
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(config));
+
+        const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
+        .setup(async m => m.get(It.IsAny<string>()))
+        .returnsAsync(config)
+        .setup(async m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
+        .returnsAsync();
+
+        const service : LazyLoadConfigService = new LazyLoadConfigService(
+            fetcherMock.object(),
+            new LazyLoadOptions(
+                "APIKEY",
+                { },
+                cacheMock.object()));
+
+        // Act
+
+        const actualConfig:ProjectConfig = await service.refreshConfigAsync()
+
+        // Assert
+
+        assert.isTrue(ProjectConfig.equals(actualConfig, config));
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()), Times.Once());
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
     });
 });
