@@ -39,7 +39,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
         
         return new Promise(async resolve => {
 
-            let cachedConfig: ProjectConfig = this.baseConfig.cache.get(this.baseConfig.getCacheKey());
+            let cachedConfig: ProjectConfig = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
             
             const newConfig = await this.refreshLogicBaseAsync(cachedConfig, forceUpdateCache)
             
@@ -66,7 +66,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
     private async tryReadFromCache(tries: number): Promise<ProjectConfig> {
         
-        var p: ProjectConfig = this.baseConfig.cache.get(this.baseConfig.getCacheKey());
+        let p: ProjectConfig = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
 
         if (this.maxInitWaitTimeStamp > new Date().getTime() && !p) {
             

@@ -89,9 +89,9 @@ export interface IConfigFetcher {
 }
 
 export interface ICache {
-    set(key: string, config: ProjectConfig): void;
+    set(key: string, config: ProjectConfig): Promise<void> | void;
 
-    get(key: string): ProjectConfig;
+    get(key: string): Promise<ProjectConfig> | ProjectConfig;
 }
 
 export { ProjectConfig } from "./ProjectConfig";
