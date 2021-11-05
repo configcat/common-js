@@ -12,8 +12,7 @@ export class ManualPollService extends ConfigServiceBase implements IConfigServi
 
     async getConfig(): Promise<ProjectConfig | null> {
 
-        let p = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
-        return p;
+        return await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
     }
 
     async refreshConfigAsync(): Promise<ProjectConfig | null> {
