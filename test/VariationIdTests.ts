@@ -77,8 +77,8 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         client.getKeyAndValue("abcdefgh", (result) => {
-            assert.equal(result.settingKey, "debug");
-            assert.equal(result.settingValue, "def");
+            assert.equal(result?.settingKey, "debug");
+            assert.equal(result?.settingValue, "def");
             done();
         });
     });
@@ -89,8 +89,8 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         let result = await client.getKeyAndValueAsync("abcdefgh");
-        assert.equal(result.settingKey, "debug");
-        assert.equal(result.settingValue, "def");
+        assert.equal(result?.settingKey, "debug");
+        assert.equal(result?.settingValue, "def");
     });
 
     it("getKeyAndValue() works with rollout rules", (done) => {
@@ -99,8 +99,8 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         client.getKeyAndValue("6ada5ff2", (result) => {
-            assert.equal(result.settingKey, "debug");
-            assert.equal(result.settingValue, "value");
+            assert.equal(result?.settingKey, "debug");
+            assert.equal(result?.settingValue, "value");
             done();
         });
     });
@@ -111,8 +111,8 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         let result = await client.getKeyAndValueAsync("6ada5ff2");
-        assert.equal(result.settingKey, "debug");
-        assert.equal(result.settingValue, "value");
+        assert.equal(result?.settingKey, "debug");
+        assert.equal(result?.settingValue, "value");
     });
 
     it("getKeyAndValue() works with percentage rules", (done) => {
@@ -121,8 +121,8 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         client.getKeyAndValue("622f5d07", (result) => {
-            assert.equal(result.settingKey, "debug2");
-            assert.equal(result.settingValue, "value2");
+            assert.equal(result?.settingKey, "debug2");
+            assert.equal(result?.settingValue, "value2");
             done();
         });
     });
@@ -133,8 +133,8 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
         let result = await client.getKeyAndValueAsync("622f5d07");
-        assert.equal(result.settingKey, "debug2");
-        assert.equal(result.settingValue, "value2");
+        assert.equal(result?.settingKey, "debug2");
+        assert.equal(result?.settingValue, "value2");
     });
 
     it("getKeyAndValueAsync() with null config", async () => {

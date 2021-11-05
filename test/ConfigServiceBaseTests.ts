@@ -39,7 +39,7 @@ describe("ConfigServiceBaseTests", () => {
 
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
-        .callback((_) => {return callNo++ === 1 ? null : pc})
+        .callback(() => {return callNo++ === 1 ? null : pc})
         .setup(m => m.set(It.IsAny<string>(), pc))
         .returns();
 
@@ -187,7 +187,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const actualConfig:ProjectConfig = await service.getConfig();
+        const actualConfig = await service.getConfig();
 
         // Assert
 
@@ -219,7 +219,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const actualConfig:ProjectConfig = await service.getConfig();
+        const actualConfig = await service.getConfig();
 
         // Assert
 
@@ -254,7 +254,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const actualConfig:ProjectConfig = await service.refreshConfigAsync()
+        const actualConfig = await service.refreshConfigAsync()
 
         // Assert
 
@@ -290,7 +290,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const actualConfig:ProjectConfig = await service.refreshConfigAsync()
+        const actualConfig = await service.refreshConfigAsync()
 
         // Assert
 

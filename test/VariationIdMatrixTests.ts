@@ -16,7 +16,7 @@ describe("MatrixTests", () => {
         let options: AutoPollOptions = new AutoPollOptions("APIKEY", { logger: null }, null)
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
-        let header: string[];
+        let header: string[] | null = null;
         let rowNo: number = 1;
 
         const data = fs.readFileSync("test/data/testmatrix_variationId.csv", "utf8");
@@ -31,7 +31,7 @@ describe("MatrixTests", () => {
                     return;
                 }
 
-                let user: User = Helper.CreateUser(line, header);
+                let user = Helper.CreateUser(line, header);
                 let splittedLine = line.split(';');
                 for (let i: number = 4; i < header.length; i++) {
 
@@ -60,12 +60,12 @@ describe("MatrixTests", () => {
 
     class Helper {
 
-        public static CreateUser(row: string, headers: string[]): User {
+        public static CreateUser(row: string, headers: string[]): User | undefined {
 
             let up: string[] = row.split(";");
 
             if (up[0] === "##null##") {
-                return null;
+                return undefined;
             }
 
             let result: User = new User(up[0]);

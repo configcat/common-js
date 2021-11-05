@@ -1,12 +1,12 @@
 export class ProjectConfig {
     /** Entity identifier */
-    HttpETag: string;
+    HttpETag?: string;
     /** ConfigCat config */
     ConfigJSON: any;
     /** Timestamp in milliseconds */
     Timestamp: number;
 
-    constructor(timeStamp: number, jsonConfig: string, httpETag: string) {
+    constructor(timeStamp: number, jsonConfig: string, httpETag?: string) {
         this.Timestamp = timeStamp;
         this.ConfigJSON = JSON.parse(jsonConfig);
         this.HttpETag = httpETag;
@@ -16,15 +16,15 @@ export class ProjectConfig {
     /**
      * Determines whether the specified ProjectConfig instances are considered equal.
      */
-    public static equals(projectConfig1: ProjectConfig, projectConfig2: ProjectConfig): boolean {
+    public static equals(projectConfig1: ProjectConfig | null, projectConfig2: ProjectConfig | null): boolean {
         if (!projectConfig1 || !projectConfig2) return false;
 
         return (this.ensureStrictEtag(projectConfig1.HttpETag) === this.ensureStrictEtag(projectConfig2.HttpETag));
     }
 
-    private static ensureStrictEtag(etag: string): string {
+    private static ensureStrictEtag(etag?: string): string {
         if (!etag) {
-            return etag;
+            return '';
         }
 
         if (etag.length > 2 && etag.substr(0,2).toLocaleUpperCase() === "W/") {

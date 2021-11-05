@@ -45,15 +45,8 @@ describe("ProjectConfig", () => {
     assert.isTrue(ProjectConfig.equals(actual, expected));
   });
 
-  it("Equals - Actual etag is null, expected etag is 'undefined'  - Should not equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", null);
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", undefined);
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
-  });
-
   it("Equals - Actual is null - Should not equal", () => {
-    const actual: ProjectConfig = null;
+    const actual: ProjectConfig | null = null;
     const expected: ProjectConfig = new ProjectConfig(1, "{}", 'etag');
 
     assert.isFalse(ProjectConfig.equals(actual, expected));
@@ -61,7 +54,7 @@ describe("ProjectConfig", () => {
 
   it("Equals - Expected is null - Should not equal", () => {
     const actual: ProjectConfig = new ProjectConfig(1, "{}", 'etag');
-    const expected: ProjectConfig = null;
+    const expected: ProjectConfig | null = null;
 
     assert.isFalse(ProjectConfig.equals(actual, expected));
   });

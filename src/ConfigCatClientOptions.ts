@@ -13,18 +13,18 @@ export enum DataGovernance {
 }
 
 export interface IOptions {
-    logger?: IConfigCatLogger;
-    requestTimeoutMs?: number;
-    baseUrl?: string;
+    logger?: IConfigCatLogger | null;
+    requestTimeoutMs?: number | null;
+    baseUrl?: string | null;
     /** You can set a base_url if you want to use a proxy server between your application and ConfigCat */
-    proxy?: string;
+    proxy?: string | null;
     /** Default: Global. Set this parameter to be in sync with the Data Governance preference on the Dashboard: 
      * https://app.configcat.com/organization/data-governance (Only Organization Admins have access) */
-    dataGovernance?: DataGovernance;
+    dataGovernance?: DataGovernance | null;
     /**
      * ICache instance for cache the config.
      */
-    cache?: ICache;
+    cache?: ICache | null;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -49,7 +49,7 @@ export abstract class OptionsBase implements IOptions {
 
     public cache: ICache;
 
-    constructor(apiKey: string, clientVersion: string, options: IOptions, defaultCache: ICache) {
+    constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null) {
         if (!apiKey) {
             throw new Error("Invalid 'apiKey' value");
         }
@@ -120,7 +120,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** Maximum waiting time between the client initialization and the first config acquisition in secconds. */
     public maxInitWaitTimeSeconds: number = 5;
 
-    constructor(apiKey: string, options: IAutoPollOptions, defaultCache: ICache) {
+    constructor(apiKey: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null) {
 
         super(apiKey, "a-" + COMMON_VERSION, options, defaultCache);
 
@@ -150,7 +150,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 }
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-    constructor(apiKey: string, options: IManualPollOptions, defaultCache: ICache) {
+    constructor(apiKey: string, options?: IManualPollOptions | null, defaultCache?: ICache | null) {
         super(apiKey, "m-" + COMMON_VERSION, options, defaultCache);
     }
 }
@@ -160,7 +160,7 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
     /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
-    constructor(apiKey: string, options: ILazyLoadingOptions, defaultCache: ICache) {
+    constructor(apiKey: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null) {
 
         super(apiKey, "l-" + COMMON_VERSION, options, defaultCache);
 

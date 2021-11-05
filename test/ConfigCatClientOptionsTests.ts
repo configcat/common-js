@@ -7,12 +7,6 @@ import { InMemoryCache } from "../src/Cache";
 
 describe("Options", () => {
 
-  it("ManualPollOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
-    expect(() => {
-      new ManualPollOptions(null, null, null);
-    }).to.throw("Invalid 'apiKey' value");
-  });
-
   it("ManualPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
       new ManualPollOptions("APIKEY", {requestTimeoutMs: -1}, null);
@@ -64,12 +58,6 @@ describe("Options", () => {
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json", options.getUrl());
     assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json", options.getUrl());
-  });
-
-  it("AutoPollOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
-    expect(() => {
-      let options: AutoPollOptions = new AutoPollOptions(null, null, null);
-    }).to.throw("Invalid 'apiKey' value");
   });
 
   it("AutoPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
@@ -165,12 +153,6 @@ describe("Options", () => {
     assert.isDefined(options);
     assert.isNotNull(options);    
     assert.equal(options.maxInitWaitTimeSeconds, 5);
-  });
-
-  it("LazyLoadOptions initialization With NULL 'apiKey' ShouldThrowError", () => {
-    expect(() => {
-      new LazyLoadOptions(null, null, null);
-    }).to.throw("Invalid 'apiKey' value");
   });
 
   it("LazyLoadOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {

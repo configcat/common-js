@@ -3,9 +3,9 @@ import { OptionsBase } from "./ConfigCatClientOptions";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
 export interface IConfigService {
-    getConfig(): Promise<ProjectConfig>;
+    getConfig(): Promise<ProjectConfig | null>;
 
-    refreshConfigAsync(): Promise<ProjectConfig>;
+    refreshConfigAsync(): Promise<ProjectConfig | null>;
 }
 
 export abstract class ConfigServiceBase {
@@ -18,7 +18,7 @@ export abstract class ConfigServiceBase {
         this.baseConfig = baseConfig;
     }
 
-    protected refreshLogicBaseAsync(lastProjectConfig: ProjectConfig, forceUpdateCache: boolean = true): Promise<ProjectConfig> {
+    protected refreshLogicBaseAsync(lastProjectConfig: ProjectConfig | null, forceUpdateCache: boolean = true): Promise<ProjectConfig | null> {
 
         return new Promise(resolve => {
 
@@ -39,7 +39,7 @@ export abstract class ConfigServiceBase {
         });
     }
 
-    private fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, retries: number, callback: (newProjectConfig: ProjectConfig) => void): void {
+    private fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig | null, retries: number, callback: (newProjectConfig: ProjectConfig | null) => void): void {
         const calledBaseUrl = this.baseConfig.baseUrl;
         this.configFetcher.fetchLogic(this.baseConfig, lastProjectConfig, (newConfig) => {
 
