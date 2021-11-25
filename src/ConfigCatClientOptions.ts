@@ -117,7 +117,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** You can subscribe to configuration changes with this callback. */
     public configChanged: () => void = () => { };
 
-    /** Maximum waiting time between the client initialization and the first config acquisition in secconds. */
+    /** Maximum waiting time between the client initialization and the first config acquisition in seconds. */
     public maxInitWaitTimeSeconds: number = 5;
 
     constructor(apiKey: string, options: IAutoPollOptions, defaultCache: ICache) {
