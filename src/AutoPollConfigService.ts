@@ -8,12 +8,14 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     private maxInitWaitTimeStamp: number;
     private configChanged: () => void;
     private timerId: any;
+    private autoPollConfig: AutoPollOptions;
 
     constructor(configFetcher: IConfigFetcher, autoPollConfig: AutoPollOptions) {
 
         super(configFetcher, autoPollConfig);
 
         this.configChanged = autoPollConfig.configChanged;
+        this.autoPollConfig = autoPollConfig;
         this.startRefreshWorker(autoPollConfig.pollIntervalSeconds * 1000);
         this.maxInitWaitTimeStamp = new Date().getTime() + (autoPollConfig.maxInitWaitTimeSeconds * 1000);
     }
@@ -68,7 +70,14 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
         let p = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
 
-        if (this.maxInitWaitTimeStamp > new Date().getTime() && !p) {
+        if (this.maxInitWaitTimeStamp > new Date().getTime()
+            && (
+                // Wait for maxInitWaitTimeStamp in case the cache is empty
+                !p
+                // Wait for maxInitWaitTimeStamp in case of an expired cache (if its timestamp is older than the pollIntervalSeconds)
+                || p.Timestamp < new Date().getTime() - this.autoPollConfig.pollIntervalSeconds * 1000
+            )
+        ) {
 
             var diff: number = this.maxInitWaitTimeStamp - new Date().getTime();
             var delay = 30 + (tries * tries * 20);

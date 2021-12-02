@@ -442,6 +442,19 @@ describe("ConfigCatClient", () => {
     client.getValue("debug", false, callback);
     client.getValue("debug", false, callback);
   });
+
+  it("Initialization With AutoPollOptions with expired cache should take care of maxInitWaitTimeSeconds", done => {
+
+    let configFetcher = new FakeConfigFetcher(500);
+    let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"))
+    let configCatKernel: FakeConfigCatKernel = { configFetcher, cache: configCache };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { cache: configCache, maxInitWaitTimeSeconds: 10 });
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    client.getValue("debug", false, value => {
+      done(value == true ? null : new Error("Wrong value."));
+    });
+  });
 });
 
 export class FakeConfigFetcherBase implements IConfigFetcher {
@@ -454,7 +467,7 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
     if (callback) {
       setTimeout(() => {
         this.calledTimes++;
-        callback(this.config === null ? null : new ProjectConfig(0, this.config, this.getEtag()));
+        callback(this.config === null ? null : new ProjectConfig(new Date().getTime(), this.config, this.getEtag()));
       }, this.callbackDelay);
     }
   }
@@ -513,4 +526,17 @@ export class FakeConfigFetcherWithPercantageRules extends FakeConfigFetcherBase 
 export class FakeConfigCatKernel implements IConfigCatKernel {
   cache?: ICache;
   configFetcher!: IConfigFetcher;
+}
+
+export class FakeCache implements ICache {
+  cached: ProjectConfig;
+  constructor(cached: ProjectConfig) {
+    this.cached = cached;
+  }
+  set(key: string, config: ProjectConfig): void | Promise<void> {
+    this.cached = config;
+  }
+  get(key: string): ProjectConfig | Promise<ProjectConfig> {
+    return this.cached;
+  }
 }
