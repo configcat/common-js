@@ -36,7 +36,9 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
     dispose(): void {
         this.disposed = true;
-        clearTimeout(this.timerId);
+        if (this.timerId) {
+            clearTimeout(this.timerId);
+        }
     }
 
     private refreshLogic(forceUpdateCache: boolean): Promise<ProjectConfig | null> {
