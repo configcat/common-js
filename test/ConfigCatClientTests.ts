@@ -443,7 +443,7 @@ describe("ConfigCatClient", () => {
     client.getValue("debug", false, callback);
   });
 
-  it("Initialization With AutoPollOptions with expired cache should take care of maxInitWaitTimeSeconds", done => {
+  it("Initialization With AutoPollOptions with expired cache - getValue should take care of maxInitWaitTimeSeconds", done => {
 
     let configFetcher = new FakeConfigFetcher(500);
     let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"))
@@ -456,7 +456,7 @@ describe("ConfigCatClient", () => {
     });
   });
 
-  it("Initialization With AutoPollOptions with expired cache should take care of maxInitWaitTimeSeconds", async () => {
+  it("Initialization With AutoPollOptions with expired cache - getValueAsync should take care of maxInitWaitTimeSeconds", async () => {
 
     let configFetcher = new FakeConfigFetcher(500);
     let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"))
