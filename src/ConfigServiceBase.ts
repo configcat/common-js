@@ -1,7 +1,6 @@
 import { IConfigFetcher } from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
-import { runInThisContext } from "vm";
 
 export interface IConfigService {
     getConfig(): Promise<ProjectConfig | null>;
@@ -119,7 +118,7 @@ export abstract class ConfigServiceBase {
                     if (thisCallback) {
                         thisCallback(newProjectConfig);
                     }
-                };
+                }
             });
         } else {
             // Recursive calls should call the fetchLogic as is.
