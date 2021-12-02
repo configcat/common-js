@@ -409,19 +409,38 @@ describe("ConfigCatClient", () => {
   });
 
 
-  it("Initialization With LazyLoadOptions - multiple getValues should not cause multiple config fetches", async () => {
+  it("Initialization With LazyLoadOptions - multiple getValueAsync should not cause multiple config fetches", async () => {
 
     let configFetcher = new FakeConfigFetcher(500);
     let configCatKernel: FakeConfigCatKernel = { configFetcher };
     let options: LazyLoadOptions = new LazyLoadOptions("APIKEY");
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
-    var actualValue1 = await client.getValueAsync("debug", false);
-    var actualValue2 = await client.getValueAsync("debug", false);
+    await Promise.all([client.getValueAsync("debug", false), client.getValueAsync("debug", false)]);
+    assert.equal(1, configFetcher.calledTimes);
+  });
 
-    assert.equal(configFetcher.calledTimes, 1);
-    assert.equal(actualValue1, true);
-    assert.equal(actualValue2, true);
+  it("Initialization With LazyLoadOptions - multiple getValue calls should not cause multiple config fetches", done => {
+
+    let configFetcher = new FakeConfigFetcher(500);
+    let configCatKernel: FakeConfigCatKernel = { configFetcher };
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY");
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    let callbackCount = 0;
+
+    const callback = (value: any) => {
+      {
+        callbackCount++;
+        if (callbackCount > 1) {
+          assert.equal(1, configFetcher.calledTimes);
+          done();
+        }
+      }
+    };
+
+    client.getValue("debug", false, callback);
+    client.getValue("debug", false, callback);
   });
 });
 
