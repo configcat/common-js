@@ -1,5 +1,5 @@
 const numeric = /^[0-9]+$/;
-const compareIdentifiers = (a, b) => {
+const compareIdentifiers = (a: any, b: any) => {
     const anum = numeric.test(a);
     const bnum = numeric.test(b);
 
@@ -15,7 +15,7 @@ const compareIdentifiers = (a, b) => {
                     : 1
 }
 
-const rcompareIdentifiers = (a, b) => compareIdentifiers(b, a);
+const rcompareIdentifiers = (a: any, b: any) => compareIdentifiers(b, a);
 
 const SEMVER_SPEC_VERSION = '2.0.0';
 
@@ -27,13 +27,13 @@ const MAX_SAFE_COMPONENT_LENGTH = 16;
 
 
 // The actual regexps go on exports.re
-const re = [];
-const src = [];
-const t = {};
+const re: any[] = [];
+const src: any[] = [];
+const t: any = {};
 let R = 0;
 
 
-const createToken = (name, value) => {
+const createToken = (name: string, value: any) => {
     const index = R++;
     t[name] = index;
     src[index] = value;
@@ -70,18 +70,18 @@ createToken('LOOSEPLAIN', `[v=\\s]*${src[t['MAINVERSIONLOOSE']]
 createToken('LOOSE', `^${src[t['LOOSEPLAIN']]}$`);
 
 class SemVer {
-    loose;
-    includePrerelease;
-    version;
-    options;
-    raw;
-    major;
-    minor;
-    patch;
-    build;
-    prerelease;
+    loose: any;
+    includePrerelease: any;
+    version: any;
+    options: any;
+    raw: any;
+    major: any;
+    minor: any;
+    patch: any;
+    build: any;
+    prerelease: any;
 
-    constructor(version, options) {
+    constructor(version: any, options: any) {
         if (!options || typeof options !== 'object') {
             options = {
                 loose: !!options,
@@ -140,7 +140,7 @@ class SemVer {
         if (!m[4]) {
             this.prerelease = []
         } else {
-            this.prerelease = m[4].split('.').map((id) => {
+            this.prerelease = m[4].split('.').map((id: any) => {
                 if (/^[0-9]+$/.test(id)) {
                     const num = +id
                     if (num >= 0 && num < MAX_SAFE_INTEGER) {
@@ -167,7 +167,7 @@ class SemVer {
         return this.version
     }
 
-    compare(other) {
+    compare(other: any): any {
         if (!(other instanceof SemVer)) {
             if (typeof other === 'string' && other === this.version) {
                 return 0
@@ -182,7 +182,7 @@ class SemVer {
         return this.compareMain(other) || this.comparePre(other)
     }
 
-    compareMain(other) {
+    compareMain(other: any) {
         if (!(other instanceof SemVer)) {
             other = new SemVer(other, this.options)
         }
@@ -194,7 +194,7 @@ class SemVer {
         )
     }
 
-    comparePre(other) {
+    comparePre(other: any) {
         if (!(other instanceof SemVer)) {
             other = new SemVer(other, this.options)
         }
@@ -226,7 +226,7 @@ class SemVer {
         } while (++i)
     }
 
-    compareBuild(other) {
+    compareBuild(other: any) {
         if (!(other instanceof SemVer)) {
             other = new SemVer(other, this.options)
         }
@@ -251,7 +251,7 @@ class SemVer {
 
     // preminor will bump the version up to the next minor release, and immediately
     // down to pre-release. premajor and prepatch work the same way.
-    inc(release, identifier) {
+    inc(release: any, identifier: any) {
         switch (release) {
             case 'premajor':
                 this.prerelease.length = 0
@@ -360,7 +360,7 @@ class SemVer {
     }
 }
 
-const parse = (version, options) => {
+const parse = (version: any, options: any) => {
     if (!options || typeof options !== 'object') {
         options = {
             loose: !!options,
@@ -392,16 +392,16 @@ const parse = (version, options) => {
     }
 }
 
-const compare = (a, b, loose) =>
+const compare = (a: any, b: any, loose: any) =>
     new SemVer(a, loose).compare(new SemVer(b, loose));
 
-export const valid = (version) => {
+export const valid = (version: any) => {
     const v = parse(version, false)
     return v ? v.version : null
 };
-export const looseeq = (a, b) => compare(a, b, true) === 0;
-export const eq = (a, b) => compare(a, b, false) === 0;
-export const lt = (a, b) => compare(a, b, false) < 0;
-export const lte = (a, b) => compare(a, b, false) <= 0;
-export const gt = (a, b) => compare(a, b, false) > 0;
-export const gte = (a, b) => compare(a, b, false) >= 0;
+export const looseeq = (a: any, b: any) => compare(a, b, true) === 0;
+export const eq = (a: any, b: any) => compare(a, b, false) === 0;
+export const lt = (a: any, b: any) => compare(a, b, false) < 0;
+export const lte = (a: any, b: any) => compare(a, b, false) <= 0;
+export const gt = (a: any, b: any) => compare(a, b, false) > 0;
+export const gte = (a: any, b: any) => compare(a, b, false) >= 0;

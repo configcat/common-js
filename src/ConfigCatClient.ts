@@ -22,7 +22,7 @@ export interface IConfigCatClient {
     forceRefreshAsync(): Promise<any>;
 
     /** Gets a list of keys for all your feature flags and settings */
-    getAllKeys(callback: (value: string[]) => void);
+    getAllKeys(callback: (value: string[]) => void): void;
 
     /** Gets a list of keys for all your feature flags and settings */
     getAllKeysAsync(): Promise<string[]>;
@@ -40,10 +40,10 @@ export interface IConfigCatClient {
     getAllVariationIdsAsync(user?: User): Promise<string[]>;
 
     /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
-    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue) => void): void;
+    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void;
 
     /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
-    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue>;
+    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
 
     /** Releases all resources used by IConfigCatClient */
     dispose(): void;
@@ -117,14 +117,14 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    forceRefreshAsync(): Promise<any> {
+    forceRefreshAsync(): Promise<void> {
         return new Promise(async (resolve) => {
             await this.configService.refreshConfigAsync();
             resolve();
         });
     }
 
-    getAllKeys(callback: (value: string[]) => void) {
+    getAllKeys(callback: (value: string[]) => void): void {
         this.getAllKeysAsync().then(value => {
             callback(value);
         })
@@ -178,13 +178,13 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue) => void): void {
+    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
         this.getKeyAndValueAsync(variationId).then(settingKeyAndValue => {
             callback(settingKeyAndValue); 
         })
     }
 
-    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue> {
+    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
         return new Promise(async (resolve) => {
             const config = await this.configService.getConfig();
             if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
@@ -260,6 +260,6 @@ export class ConfigCatClient implements IConfigCatClient {
 }
 
 export class SettingKeyValue {
-    settingKey: string;
-    settingValue: any;
+    settingKey!: string;
+    settingValue!: any;
 }

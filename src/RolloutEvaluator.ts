@@ -5,13 +5,13 @@ import * as semver from "./Semver";
 import { isUndefined } from "./Utils"
 
 export interface IRolloutEvaluator {
-    Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
+    Evaluate(config: ProjectConfig | null, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
 }
 
 /** Object for variation evaluation */
 export class User {
 
-    constructor(identifier: string, email: string = null, country: string = null, custom = {}) {
+    constructor(identifier: string, email?: string, country?: string, custom = {}) {
         this.identifier = identifier;
         this.email = email;
         this.country = country;
@@ -28,7 +28,7 @@ export class User {
     country?: string;
 
     /** Optional dictionary for custom attributes of the User for advanced targeting rule definitions. e.g. User role, Subscription type */
-    custom?: { [key: string]: string } = {};
+    custom: { [key: string]: string } = {};
 }
 
 export class RolloutEvaluator implements IRolloutEvaluator {
@@ -40,7 +40,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(config: ProjectConfig, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
+    Evaluate(config: ProjectConfig | null, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
 
         if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
 
@@ -124,7 +124,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                 let rule: any = rolloutRules[i];
 
-                let comparisonAttribute: string = this.GetUserAttribute(user, rule[RolloutRules.ComparisonAttribute]);
+                let comparisonAttribute = this.GetUserAttribute(user, rule[RolloutRules.ComparisonAttribute]);
 
                 if (!comparisonAttribute) {
                     continue;
@@ -349,7 +349,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return result;
     }
 
-    private EvaluateVariations(rolloutPercentageItems: any, key: string, user: User): ValueAndVariationId {
+    private EvaluateVariations(rolloutPercentageItems: any, key: string, user: User): ValueAndVariationId | null {
 
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
@@ -493,7 +493,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return false;
     }
 
-    private GetUserAttribute(user: User, attribute: string): string {
+    private GetUserAttribute(user: User, attribute: string): string | undefined {
         switch (attribute) {
             case "Identifier":
                 return user.identifier;
@@ -552,23 +552,23 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
 
 class ValueAndVariationId {
-    public Value: any;
+    public Value!: any;
 
-    public VariationId: any;
+    public VariationId!: any;
 }
 
 class EvaluateResult {
-    public ValueAndVariationId: ValueAndVariationId;
+    public ValueAndVariationId!: ValueAndVariationId | null;
 
-    public EvaluateLog: EvaluateLogger;
+    public EvaluateLog!: EvaluateLogger;
 }
 
 class EvaluateLogger {
-    public User: User;
+    public User!: User | undefined;
 
-    public KeyName: string;
+    public KeyName!: string;
 
-    public ReturnValue: any;
+    public ReturnValue!: any;
 
     public Operations: string = "";
 

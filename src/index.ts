@@ -21,8 +21,8 @@ export function createClientWithManualPoll(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: IManualPollOptions): IConfigCatClient {
-        return new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
-    }
+    return new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+}
 
 /**
  * Create an instance of ConfigCatClient and setup LazyLoad mode
@@ -33,8 +33,8 @@ export function createClientWithLazyLoad(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: ILazyLoadingOptions): IConfigCatClient {
-        return new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
-    }
+    return new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+}
 
 /**
  * Create an instance of ConfigCatConsoleLogger
@@ -69,7 +69,7 @@ export interface IConfigCatLogger {
     error(message: string): void;
 }
 
-export enum LogLevel {    
+export enum LogLevel {
     Info = 3,
     Warn = 2,
     Error = 1,
@@ -85,13 +85,13 @@ export interface IConfigCatKernel {
 }
 
 export interface IConfigFetcher {
-    fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig) => void): void;
+    fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig | null, callback: (newProjectConfig: ProjectConfig | null) => void): void;
 }
 
 export interface ICache {
     set(key: string, config: ProjectConfig): Promise<void> | void;
 
-    get(key: string): Promise<ProjectConfig> | ProjectConfig;
+    get(key: string): Promise<ProjectConfig | null> | ProjectConfig | null;
 }
 
 export { ProjectConfig } from "./ProjectConfig";

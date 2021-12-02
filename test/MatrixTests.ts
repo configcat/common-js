@@ -34,13 +34,13 @@ describe("MatrixTests", () => {
 
     class Helper {
 
-        public static CreateUser(row: string, headers: string[]): User {
+        public static CreateUser(row: string, headers: string[]): User | undefined {
 
             let column: string[] = row.split(";");
             const USERNULL: string = "##null##";
 
             if (column[0] === USERNULL) {
-                return null;
+                return undefined;
             }
 
             let result: User = new User(column[0]);
@@ -80,7 +80,7 @@ describe("MatrixTests", () => {
         public static RunMatrixTest(sampleFilePath: string, matrixFilePath: string, complete: () => void) {
 
             const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
-            const CONFIG: ProjectConfig = new ProjectConfig(0, SAMPLE, null);
+            const CONFIG: ProjectConfig = new ProjectConfig(0, SAMPLE, '');
 
             let rowNo: number = 1;
 
@@ -91,7 +91,7 @@ describe("MatrixTests", () => {
                 }
 
                 var lines: string[] = data.toString().split(EOL);
-                let header: string[] = lines.shift().split(";");
+                let header: string[] = lines.shift()?.split(";") ?? [];
 
                 lines.forEach((line: string): void => {
 
@@ -99,7 +99,7 @@ describe("MatrixTests", () => {
                         return;
                     }
 
-                    let user: User = Helper.CreateUser(line, header);
+                    let user = Helper.CreateUser(line, header);
 
                     for (let i = 4; i < header.length; i++) {
 

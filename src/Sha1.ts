@@ -1,20 +1,9 @@
-export function sha1 (msg) {
-    function rotate_left(n,s) {
+export function sha1 (msg: any) {
+    function rotate_left(n:any,s:any) {
         var t4 = ( n<<s ) | (n>>>(32-s));
         return t4;
     };
-    function lsb_hex(val) {
-        var str="";        
-        var vh;
-        var vl;
-        for(var i=0; i<=6; i+=2 ) {
-            vh = (val>>>(i*4+4))&0x0f;
-            vl = (val>>>(i*4))&0x0f;
-            str += vh.toString(16) + vl.toString(16);
-        }
-        return str;
-    };
-    function cvt_hex(val) {
+    function cvt_hex(val:any) {
         var str="";        
         var v;
         for(var i=7; i>=0; i-- ) {
@@ -23,7 +12,7 @@ export function sha1 (msg) {
         }
         return str;
     };
-    function Utf8Encode(string) {
+    function Utf8Encode(string: any) {
         string = string.replace(/\r\n/g,"\n");
         var utftext = "";
         for (var n = 0; n < string.length; n++) {
