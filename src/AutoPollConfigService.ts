@@ -9,6 +9,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     private configChanged: () => void;
     private timerId: any;
     private autoPollConfig: AutoPollOptions;
+    private disposed = false;
 
     constructor(configFetcher: IConfigFetcher, autoPollConfig: AutoPollOptions) {
 
@@ -34,6 +35,7 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     }
 
     dispose(): void {
+        this.disposed = true;
         clearTimeout(this.timerId);
     }
 
@@ -58,6 +60,9 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
 
     private startRefreshWorker(delay: number) {
         this.refreshLogic(false).then((_) => {
+            if (this.disposed) {
+                return;
+            }
             this.timerId = setTimeout(
                 () => {
                     this.startRefreshWorker(delay);

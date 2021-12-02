@@ -455,6 +455,36 @@ describe("ConfigCatClient", () => {
       done(value == true ? null : new Error("Wrong value."));
     });
   });
+
+  it("Initialization With AutoPollOptions with expired cache should take care of maxInitWaitTimeSeconds", async () => {
+
+    let configFetcher = new FakeConfigFetcher(500);
+    let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"))
+    let configCatKernel: FakeConfigCatKernel = { configFetcher, cache: configCache };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { cache: configCache, maxInitWaitTimeSeconds: 10 });
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    const value = await client.getValueAsync("debug", false);
+    assert.isTrue(value);
+  });
+
+  it("Dispose should stop the client in every scenario", done => {
+
+    let configFetcher = new FakeConfigFetcher(500);
+    let configCatKernel: FakeConfigCatKernel = { configFetcher };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", { pollIntervalSeconds: 2 });
+    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    client.dispose();
+    assert.equal(configFetcher.calledTimes, 0);
+    setTimeout(() => {
+      assert.equal(configFetcher.calledTimes, 1);
+
+      setTimeout(() => {
+        assert.equal(configFetcher.calledTimes, 1);
+        done();
+      }, 3000);
+    }, 1000);
+  });
 });
 
 export class FakeConfigFetcherBase implements IConfigFetcher {
