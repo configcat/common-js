@@ -478,12 +478,8 @@ describe("ConfigCatClient", () => {
     assert.equal(configFetcher.calledTimes, 0);
     setTimeout(() => {
       assert.equal(configFetcher.calledTimes, 1);
-
-      setTimeout(() => {
-        assert.equal(configFetcher.calledTimes, 1);
-        done();
-      }, 3000);
-    }, 1000);
+      done();
+    }, 4000);
   });
 });
 
