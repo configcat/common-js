@@ -11,11 +11,11 @@ export interface IRolloutEvaluator {
 /** Object for variation evaluation */
 export class User {
 
-    constructor(identifier: string, email?: string, country?: string, custom = {}) {
+    constructor(identifier: string, email?: string, country?: string, custom?: { [key: string]: string }) {
         this.identifier = identifier;
         this.email = email;
         this.country = country;
-        this.custom = custom;
+        this.custom = custom || {};
     }
 
     /** Unique identifier for the User or Session. e.g. Email address, Primary key, Session Id */
@@ -28,7 +28,7 @@ export class User {
     country?: string;
 
     /** Optional dictionary for custom attributes of the User for advanced targeting rule definitions. e.g. User role, Subscription type */
-    custom: { [key: string]: string } = {};
+    custom?: { [key: string]: string } = {};
 }
 
 export class RolloutEvaluator implements IRolloutEvaluator {
