@@ -54,6 +54,7 @@ describe("MatrixTests", () => {
             }
 
             if (column[3] !== USERNULL) {
+                result.custom = result.custom || {};
                 result.custom[headers[3]] = column[3];
             }
 

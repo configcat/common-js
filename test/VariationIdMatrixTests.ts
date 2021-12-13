@@ -79,6 +79,7 @@ describe("MatrixTests", () => {
             }
 
             if (up[3] !== "##null##") {
+                result.custom = result.custom || {};
                 result.custom[headers[3]] = up[3];
             }
 
