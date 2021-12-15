@@ -48,10 +48,10 @@ export interface IConfigCatClient {
     /** Releases all resources used by IConfigCatClient */
     dispose(): void;
 
-    /** Returns all values of a feature flag or setting */
+    /** Returns the values of all feature flags or settings */
     getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void;
 
-    /** Returns all values of a feature flag or setting */
+    /** Returns the values of all feature flags or settings */
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
 }
 
