@@ -95,7 +95,8 @@ describe("MatrixTests", () => {
                 let header: string[] = lines.shift()?.split(";") ?? [];
 
                 lines.forEach((line: string): void => {
-
+                    rowNo++;
+                    
                     if (!line) {
                         return;
                     }
@@ -116,8 +117,6 @@ describe("MatrixTests", () => {
 
                         assert.strictEqual(actual, expected);
                     }
-
-                    rowNo++;
                 }, complete());
             });
         }

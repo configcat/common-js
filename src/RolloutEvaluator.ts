@@ -194,7 +194,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                     case 2: // contains
 
-                        if (comparisonAttribute.search(comparisonValue) !== -1) {
+                        if (comparisonAttribute.indexOf(comparisonValue) !== -1) {
                             log += "MATCH";
 
                             eLog.OpAppendLine(log);
@@ -216,7 +216,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                     case 3: // not contains
 
-                        if (comparisonAttribute.search(comparisonValue) === -1) {
+                        if (comparisonAttribute.indexOf(comparisonValue) === -1) {
                             log += "MATCH";
 
                             eLog.OpAppendLine(log);
