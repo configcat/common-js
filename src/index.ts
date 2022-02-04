@@ -60,6 +60,11 @@ export interface ILazyLoadingOptions extends IOptions {
 }
 
 export interface IConfigCatLogger {
+    debug(message: string): void;
+    
+    /**
+     * @deprecated Use `debug(message: string)` method instead of this
+     */
     log(message: string): void;
 
     info(message: string): void;
@@ -70,6 +75,7 @@ export interface IConfigCatLogger {
 }
 
 export enum LogLevel {
+    Debug = 4,
     Info = 3,
     Warn = 2,
     Error = 1,

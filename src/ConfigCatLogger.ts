@@ -16,8 +16,17 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
         }       
     }
 
+    /**
+     * @deprecated Use `debug(message: string)` method instead of this
+     */
     log(message: string): void {       
         this.info(message);        
+    }
+
+    debug(message: string): void {
+        if (this.isLogLevelEnabled(LogLevel.Debug)) {
+            console.info(this.SOURCE + " - DEBUG - " + message);
+        }
     }
 
     info(message: string): void {

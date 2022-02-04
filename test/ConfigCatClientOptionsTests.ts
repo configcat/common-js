@@ -261,6 +261,10 @@ class FakeCache implements ICache {
 
 export class FakeLogger implements IConfigCatLogger {
 
+
+  // tslint:disable-next-line:no-empty
+  debug(message: string): void {    
+  }
   // tslint:disable-next-line:no-empty
   info(message: string): void {    
   }
