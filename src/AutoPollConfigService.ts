@@ -61,13 +61,21 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
     }
 
     private startRefreshWorker(delay: number) {
+        this.refreshLogic(true).then((_) => {
+            setTimeout(() => this.refreshWorkerLogic(delay), delay);
+        });
+    }
+
+    private refreshWorkerLogic(delay: number) {
+        
+        if (this.disposed) {
+            return;
+        }
+
         this.refreshLogic(false).then((_) => {
-            if (this.disposed) {
-                return;
-            }
             this.timerId = setTimeout(
                 () => {
-                    this.startRefreshWorker(delay);
+                    this.refreshWorkerLogic(delay);
                 },
                 delay);
         });

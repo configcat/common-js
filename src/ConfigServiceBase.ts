@@ -12,7 +12,6 @@ export abstract class ConfigServiceBase {
     protected configFetcher: IConfigFetcher;
     protected baseConfig: OptionsBase;
 
-    private fetchLogicLock = false;
     private fetchLogicCallbacks: ((newProjectConfig: ProjectConfig | null) => void)[] = [];
 
     constructor(configFetcher: IConfigFetcher, baseConfig: OptionsBase) {
