@@ -28,6 +28,7 @@ export abstract class ConfigServiceBase {
                     resolve(newConfig);
                 }
                 else if (forceUpdateCache && lastProjectConfig && lastProjectConfig.ConfigJSON) {
+                    lastProjectConfig.Timestamp = new Date().getTime();
                     await this.baseConfig.cache.set(this.baseConfig.getCacheKey(), lastProjectConfig);
                     resolve(lastProjectConfig);
                 }

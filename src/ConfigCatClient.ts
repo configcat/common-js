@@ -5,8 +5,9 @@ import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
-import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
+import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile, ProjectConfig } from "./ProjectConfig";
 import { OverrideBehaviour } from "./FlagOverrides";
+import { getSettingsFromConfig } from "./Utils";
 
 export interface IConfigCatClient {
 
@@ -108,7 +109,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
         return new Promise(async (resolve) => {
-            const settings = await this.getSettings();
+            const settings = await this.getSettingsAsync();
             if (!settings) {
                 this.options.logger.error("config.json is not present. Returning default value: '" + defaultValue + "'.");
                 resolve(defaultValue);
@@ -141,7 +142,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getAllKeysAsync(): Promise<string[]> {
         return new Promise(async (resolve) => {
-            const settings = await this.getSettings();
+            const settings = await this.getSettingsAsync();
             if (!settings) {
                 this.options.logger.error("config.json is not present, returning empty array");
                 resolve([]);
@@ -160,7 +161,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
         return new Promise(async (resolve) => {
-            const settings = await this.getSettings();
+            const settings = await this.getSettingsAsync();
             if (!settings) {
                 this.options.logger.error("config.json is not present. Returning default variationId: '" + defaultVariationId + "'.");
                 resolve(defaultVariationId);
@@ -201,7 +202,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
         return new Promise(async (resolve) => {
-            const settings = await this.getSettings();
+            const settings = await this.getSettingsAsync();
             if (!settings) {
                 this.options.logger.error("config.json is not present, returning empty array");
                 resolve(null);
@@ -250,7 +251,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
         return new Promise(async (resolve) => {
-            const settings = await this.getSettings();
+            const settings = await this.getSettingsAsync();
             if (!settings) {
                 this.options.logger.error("config.json is not present, returning empty array");
                 resolve([]);
@@ -272,16 +273,16 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    private getSettings(): Promise<{ [name: string]: Setting } | null> {
-        return new Promise(async (resolve) => {
+    private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
+        return new Promise(async (resolve) => {            
             if (this.options?.flagOverrides) {
                 const localSettings = await this.options.flagOverrides.dataSource.getOverrides();
                 if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOnly) {
                     resolve(localSettings);
                     return;
                 }
-                const config = await this.configService?.getConfig();
-                const remoteSettings = config?.getSettings() ?? {};
+                const remoteConfig = await this.configService?.getConfig();
+                const remoteSettings = getSettingsFromConfig(remoteConfig?.ConfigJSON ?? {});
 
                 if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOverRemote) {
                     resolve({ ...remoteSettings, ...localSettings });
@@ -298,7 +299,7 @@ export class ConfigCatClient implements IConfigCatClient {
                 return;
             }
 
-            resolve(config.getSettings());
+            resolve(getSettingsFromConfig(config.ConfigJSON));
         });
     }
 }
