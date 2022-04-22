@@ -36,12 +36,6 @@ export class ProjectConfig {
 
         return etag;
     }
-
-    public getSettings(): { [name: string]: Setting } {
-        return Object.fromEntries(Object.entries(this.ConfigJSON[ConfigFile.FeatureFlags]).map(([key, value]) => {
-            return [key, Setting.fromJson(value)];
-        }));
-    }
 }
 
 export class ConfigFile {
