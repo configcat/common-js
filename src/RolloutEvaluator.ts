@@ -1,11 +1,11 @@
 import { IConfigCatLogger } from "./index";
-import { ProjectConfig, Setting, RolloutRules, RolloutPercentageItems, ConfigFile } from "./ProjectConfig";
+import { ProjectConfig, Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
 import { sha1 } from "./Sha1";
 import * as semver from "./Semver";
 import { isUndefined } from "./Utils"
 
 export interface IRolloutEvaluator {
-    Evaluate(config: ProjectConfig | null, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
+    Evaluate(settings: {[name: string]: Setting}, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
 }
 
 /** Object for variation evaluation */
@@ -40,28 +40,19 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(config: ProjectConfig | null, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
+    Evaluate(settings: {[name: string]: Setting}, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
 
-        if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
-
-            this.logger.error("JSONConfig is not present. Returning default value: '" + defaultValue + "'.");
-
-            return { Value: defaultValue, VariationId: defaultVariationId };
-        }
-
-        const featureFlags = config.ConfigJSON[ConfigFile.FeatureFlags];
-
-        if (!featureFlags[key]) {
+        if (!settings[key]) {
 
             let s: string = "Evaluating getValue('" + key + "') failed. Returning default value: '" + defaultValue + "'.";
-            s += " Here are the available keys: {" + Object.keys(featureFlags).join() + "}.";
+            s += " Here are the available keys: {" + Object.keys(settings).join() + "}.";
 
             this.logger.error(s);
 
             return { Value: defaultValue, VariationId: defaultVariationId };
         }
 
-        const featureFlag = featureFlags[key];
+        const featureFlag = settings[key];
 
         let eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -74,15 +65,15 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         if (user) {
 
-            result = this.EvaluateRules(featureFlag[Setting.RolloutRules], user, eLog);
+            result = this.EvaluateRules(featureFlag.rolloutRules, user, eLog);
 
             if (result.ValueAndVariationId == null) {
 
-                result.ValueAndVariationId = this.EvaluateVariations(featureFlag[Setting.RolloutPercentageItems], key, user);
+                result.ValueAndVariationId = this.EvaluateVariations(featureFlag.rolloutPercentageItems, key, user);
                 if (result.ValueAndVariationId) {
                     result.EvaluateLog.ReturnValue = result.ValueAndVariationId.Value;
                 }
-                if (featureFlag[Setting.RolloutPercentageItems].length > 0) {
+                if (featureFlag.rolloutPercentageItems.length > 0) {
                     result.EvaluateLog.OpAppendLine("Evaluating % options => " + (result.ValueAndVariationId == null ? "user not targeted" : "user targeted"));
                 }
 
@@ -90,8 +81,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         }
         else {
 
-            if ((featureFlag[Setting.RolloutRules] && featureFlag[Setting.RolloutRules].length > 0) ||
-                (featureFlag[Setting.RolloutPercentageItems] && featureFlag[Setting.RolloutPercentageItems].length > 0)) {
+            if ((featureFlag.rolloutRules && featureFlag.rolloutRules.length > 0) ||
+                (featureFlag.rolloutPercentageItems && featureFlag.rolloutPercentageItems.length > 0)) {
                 let s: string = "Evaluating getValue('" + key + "'). "
                 s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
                 s += "Read more: https://configcat.com/docs/advanced/user-object";
@@ -102,8 +93,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         if (result.ValueAndVariationId == null) {
             result.ValueAndVariationId = {
-                Value: featureFlag[Setting.Value],
-                VariationId: featureFlag[Setting.VariationId],
+                Value: featureFlag.value,
+                VariationId: featureFlag.variationId,
             }
             result.EvaluateLog.ReturnValue = result.ValueAndVariationId.Value;
         }
@@ -113,7 +104,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return result.ValueAndVariationId;
     }
 
-    private EvaluateRules(rolloutRules: any, user: User, eLog: EvaluateLogger): EvaluateResult {
+    private EvaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): EvaluateResult {
 
         let result: EvaluateResult = new EvaluateResult();
         result.ValueAndVariationId = null;
@@ -122,17 +113,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             for (let i: number = 0; i < rolloutRules.length; i++) {
 
-                let rule: any = rolloutRules[i];
+                let rule: RolloutRule = rolloutRules[i];
 
-                let comparisonAttribute = this.GetUserAttribute(user, rule[RolloutRules.ComparisonAttribute]);
+                let comparisonAttribute = this.GetUserAttribute(user, rule.comparisonAttribute);
 
                 if (!comparisonAttribute) {
                     continue;
                 }
 
-                let comparator: number = rule[RolloutRules.Comparator];
+                let comparator: number = rule.comparator;
 
-                let comparisonValue: string = rule[RolloutRules.ComparisonValue];
+                let comparisonValue: string = rule.comparisonValue;
 
                 let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
 
@@ -149,8 +140,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                                 eLog.OpAppendLine(log);
 
                                 result.ValueAndVariationId = {
-                                    Value: rule[RolloutRules.Value],
-                                    VariationId: rule[RolloutRules.VariationId]
+                                    Value: rule.value,
+                                    VariationId: rule.variationId
                                 };
                                 eLog.ReturnValue = result.ValueAndVariationId.Value;
 
@@ -178,8 +169,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             eLog.OpAppendLine(log);
 
                             result.ValueAndVariationId = {
-                                Value: rule[RolloutRules.Value],
-                                VariationId: rule[RolloutRules.VariationId]
+                                Value: rule.value,
+                                VariationId: rule.variationId
                             };
                             eLog.ReturnValue = result.ValueAndVariationId.Value;
 
@@ -200,8 +191,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             eLog.OpAppendLine(log);
 
                             result.ValueAndVariationId = {
-                                Value: rule[RolloutRules.Value],
-                                VariationId: rule[RolloutRules.VariationId]
+                                Value: rule.value,
+                                VariationId: rule.variationId
                             };
                             eLog.ReturnValue = result.ValueAndVariationId.Value;
 
@@ -222,8 +213,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             eLog.OpAppendLine(log);
 
                             result.ValueAndVariationId = {
-                                Value: rule[RolloutRules.Value],
-                                VariationId: rule[RolloutRules.VariationId]
+                                Value: rule.value,
+                                VariationId: rule.variationId
                             };
                             eLog.ReturnValue = result.ValueAndVariationId.Value;
 
@@ -249,8 +240,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             eLog.OpAppendLine(log);
 
                             result.ValueAndVariationId = {
-                                Value: rule[RolloutRules.Value],
-                                VariationId: rule[RolloutRules.VariationId]
+                                Value: rule.value,
+                                VariationId: rule.variationId
                             };
                             eLog.ReturnValue = result.ValueAndVariationId.Value;
                             result.EvaluateLog = eLog;
@@ -275,8 +266,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             eLog.OpAppendLine(log);
 
                             result.ValueAndVariationId = {
-                                Value: rule[RolloutRules.Value],
-                                VariationId: rule[RolloutRules.VariationId]
+                                Value: rule.value,
+                                VariationId: rule.variationId
                             };
                             eLog.ReturnValue = result.ValueAndVariationId.Value;
                             result.EvaluateLog = eLog;
@@ -298,8 +289,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                                 eLog.OpAppendLine(log);
 
                                 result.ValueAndVariationId = {
-                                    Value: rule[RolloutRules.Value],
-                                    VariationId: rule[RolloutRules.VariationId]
+                                    Value: rule.value,
+                                    VariationId: rule.variationId
                                 };
                                 eLog.ReturnValue = result.ValueAndVariationId.Value;
                                 result.EvaluateLog = eLog;
@@ -325,8 +316,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             eLog.OpAppendLine(log);
 
                             result.ValueAndVariationId = {
-                                Value: rule[RolloutRules.Value],
-                                VariationId: rule[RolloutRules.VariationId]
+                                Value: rule.value,
+                                VariationId: rule.variationId
                             };
                             eLog.ReturnValue = result.ValueAndVariationId.Value;
                             result.EvaluateLog = eLog;
@@ -349,7 +340,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return result;
     }
 
-    private EvaluateVariations(rolloutPercentageItems: any, key: string, user: User): ValueAndVariationId | null {
+    private EvaluateVariations(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): ValueAndVariationId | null {
 
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
@@ -359,13 +350,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             let bucket: number = 0;
 
             for (let i: number = 0; i < rolloutPercentageItems.length; i++) {
-                const variation: any = rolloutPercentageItems[i];
-                bucket += +variation[RolloutPercentageItems.Percentage];
+                const variation: RolloutPercentageItem = rolloutPercentageItems[i];
+                bucket += +variation.percentage;
 
                 if (hashScale < bucket) {
                     return {
-                        Value: variation[RolloutPercentageItems.Value],
-                        VariationId: variation[RolloutPercentageItems.VariationId]
+                        Value: variation.value,
+                        VariationId: variation.variationId
                     };
                 }
             }

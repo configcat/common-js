@@ -1,6 +1,6 @@
 import "mocha";
 import { OptionsBase, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
-import { ICache, IConfigFetcher, ProjectConfig } from "../src";
+import { FetchResult, ICache, IConfigFetcher, ProjectConfig } from "../src";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { Mock, It, Times, EqualMatchingInjectorConfig, ResolvedPromiseFactory, RejectedPromiseFactory } from 'moq.ts';
@@ -29,18 +29,19 @@ describe("ConfigServiceBaseTests", () => {
 
         // Arrange
 
-        const pc: ProjectConfig = CreateProjectConfig();
+        const fr: FetchResult = createFetchResult();
+        const pc: ProjectConfig = createConfigFromFetchResult(fr);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(pc));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         let callNo: number = 1;
 
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
         .callback(() => {return callNo++ === 1 ? null : pc})
-        .setup(m => m.set(It.IsAny<string>(), pc))
+        .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
         .returns();
 
         // Act
@@ -56,26 +57,27 @@ describe("ConfigServiceBaseTests", () => {
 
         // Assert
 
-        cacheMock.verify(v => v.set(It.IsAny<string>(), pc), Times.Once());
-        fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()), Times.AtLeast(3));
+        cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Once());
+        fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.AtLeast(3));
     });
 
     it("AutoPollConfigService - with forceRefresh - invokes 'cache.set' operation two times", async () => {
 
         // Arrange
 
-        const pc: ProjectConfig = CreateProjectConfig();
+        const fr: FetchResult = createFetchResult();
+        const pc: ProjectConfig = createConfigFromFetchResult(fr);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(pc));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         let callNo: number = 1;
 
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
         .callback((_) => {return callNo++ === 1 ? null : pc})
-        .setup(m => m.set(It.IsAny<string>(), pc))
+        .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
         .returns();
 
         // Act
@@ -93,21 +95,24 @@ describe("ConfigServiceBaseTests", () => {
 
         // Assert
 
-        cacheMock.verify(v => v.set(It.IsAny<string>(), pc), Times.Exactly(2));        
+        cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(2));        
     });
 
     it("AutoPollConfigService - ProjectConfig is cached and fetch returns same value - should never invokes 'cache.set' operation", async () => {
 
         // Arrange
 
+        const pc: ProjectConfig = createProjectConfig();
+        const fr: FetchResult = createFetchResult();
+
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(CreateProjectConfig()));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
-        .returns(CreateProjectConfig())
-        .setup(m => m.set(It.IsAny<string>(), CreateProjectConfig()))
+        .returns(pc)
+        .setup(m => m.set(It.IsAny<string>(), pc))
         .returns();
 
         // Act
@@ -128,15 +133,17 @@ describe("ConfigServiceBaseTests", () => {
 
     it("AutoPollConfigService - Async cache is supported", async () => {
         // Arrange
+        const pc: ProjectConfig = createProjectConfig();
+        const fr: FetchResult = createFetchResult();
 
         const fetcherMock = new Mock<IConfigFetcher>()
         .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(CreateProjectConfig()));
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
         .setup(async m => m.get(It.IsAny<string>()))
-        .returnsAsync(CreateProjectConfig())
-        .setup(async m => m.set(It.IsAny<string>(), CreateProjectConfig()))
+        .returnsAsync(pc)
+        .setup(async m => m.set(It.IsAny<string>(), pc))
         .returnsAsync();
 
         // Act
@@ -160,22 +167,23 @@ describe("ConfigServiceBaseTests", () => {
         // Arrange
 
         const cacheTimeToLiveSeconds: number = 10;
-        const oldConfig: ProjectConfig = CreateProjectConfig();
+        const oldConfig: ProjectConfig = createProjectConfig();
         oldConfig.Timestamp = new Date().getTime() - (cacheTimeToLiveSeconds * 1000);
         oldConfig.HttpETag = "oldConfig";        
 
-        const newConfig: ProjectConfig = CreateProjectConfig();
-        newConfig.Timestamp = new Date().getTime();
-        newConfig.HttpETag = "newConfig";
+        const fr: FetchResult = createFetchResult();
+        fr.eTag = "newConfig";
+
+        const newConfig: ProjectConfig = createConfigFromFetchResult(fr);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(newConfig));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
         .returns(oldConfig)
-        .setup(m => m.set(It.IsAny<string>(), newConfig))
+        .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
         .returns();
 
         const service : LazyLoadConfigService = new LazyLoadConfigService(
@@ -193,15 +201,15 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, newConfig));
         
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), oldConfig, It.IsAny<any>()), Times.Once());
-        cacheMock.verify(v => v.set(It.IsAny<string>(), newConfig), Times.Once());        
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), "oldConfig", It.IsAny<any>()), Times.Once());
+        cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(newConfig.ConfigJSON))), Times.Once());        
     });
 
     it("LazyLoadConfigService - ProjectConfig is cached - should not invoke fetch", async () => {
 
         // Arrange
 
-        const config: ProjectConfig = CreateProjectConfig();
+        const config: ProjectConfig = createProjectConfig();
         config.Timestamp = new Date().getTime();
          
         const fetcherMock = new Mock<IConfigFetcher>();        
@@ -225,19 +233,21 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
         
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()), Times.Never());             
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Never());             
     });
 
     it("LazyLoadConfigService - refreshConfigAsync - should invoke fetch and cache.set operation", async () => {
 
         // Arrange
 
-        const config: ProjectConfig = CreateProjectConfig();
+        const config: ProjectConfig = createProjectConfig();
         config.Timestamp = new Date().getTime();
+
+        const fr: FetchResult = createFetchResult();
          
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(config));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
@@ -260,7 +270,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
         
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()), Times.Once());             
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());             
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
     });
 
@@ -268,12 +278,14 @@ describe("ConfigServiceBaseTests", () => {
 
         // Arrange
 
-        const config: ProjectConfig = CreateProjectConfig();
+        const config: ProjectConfig = createProjectConfig();
         config.Timestamp = new Date().getTime();
 
+        const fr: FetchResult = createFetchResult();
+
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(config));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [a1, a2, cb]}) => cb(fr));
 
         const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
         .setup(async m => m.get(It.IsAny<string>()))
@@ -296,14 +308,23 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
     });
 });
 
-function CreateProjectConfig(): ProjectConfig {
+function createProjectConfig(): ProjectConfig {
     return new ProjectConfig(
         1,
         "{\"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }",
         "etag");
+}
+
+function createFetchResult(): FetchResult {
+    return FetchResult.success("{\"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }",
+    "etag");
+}
+
+function createConfigFromFetchResult(result: FetchResult): ProjectConfig {
+    return new ProjectConfig(new Date().getTime(), result.responseBody, result.eTag);
 }

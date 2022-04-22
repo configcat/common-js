@@ -5,7 +5,8 @@ import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
-import { Setting, RolloutRules, RolloutPercentageItems, ConfigFile } from "./ProjectConfig";
+import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
+import { OverrideBehaviour } from "./FlagOverrides";
 
 export interface IConfigCatClient {
 
@@ -56,7 +57,7 @@ export interface IConfigCatClient {
 }
 
 export class ConfigCatClient implements IConfigCatClient {
-    private configService: IConfigService;
+    private configService?: IConfigService;
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
 
@@ -76,23 +77,25 @@ export class ConfigCatClient implements IConfigCatClient {
 
         if (!configCatKernel.configFetcher) {
             throw new Error("Invalid 'configCatKernel.configFetcher' value");
-        }      
+        }
 
         this.evaluator = new RolloutEvaluator(options.logger);
 
-        if (options && options instanceof LazyLoadOptions) {
-            this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, options);
-        } else if (options && options instanceof ManualPollOptions) {
-            this.configService = new ManualPollService(configCatKernel.configFetcher, options);
-        } else if (options && options instanceof AutoPollOptions) {
-            this.configService = new AutoPollConfigService(configCatKernel.configFetcher, options);
-        } else {
-            throw new Error("Invalid 'options' value");
+        if (options?.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
+            if (options && options instanceof LazyLoadOptions) {
+                this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, options);
+            } else if (options && options instanceof ManualPollOptions) {
+                this.configService = new ManualPollService(configCatKernel.configFetcher, options);
+            } else if (options && options instanceof AutoPollOptions) {
+                this.configService = new AutoPollConfigService(configCatKernel.configFetcher, options);
+            } else {
+                throw new Error("Invalid 'options' value");
+            }
         }
     }
 
     dispose(): void {
-        if (this.configService instanceof AutoPollConfigService){
+        if (this.configService instanceof AutoPollConfigService) {
             this.configService.dispose();
         }
     }
@@ -104,9 +107,15 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
-        return new Promise(async (resolve) => {            
-            const config = await this.configService.getConfig();            
-            var result:any = this.evaluator.Evaluate(config, key, defaultValue, user).Value;
+        return new Promise(async (resolve) => {
+            const settings = await this.getSettings();
+            if (!settings) {
+                this.options.logger.error("config.json is not present. Returning default value: '" + defaultValue + "'.");
+                resolve(defaultValue);
+                return;
+            }
+
+            var result: any = this.evaluator.Evaluate(settings, key, defaultValue, user).Value;
             resolve(result);
         });
     }
@@ -119,7 +128,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     forceRefreshAsync(): Promise<void> {
         return new Promise(async (resolve) => {
-            await this.configService.refreshConfigAsync();
+            await this.configService?.refreshConfigAsync();
             resolve();
         });
     }
@@ -132,14 +141,14 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getAllKeysAsync(): Promise<string[]> {
         return new Promise(async (resolve) => {
-            const config = await this.configService.getConfig();
-            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
+            const settings = await this.getSettings();
+            if (!settings) {
                 this.options.logger.error("config.json is not present, returning empty array");
                 resolve([]);
                 return;
             }
 
-            resolve(Object.keys(config.ConfigJSON[ConfigFile.FeatureFlags]));
+            resolve(Object.keys(settings));
         });
     }
 
@@ -151,8 +160,14 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
         return new Promise(async (resolve) => {
-            const config = await this.configService.getConfig();
-            var result: any = this.evaluator.Evaluate(config, key, null, user, defaultVariationId).VariationId;
+            const settings = await this.getSettings();
+            if (!settings) {
+                this.options.logger.error("config.json is not present. Returning default variationId: '" + defaultVariationId + "'.");
+                resolve(defaultVariationId);
+                return;
+            }
+
+            var result: string = this.evaluator.Evaluate(settings, key, null, user, defaultVariationId).VariationId;
             resolve(result);
         });
     }
@@ -180,43 +195,42 @@ export class ConfigCatClient implements IConfigCatClient {
 
     getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
         this.getKeyAndValueAsync(variationId).then(settingKeyAndValue => {
-            callback(settingKeyAndValue); 
+            callback(settingKeyAndValue);
         })
     }
 
     getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
         return new Promise(async (resolve) => {
-            const config = await this.configService.getConfig();
-            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
+            const settings = await this.getSettings();
+            if (!settings) {
                 this.options.logger.error("config.json is not present, returning empty array");
                 resolve(null);
                 return;
             }
 
-            const featureFlags = config.ConfigJSON[ConfigFile.FeatureFlags];
-            for (let settingKey in featureFlags) {
-                if (variationId === featureFlags[settingKey][Setting.VariationId]) {
-                    resolve({ settingKey: settingKey, settingValue: featureFlags[settingKey][Setting.Value] });
+            for (let settingKey in settings) {
+                if (variationId === settings[settingKey].variationId) {
+                    resolve({ settingKey: settingKey, settingValue: settings[settingKey].value });
                     return;
                 }
 
-                const rolloutRules = featureFlags[settingKey][Setting.RolloutRules];
+                const rolloutRules = settings[settingKey].rolloutRules;
                 if (rolloutRules && rolloutRules.length > 0) {
                     for (let i: number = 0; i < rolloutRules.length; i++) {
-                        const rolloutRule: any = rolloutRules[i];
-                        if (variationId === rolloutRule[RolloutRules.VariationId]) {
-                            resolve({ settingKey: settingKey, settingValue: rolloutRule[RolloutRules.Value] });
+                        const rolloutRule: RolloutRule = rolloutRules[i];
+                        if (variationId === rolloutRule.variationId) {
+                            resolve({ settingKey: settingKey, settingValue: rolloutRule.value });
                             return;
                         }
                     }
                 }
 
-                const percentageItems = featureFlags[settingKey][Setting.RolloutPercentageItems];
+                const percentageItems = settings[settingKey].rolloutPercentageItems;
                 if (percentageItems && percentageItems.length > 0) {
                     for (let i: number = 0; i < percentageItems.length; i++) {
-                        const percentageItem: any = percentageItems[i];
-                        if (variationId === percentageItem[RolloutPercentageItems.VariationId]) {
-                            resolve({ settingKey: settingKey, settingValue: percentageItem[RolloutPercentageItems.Value] });
+                        const percentageItem: RolloutPercentageItem = percentageItems[i];
+                        if (variationId === percentageItem.variationId) {
+                            resolve({ settingKey: settingKey, settingValue: percentageItem.value });
                             return;
                         }
                     }
@@ -228,34 +242,64 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {        
+    getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {
         this.getAllValuesAsync(user).then(value => {
             callback(value);
         });
     }
-    
+
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
         return new Promise(async (resolve) => {
-            const config = await this.configService.getConfig();
-            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
+            const settings = await this.getSettings();
+            if (!settings) {
                 this.options.logger.error("config.json is not present, returning empty array");
                 resolve([]);
                 return;
             }
 
-            const keys: string[] = Object.keys(config.ConfigJSON[ConfigFile.FeatureFlags]);
+            const keys: string[] = Object.keys(settings);
 
             let result: SettingKeyValue[] = [];
 
             keys.forEach(key => {
                 result.push({
                     settingKey: key,
-                    settingValue: this.evaluator.Evaluate(config, key, undefined, user).Value
+                    settingValue: this.evaluator.Evaluate(settings, key, undefined, user).Value
                 });
             });
-            
+
             resolve(result);
-        });       
+        });
+    }
+
+    private getSettings(): Promise<{ [name: string]: Setting } | null> {
+        return new Promise(async (resolve) => {
+            if (this.options?.flagOverrides) {
+                const localSettings = await this.options.flagOverrides.dataSource.getOverrides();
+                if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOnly) {
+                    resolve(localSettings);
+                    return;
+                }
+                const config = await this.configService?.getConfig();
+                const remoteSettings = config?.getSettings() ?? {};
+
+                if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOverRemote) {
+                    resolve({ ...remoteSettings, ...localSettings });
+                    return;
+                } else if (this.options.flagOverrides.behaviour == OverrideBehaviour.RemoteOverLocal) {
+                    resolve({ ...localSettings, ...remoteSettings });
+                    return;
+                }
+            }
+
+            const config = await this.configService?.getConfig();
+            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
+                resolve(null);
+                return;
+            }
+
+            resolve(config.getSettings());
+        });
     }
 }
 

@@ -90,8 +90,39 @@ export interface IConfigCatKernel {
     cache?: ICache;
 }
 
+export enum FetchStatus {
+    Fetched = 0,
+    NotModified = 1,
+    Errored = 2,
+}
+
+export class FetchResult {
+    public status: FetchStatus;
+    public responseBody: string;
+    public eTag?: string;
+
+    constructor(status: FetchStatus, responseBody: string, eTag?: string) {
+        this.status = status;
+        this.responseBody = responseBody;
+        this.eTag = eTag
+    }
+
+    static success(responseBody: string, eTag: string): FetchResult {
+        return new FetchResult(FetchStatus.Fetched, responseBody, eTag);
+    }
+
+    static notModified(): FetchResult {
+        return new FetchResult(FetchStatus.NotModified, "");
+    }
+
+    static error() {
+        return new FetchResult(FetchStatus.Errored, "");
+    }
+    
+}
+
 export interface IConfigFetcher {
-    fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig | null, callback: (newProjectConfig: ProjectConfig | null) => void): void;
+    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void;
 }
 
 export interface ICache {
@@ -107,3 +138,5 @@ export { IConfigCatClient } from "./ConfigCatClient";
 export { OptionsBase, DataGovernance } from "./ConfigCatClientOptions";
 
 export { User } from "./RolloutEvaluator";
+
+export { IOverrideDataSource, FlagOverrides } from "./FlagOverrides";
