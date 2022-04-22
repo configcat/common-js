@@ -20,7 +20,13 @@ function tryGetClient(apiKey: string): IConfigCatClient | undefined {
  * @param config - Configuration for autoPoll mode
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return tryGetClient(apiKey) || new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    let client = tryGetClient(apiKey);
+    if (client) {
+        return client;
+    }
+    client = new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    instanceRepository.set(apiKey, client);
+    return client;
 }
 
 /**
@@ -28,11 +34,14 @@ export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfi
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for manualPoll mode
  */
-export function createClientWithManualPoll(
-    apiKey: string,
-    configCatKernel: IConfigCatKernel,
-    options?: IManualPollOptions): IConfigCatClient {
-    return tryGetClient(apiKey) || new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+export function createClientWithManualPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IManualPollOptions): IConfigCatClient {
+    let client = tryGetClient(apiKey);
+    if (client) {
+        return client;
+    }
+    client = new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    instanceRepository.set(apiKey, client);
+    return client;
 }
 
 /**
@@ -40,11 +49,14 @@ export function createClientWithManualPoll(
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for lazyLoad mode
  */
-export function createClientWithLazyLoad(
-    apiKey: string,
-    configCatKernel: IConfigCatKernel,
-    options?: ILazyLoadingOptions): IConfigCatClient {
-    return tryGetClient(apiKey) || new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfigCatKernel, options?: ILazyLoadingOptions): IConfigCatClient {
+    let client = tryGetClient(apiKey);
+    if (client) {
+        return client;
+    }
+    client = new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    instanceRepository.set(apiKey, client);
+    return client;
 }
 
 /**
