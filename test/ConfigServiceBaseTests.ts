@@ -7,6 +7,7 @@ import { Mock, It, Times, EqualMatchingInjectorConfig, ResolvedPromiseFactory, R
 import { ReturnsAsyncPresetFactory, ThrowsAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, MimicsRejectedAsyncPresetFactory, RootMockProvider, Presets } from "moq.ts/internal";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { assert } from "chai";
+import { InMemoryCache } from "../src/Cache";
 
 describe("ConfigServiceBaseTests", () => {
 
@@ -25,7 +26,7 @@ describe("ConfigServiceBaseTests", () => {
         ])
     };
 
-    it("AutoPollConfigService - backgroundworker only - config doesn't exits in the cache - invokes 'cache.set' operation only once", async () => {
+    it("AutoPollConfigService - backgroundworker only - config doesn't exist in the cache - invokes 'cache.set' operation only once", async () => {
 
         // Arrange
 
@@ -98,7 +99,7 @@ describe("ConfigServiceBaseTests", () => {
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(2));        
     });
 
-    it("AutoPollConfigService - ProjectConfig is cached and fetch returns same value - should never invokes 'cache.set' operation", async () => {
+    it("AutoPollConfigService - ProjectConfig is cached and fetch returns same value - should invoke the 'cache.set' operation only once (at first)", async () => {
 
         // Arrange
 
@@ -112,7 +113,7 @@ describe("ConfigServiceBaseTests", () => {
         const cacheMock = new Mock<ICache>()
         .setup(m => m.get(It.IsAny<string>()))
         .returns(pc)
-        .setup(m => m.set(It.IsAny<string>(), pc))
+        .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
         .returns();
 
         // Act
@@ -128,41 +129,160 @@ describe("ConfigServiceBaseTests", () => {
 
         // Assert
 
-        cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Never());        
+        cacheMock.verify(v => v.set(
+            It.IsAny<string>(),
+            It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))),
+        Times.Once());     
     });
 
-    it("AutoPollConfigService - Async cache is supported", async () => {
+    it("AutoPollConfigService - Cached config is the same as ProjectConfig but older than the polling time - Should wait until the cache is updated with the new etag", async () => {
+        
         // Arrange
-        const pc: ProjectConfig = createProjectConfig();
-        const fr: FetchResult = createFetchResult();
+
+        const frNew: FetchResult = createFetchResult();
+        frNew.eTag = "newEtag";
+        const frOld: FetchResult = createFetchResult();
+        frOld.eTag = "oldEtag";
+
+        const pollInterval: number = 10;
+
+        const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew);
+        const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld);
+
+        const time: number = new Date().getTime();
+        projectConfigOld.Timestamp = time - (pollInterval * 1001);
+
+        const cache: ICache = new InMemoryCache();
+
+        const options: AutoPollOptions = new AutoPollOptions(
+            "APIKEY",
+            {
+                pollIntervalSeconds: pollInterval,
+                maxInitWaitTimeSeconds: 100
+            },
+            cache);
+
+        await cache.set(options.getCacheKey(), projectConfigOld);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-        .callback(({args: [a1, a2, cb]}) => cb(fr));
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [_, __, cb]}) => {
+            setTimeout(() => cb(frNew), 100);
+        });       
+        
+        // Act
 
-        const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
-        .setup(async m => m.get(It.IsAny<string>()))
-        .returnsAsync(pc)
-        .setup(async m => m.set(It.IsAny<string>(), pc))
-        .returnsAsync();
+        const service : AutoPollConfigService = new AutoPollConfigService(
+            fetcherMock.object(),
+            options);
+
+        const actualProjectConfig: ProjectConfig | null = await service.getConfig();
+
+        // Assert
+
+        assert.isNotNull(actualProjectConfig?.HttpETag);
+        assert.isNotNull(actualProjectConfig?.ConfigJSON);
+        assert.equal(actualProjectConfig?.HttpETag, projectConfigNew.HttpETag);
+        assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigNew?.ConfigJSON));
+    });
+
+    it("AutoPollConfigService - Cached config is the same as ProjectConfig but older than the polling time - Should return cached item", async () => {
+        
+        // Arrange
+
+        const frNew: FetchResult = createFetchResult();
+        frNew.eTag = "newEtag";
+        const frOld: FetchResult = createFetchResult();
+        frOld.eTag = "oldEtag";
+
+        const pollInterval: number = 10;
+
+        const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew);
+        const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld);
+
+        const time: number = new Date().getTime();
+        projectConfigOld.Timestamp = time - (pollInterval * 999);
+
+        const cache: ICache = new InMemoryCache();
+
+        const options: AutoPollOptions = new AutoPollOptions(
+            "APIKEY",
+            {
+                pollIntervalSeconds: pollInterval,
+                maxInitWaitTimeSeconds: 100
+            },
+            cache);
+        
+        await cache.set(options.getCacheKey(), projectConfigOld);
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+        .callback(({args: [_, __, cb]}) => {
+            setTimeout(() => cb(projectConfigNew), 100);
+        });
 
         // Act
 
         const service : AutoPollConfigService = new AutoPollConfigService(
             fetcherMock.object(),
-            new AutoPollOptions(
-                "APIKEY",
-                { pollIntervalSeconds: 1 },
-                cacheMock.object()));
+            options);
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        const actualProjectConfig: ProjectConfig | null = await service.getConfig();
 
         // Assert
 
-        cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Never());
+        assert.isNotNull(actualProjectConfig?.HttpETag);
+        assert.isNotNull(actualProjectConfig?.ConfigJSON);
+        assert.equal(actualProjectConfig?.HttpETag, projectConfigOld.HttpETag);
+        assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigOld?.ConfigJSON));
+        assert.equal(actualProjectConfig?.Timestamp, projectConfigOld.Timestamp);
     });
 
-    it("LazyLoadConfigService - ProjectConfig is older in the cache - should fetch a new config and put into cache", async () => {
+    it("AutoPollConfigService - ProjectConfigs are same but cache stores older config than poll interval and fetch operation is longer than maxInitWaitTimeSeconds - Should return cached item", async () => {
+        
+        // Arrange
+
+        const pollInterval: number = 10;
+
+        const fr: FetchResult = createFetchResult();
+
+        const projectConfigOld: ProjectConfig = createConfigFromFetchResult(fr);
+
+        const cache: ICache = new InMemoryCache();
+
+        const options: AutoPollOptions = new AutoPollOptions(
+            "APIKEY",
+            {
+                pollIntervalSeconds: pollInterval,
+                maxInitWaitTimeSeconds: 1
+            },
+            cache);
+        
+        await cache.set(options.getCacheKey(), projectConfigOld);
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+        .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
+        .callback(({args: [_, __, cb]}) => {
+            setTimeout(() => cb(null), 2000)
+        });
+
+        // Act
+
+        const service : AutoPollConfigService = new AutoPollConfigService(
+            fetcherMock.object(),
+            options);
+
+        const actualProjectConfig: ProjectConfig | null = await service.getConfig();
+
+        // Assert
+
+        assert.isNotNull(actualProjectConfig?.HttpETag);
+        assert.isNotNull(actualProjectConfig?.ConfigJSON);
+        assert.equal(actualProjectConfig?.HttpETag, projectConfigOld.HttpETag);
+        assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigOld?.ConfigJSON));
+    });
+
+    it("LazyLoadConfigService - ProjectConfig is different in the cache - should fetch a new config and put into cache", async () => {
 
         // Arrange
 
