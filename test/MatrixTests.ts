@@ -80,7 +80,7 @@ describe("MatrixTests", () => {
 
             const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
             let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE) };
-            const client = createClientWithManualPoll("SDKKEY", configCatKernel, {
+            const client = createClientWithManualPoll(sampleFilePath + matrixFilePath, configCatKernel, {
                 logger: new ConfigCatConsoleLogger(LogLevel.Off)
             });
 
