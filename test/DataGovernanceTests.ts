@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { OptionsBase, DataGovernance } from "../src/ConfigCatClientOptions";
-import { IConfigFetcher, ProjectConfig } from "../src";
+import { FetchResult, IConfigFetcher, ProjectConfig } from "../src";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 
 const globalUrl = "https://cdn-global.configcat.com";
@@ -239,14 +239,14 @@ describe("DataGovernance", () => {
 });
 
 export class FakeConfigFetcher implements IConfigFetcher {
-    responses: { [url: string]: ProjectConfig; } = {};
+    responses: { [url: string]: FetchResult; } = {};
     calls: any[] = [];
 
-    prepareResponse(url: string, projectConfig: ProjectConfig) {
-        this.responses[url] = projectConfig;
+    prepareResponse(url: string, fetchResult: FetchResult) {
+        this.responses[url] = fetchResult;
     }
 
-    fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig | null, callback: (newProjectConfig: ProjectConfig | null) => void): void {
+    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void {
         const projectConfig = this.responses[options.getUrl()];
         if (!projectConfig) {
             assert.fail("ConfigFetcher not prepared for " + options.baseUrl);
@@ -283,7 +283,7 @@ export class FakeConfigServiceBase extends ConfigServiceBase {
         }
 
         configFetcher.prepareResponse(this.getUrl(baseUrl),
-            new ProjectConfig(0, JSON.stringify(configJson), ""));
+            FetchResult.success(JSON.stringify(configJson), "etag"));
     }
 
     validateCallCount(callCount: number) {

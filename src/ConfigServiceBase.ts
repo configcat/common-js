@@ -1,4 +1,4 @@
-import { IConfigFetcher } from "./index";
+import { FetchResult, FetchStatus, IConfigFetcher } from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
@@ -12,7 +12,7 @@ export abstract class ConfigServiceBase {
     protected configFetcher: IConfigFetcher;
     protected baseConfig: OptionsBase;
 
-    private fetchLogicCallbacks: ((newProjectConfig: ProjectConfig | null) => void)[] = [];
+    private fetchLogicCallbacks: ((result: FetchResult) => void)[] = [];
 
     constructor(configFetcher: IConfigFetcher, baseConfig: OptionsBase) {
 
@@ -21,18 +21,15 @@ export abstract class ConfigServiceBase {
     }
 
     protected refreshLogicBaseAsync(lastProjectConfig: ProjectConfig | null, forceUpdateCache: boolean = true): Promise<ProjectConfig | null> {
-
         return new Promise(resolve => {
-
-            this.fetchLogic(this.baseConfig, lastProjectConfig, 0, async (newConfig) => {
-
+            this.fetchLogic(this.baseConfig, lastProjectConfig?.HttpETag ?? null, 0, async (newConfig) => {
                 if (newConfig && newConfig.ConfigJSON) {
-
-                    if (forceUpdateCache || !ProjectConfig.equals(newConfig, lastProjectConfig)) {
-                        await this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
-                    }
-
+                    await this.baseConfig.cache.set(this.baseConfig.getCacheKey(), newConfig);
                     resolve(newConfig);
+                }
+                else if (forceUpdateCache && lastProjectConfig && lastProjectConfig.ConfigJSON) {
+                    await this.baseConfig.cache.set(this.baseConfig.getCacheKey(), lastProjectConfig);
+                    resolve(lastProjectConfig);
                 }
                 else {
                     resolve(lastProjectConfig);
@@ -41,10 +38,15 @@ export abstract class ConfigServiceBase {
         });
     }
 
-    private fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig | null, retries: number, callback: (newProjectConfig: ProjectConfig | null) => void): void {
+    private fetchLogic(options: OptionsBase, lastEtag: string | null, retries: number, callback: (newProjectConfig: ProjectConfig | null) => void): void {
         const calledBaseUrl = this.baseConfig.baseUrl;
-        this.fetchLogicInternal(this.baseConfig, lastProjectConfig, retries, (newConfig) => {
+        this.fetchLogicInternal(this.baseConfig, lastEtag, retries, (result) => {
+            if (result.status != FetchStatus.Fetched || ProjectConfig.compareEtags(lastEtag ?? '', result.eTag)) {
+                callback(null);
+                return;
+            }
 
+            const newConfig = new ProjectConfig(new Date().getTime(), result.responseBody, result.eTag);
             if (!newConfig || !newConfig.ConfigJSON) {
                 callback(null);
                 return;
@@ -52,7 +54,6 @@ export abstract class ConfigServiceBase {
 
             const preferences = newConfig.ConfigJSON[ConfigFile.Preferences];
             if (!preferences) {
-
                 callback(newConfig);
                 return;
             }
@@ -61,7 +62,6 @@ export abstract class ConfigServiceBase {
 
             // If the base_url is the same as the last called one, just return the response.
             if (!baseUrl || baseUrl == calledBaseUrl) {
-
                 callback(newConfig);
                 return;
             }
@@ -78,7 +78,6 @@ export abstract class ConfigServiceBase {
             options.baseUrl = baseUrl;
 
             if (redirect === 0) {
-
                 callback(newConfig);
                 return;
             }
@@ -97,21 +96,19 @@ export abstract class ConfigServiceBase {
                 return;
             }
 
-            this.fetchLogic(options, lastProjectConfig, ++retries, callback);
+            this.fetchLogic(options, lastEtag, ++retries, callback);
             return;
         });
     }
 
-    private fetchLogicInternal(options: OptionsBase, lastProjectConfig: ProjectConfig | null, retries: number, callback: (newProjectConfig: ProjectConfig | null) => void): void {
-        if (retries === 0) {
-            // Only lock on the top-level calls, not on the recursive calls (config.json redirections).
-
+    private fetchLogicInternal(options: OptionsBase, lastEtag: string | null, retries: number, callback: (result: FetchResult) => void): void {
+        if (retries === 0) { // Only lock on the top-level calls, not on the recursive calls (config.json redirections).
             this.fetchLogicCallbacks.push(callback);
             if (this.fetchLogicCallbacks.length > 1) {
                 // The first fetchLogic call is already in progress.
                 return;
             }
-            this.configFetcher.fetchLogic(options, lastProjectConfig, newProjectConfig => {
+            this.configFetcher.fetchLogic(options, lastEtag, newProjectConfig => {
                 while (this.fetchLogicCallbacks.length) {
                     const thisCallback = this.fetchLogicCallbacks.pop();
                     if (thisCallback) {
@@ -121,7 +118,7 @@ export abstract class ConfigServiceBase {
             });
         } else {
             // Recursive calls should call the fetchLogic as is.
-            this.configFetcher.fetchLogic(options, lastProjectConfig, callback);
+            this.configFetcher.fetchLogic(options, lastEtag, callback);
         }
     }
 }

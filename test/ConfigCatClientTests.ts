@@ -1,7 +1,7 @@
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import "mocha";
-import { IConfigFetcher, IConfigCatKernel, ICache } from "../src/.";
+import { IConfigFetcher, IConfigCatKernel, ICache, FetchResult } from "../src/.";
 import { ProjectConfig } from "../src/ProjectConfig";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { User } from "../src/RolloutEvaluator";
@@ -489,11 +489,11 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
   constructor(private config: string | null, private callbackDelay: number = 0) {
   }
 
-  fetchLogic(options: OptionsBase, lastProjectConfig: ProjectConfig, callback: (newProjectConfig: ProjectConfig | null) => void): void {
+  fetchLogic(options: OptionsBase, lastEtag: string, callback: (result: FetchResult) => void): void {
     if (callback) {
       setTimeout(() => {
         this.calledTimes++;
-        callback(this.config === null ? null : new ProjectConfig(new Date().getTime(), this.config, this.getEtag()));
+        callback(this.config === null ? FetchResult.error() : FetchResult.success(this.config, this.getEtag()));
       }, this.callbackDelay);
     }
   }

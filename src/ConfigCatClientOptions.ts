@@ -1,6 +1,7 @@
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
-import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache } from "./index";
+import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache, IOverrideDataSource } from "./index";
 import { InMemoryCache } from "./Cache";
+import { FlagOverrides } from "./FlagOverrides";
 import COMMON_VERSION from "./Version";
 
 
@@ -25,6 +26,7 @@ export interface IOptions {
      * ICache instance for cache the config.
      */
     cache?: ICache | null;
+    flagOverrides?: FlagOverrides | null;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -48,6 +50,8 @@ export abstract class OptionsBase implements IOptions {
     public dataGovernance: DataGovernance;
 
     public cache: ICache;
+
+    public flagOverrides?: FlagOverrides;
 
     constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null) {
         if (!apiKey) {
@@ -96,6 +100,10 @@ export abstract class OptionsBase implements IOptions {
 
             if (options.cache) {
                 this.cache = options.cache;
+            }
+
+            if (options.flagOverrides) {
+                this.flagOverrides = options.flagOverrides;
             }
         }
     }
