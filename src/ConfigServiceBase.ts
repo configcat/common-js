@@ -47,12 +47,12 @@ export abstract class ConfigServiceBase {
                 return;
             }
 
-            const newConfig = new ProjectConfig(new Date().getTime(), result.responseBody, result.eTag);
-            if (!newConfig || !newConfig.ConfigJSON) {
+            if (!result.responseBody) {
                 callback(null);
                 return;
             }
 
+            const newConfig = new ProjectConfig(new Date().getTime(), result.responseBody, result.eTag);
             const preferences = newConfig.ConfigJSON[ConfigFile.Preferences];
             if (!preferences) {
                 callback(newConfig);
