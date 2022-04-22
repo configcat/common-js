@@ -55,12 +55,15 @@ export interface IConfigCatClient {
 
     /** Returns the values of all feature flags or settings */
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
+
+    isDisposed(): boolean;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
     private configService?: IConfigService;
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
+    private disposed = false;
 
     constructor(
         options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
@@ -96,6 +99,10 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     dispose(): void {
+        if (this.disposed) {
+            return;
+        }
+        this.disposed = true;
         if (this.configService instanceof AutoPollConfigService) {
             this.configService.dispose();
         }
@@ -274,7 +281,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
-        return new Promise(async (resolve) => {            
+        return new Promise(async (resolve) => {
             if (this.options?.flagOverrides) {
                 const localSettings = await this.options.flagOverrides.dataSource.getOverrides();
                 if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOnly) {
@@ -301,6 +308,10 @@ export class ConfigCatClient implements IConfigCatClient {
 
             resolve(getSettingsFromConfig(config.ConfigJSON));
         });
+    }
+
+    isDisposed(): boolean {
+        return this.disposed;
     }
 }
 

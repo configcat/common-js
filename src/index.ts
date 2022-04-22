@@ -3,17 +3,28 @@ import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsB
 import { ProjectConfig } from "./ProjectConfig";
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 
+const instanceRepository = new Map<string, IConfigCatClient>();
+
+function tryGetClient(apiKey: string): IConfigCatClient | undefined {
+    let client = instanceRepository.get(apiKey);
+    if (client?.isDisposed()) {
+        instanceRepository.delete(apiKey);
+        return undefined;
+    }
+    return client;
+}
+
 /**
- * Create an instance of ConfigCatClient and setup AutoPoll mode
+ * Create an instance of ConfigCatClient and setup AutoPoll mode. If a client is already initialized with a given apiKey, it will be returned.
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for autoPoll mode
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    return tryGetClient(apiKey) || new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
- * Create an instance of ConfigCatClient and setup ManualPoll mode
+ * Create an instance of ConfigCatClient and setup ManualPoll mode. If a client is already initialized with a given apiKey, it will be returned.
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for manualPoll mode
  */
@@ -21,11 +32,11 @@ export function createClientWithManualPoll(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: IManualPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    return tryGetClient(apiKey) || new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
- * Create an instance of ConfigCatClient and setup LazyLoad mode
+ * Create an instance of ConfigCatClient and setup LazyLoad mode. If a client is already initialized with a given apiKey, it will be returned.
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for lazyLoad mode
  */
@@ -33,7 +44,7 @@ export function createClientWithLazyLoad(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: ILazyLoadingOptions): IConfigCatClient {
-    return new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    return tryGetClient(apiKey) || new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
@@ -61,7 +72,7 @@ export interface ILazyLoadingOptions extends IOptions {
 
 export interface IConfigCatLogger {
     debug(message: string): void;
-    
+
     /**
      * @deprecated Use `debug(message: string)` method instead of this
      */
@@ -118,7 +129,7 @@ export class FetchResult {
     static error() {
         return new FetchResult(FetchStatus.Errored, "");
     }
-    
+
 }
 
 export interface IConfigFetcher {
