@@ -5,7 +5,7 @@ import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollService } from "./ManualPollService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
-import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile, ProjectConfig } from "./ProjectConfig";
+import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
 import { OverrideBehaviour } from "./FlagOverrides";
 import { getSettingsFromConfig } from "./Utils";
 
