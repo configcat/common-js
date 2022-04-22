@@ -8,6 +8,7 @@ const instanceRepository = new Map<string, IConfigCatClient>();
 function tryGetClient(apiKey: string): IConfigCatClient | undefined {
     let client = instanceRepository.get(apiKey);
     if (client?.isDisposed()) {
+        // If the client is disposed, remove it from the repository and allow new instances from the API key.
         instanceRepository.delete(apiKey);
         return undefined;
     }
