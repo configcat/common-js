@@ -60,7 +60,7 @@ describe("Local Overrides", () => {
         }, null);
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
-        assert.equal(await client.getValueAsync("fakeKey", false), false);
+        assert.equal(await client.getValueAsync("fakeKey", true), false);
         assert.equal(await client.getValueAsync("nonexisting", false), true);
     });
 
@@ -85,5 +85,6 @@ describe("Local Overrides", () => {
         assert.equal(await client.getValueAsync("int-setting", 0), 5);
         assert.equal(await client.getValueAsync("double_setting", 0), 3.14);
         assert.equal(await client.getValueAsync("string-setting", ""), "test");
+        assert.equal(await client.getValueAsync("fakeKey", true), false);
     });
   });
