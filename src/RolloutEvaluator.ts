@@ -41,7 +41,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     Evaluate(settings: {[name: string]: Setting}, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
-
+        this.logger.debug("RolloutEvaluator.Evaluate() called.");
         if (!settings[key]) {
 
             let s: string = "Evaluating getValue('" + key + "') failed. Returning default value: '" + defaultValue + "'.";
@@ -106,6 +106,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     private EvaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): EvaluateResult {
 
+        this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
         let result: EvaluateResult = new EvaluateResult();
         result.ValueAndVariationId = null;
 
@@ -341,7 +342,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     private EvaluateVariations(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): ValueAndVariationId | null {
-
+        this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
             let hashCandidate: string = key + ((user.identifier === null || user.identifier === undefined) ? '' : user.identifier);
@@ -366,6 +367,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     private EvaluateNumber(v1: string, v2: string, comparator: number): boolean {
+        this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
 
         let n1: number, n2: number;
 
@@ -404,7 +406,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     private EvaluateSemver(v1: string, v2: string, comparator: number): boolean {
-
+        this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
         if (semver.valid(v1) == null || isUndefined(v2)) {
             return false;
         }
