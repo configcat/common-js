@@ -72,6 +72,8 @@ export class ConfigCatClient implements IConfigCatClient {
 
         this.options = options;
 
+        this.options.logger.debug('Initializing ConfigCatClient. Options: ' + JSON.stringify(this.options));
+
         if (!configCatKernel) {
             throw new Error("Invalid 'configCatKernel' value");
         }
@@ -96,18 +98,22 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     dispose(): void {
+        this.options.logger.debug("dispose() called");
         if (this.configService instanceof AutoPollConfigService) {
+            this.options.logger.debug("Disposing AutoPollConfigService");
             this.configService.dispose();
         }
     }
 
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
+        this.options.logger.debug("getValue() called.");
         this.getValueAsync(key, defaultValue, user).then(value => {
             callback(value);
         });
     }
 
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
+        this.options.logger.debug("getValueAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
             if (!settings) {
@@ -122,12 +128,14 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     forceRefresh(callback: () => void): void {
+        this.options.logger.debug("forceRefresh() called.");
         this.forceRefreshAsync().then(() => {
             callback();
         });
     }
 
     forceRefreshAsync(): Promise<void> {
+        this.options.logger.debug("forceRefreshAsync() called.");
         return new Promise(async (resolve) => {
             await this.configService?.refreshConfigAsync();
             resolve();
@@ -135,12 +143,14 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getAllKeys(callback: (value: string[]) => void): void {
+        this.options.logger.debug("getAllKeys() called.");
         this.getAllKeysAsync().then(value => {
             callback(value);
         })
     }
 
     getAllKeysAsync(): Promise<string[]> {
+        this.options.logger.debug("getAllKeysAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
             if (!settings) {
@@ -154,12 +164,14 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getVariationId(key: string, defaultVariationId: any, callback: (variationId: string) => void, user?: User): void {
+        this.options.logger.debug("getVariationId() called.");
         this.getVariationIdAsync(key, defaultVariationId, user).then(variationId => {
             callback(variationId);
         });
     }
 
     getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
+        this.options.logger.debug("getVariationIdAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
             if (!settings) {
@@ -174,12 +186,14 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void {
+        this.options.logger.debug("getAllVariationIds() called.");
         this.getAllVariationIdsAsync(user).then(variationIds => {
             callback(variationIds);
         });
     }
 
     getAllVariationIdsAsync(user?: User): Promise<string[]> {
+        this.options.logger.debug("getAllVariationIdsAsync() called.");
         return new Promise(async (resolve) => {
             const keys = await this.getAllKeysAsync();
 
@@ -195,12 +209,14 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
+        this.options.logger.debug("getKeyAndValue() called.");
         this.getKeyAndValueAsync(variationId).then(settingKeyAndValue => {
             callback(settingKeyAndValue);
         })
     }
 
     getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
+        this.options.logger.debug("getKeyAndValueAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
             if (!settings) {
@@ -244,12 +260,14 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {
+        this.options.logger.debug("getAllValues() called.");
         this.getAllValuesAsync(user).then(value => {
             callback(value);
         });
     }
 
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
+        this.options.logger.debug("getAllValuesAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
             if (!settings) {
@@ -274,6 +292,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
+        this.options.logger.debug("getSettingsAsync() called.");
         return new Promise(async (resolve) => {            
             if (this.options?.flagOverrides) {
                 const localSettings = await this.options.flagOverrides.dataSource.getOverrides();
