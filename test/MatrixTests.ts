@@ -79,7 +79,7 @@ describe("MatrixTests", () => {
         public static async RunMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
 
             const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
-            let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE) };
+            let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE), sdkType: "common", sdkVersion: "1.0.0" };
             const client = createClientWithManualPoll("SDKKEY", configCatKernel, {
                 logger: new ConfigCatConsoleLogger(LogLevel.Off)
             });
