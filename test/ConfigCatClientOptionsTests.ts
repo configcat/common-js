@@ -4,6 +4,7 @@ import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/Conf
 import { ICache, IConfigCatLogger, LogLevel, OptionsBase, ProjectConfig } from "../src";
 import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
 import { InMemoryCache } from "../src/Cache";
+import COMMON_VERSION from "../src/Version";
 
 describe("Options", () => {
 
@@ -245,6 +246,28 @@ describe("Options", () => {
 
     assert.isDefined(options.cache);
     assert.instanceOf(options.cache, InMemoryCache);
+  });
+
+  
+  it("AutoPollOptions initialization - sdkVersion works", () => {
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", {}, null);
+    assert.equal("a-" + COMMON_VERSION, options.clientVersion);
+    options = new AutoPollOptions("APIKEY", {}, null, "dummy");
+    assert.equal("a-dummy", options.clientVersion);
+  });
+  
+  it("LazyLoadOptions initialization - sdkVersion works", () => {
+    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", {}, null);
+    assert.equal("l-" + COMMON_VERSION, options.clientVersion);
+    options = new LazyLoadOptions("APIKEY", {}, null, "dummy");
+    assert.equal("l-dummy", options.clientVersion);
+  });
+
+  it("ManualPollOptions initialization - sdkVersion works", () => {
+    let options: ManualPollOptions = new ManualPollOptions("APIKEY", {}, null);
+    assert.equal("m-" + COMMON_VERSION, options.clientVersion);
+    options = new ManualPollOptions("APIKEY", {}, null, "dummy");
+    assert.equal("m-dummy", options.clientVersion);
   });
 });
 
