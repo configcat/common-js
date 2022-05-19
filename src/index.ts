@@ -139,4 +139,4 @@ export { OptionsBase, DataGovernance } from "./ConfigCatClientOptions";
 
 export { User } from "./RolloutEvaluator";
 
-export { IOverrideDataSource, FlagOverrides } from "./FlagOverrides";
+export { IOverrideDataSource, FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";
