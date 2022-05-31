@@ -2,7 +2,6 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
 import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache, IOverrideDataSource } from "./index";
 import { InMemoryCache } from "./Cache";
 import { FlagOverrides } from "./FlagOverrides";
-import COMMON_VERSION from "./Version";
 
 
 /** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
@@ -128,9 +127,9 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** Maximum waiting time between the client initialization and the first config acquisition in seconds. */
     public maxInitWaitTimeSeconds: number = 5;
 
-    constructor(apiKey: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null) {
+    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null) {
 
-        super(apiKey, "a-" + COMMON_VERSION, options, defaultCache);
+        super(apiKey, sdkType + "/a-" + sdkVersion, options, defaultCache);
 
         if (options) {
 
@@ -158,8 +157,8 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 }
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-    constructor(apiKey: string, options?: IManualPollOptions | null, defaultCache?: ICache | null) {
-        super(apiKey, "m-" + COMMON_VERSION, options, defaultCache);
+    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null, defaultCache?: ICache | null) {
+        super(apiKey, sdkType + "/m-" + sdkVersion, options, defaultCache);
     }
 }
 
@@ -168,9 +167,9 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
     /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
-    constructor(apiKey: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null) {
+    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null) {
 
-        super(apiKey, "l-" + COMMON_VERSION, options, defaultCache);
+        super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCache);
 
         if (options) {
             if (options.cacheTimeToLiveSeconds) {

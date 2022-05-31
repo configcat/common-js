@@ -8,16 +8,20 @@ import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 
 describe("Local Overrides", () => {
     it("Values from map - LocalOnly", async () => {
-        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }") };
-        let options: AutoPollOptions = new AutoPollOptions("localhost", {
-            flagOverrides: { 
+        let configCatKernel: FakeConfigCatKernel = {
+            configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+            sdkType: "common",
+            sdkVersion: "1.0.0"
+        };
+        let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+            flagOverrides: {
                 dataSource: new MapOverrideDataSource({
                     enabledFeature: true,
                     disabledFeature: false,
                     intSetting: 5,
                     doubleSetting: 3.14,
                     stringSetting: "test"
-                }), 
+                }),
                 behaviour: OverrideBehaviour.LocalOnly
             }
         }, null);
@@ -31,13 +35,17 @@ describe("Local Overrides", () => {
     });
 
     it("Values from map - LocalOverRemote", async () => {
-        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }") };
-        let options: AutoPollOptions = new AutoPollOptions("localhost", {
-            flagOverrides: { 
+        let configCatKernel: FakeConfigCatKernel = {
+            configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+            sdkType: "common",
+            sdkVersion: "1.0.0"
+        };
+        let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+            flagOverrides: {
                 dataSource: new MapOverrideDataSource({
                     fakeKey: true,
                     nonexisting: true
-                }), 
+                }),
                 behaviour: OverrideBehaviour.LocalOverRemote
             }
         }, null);
@@ -48,13 +56,17 @@ describe("Local Overrides", () => {
     });
 
     it("Values from map - RemoteOverLocal", async () => {
-        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }") };
-        let options: AutoPollOptions = new AutoPollOptions("localhost", {
-            flagOverrides: { 
+        let configCatKernel: FakeConfigCatKernel = {
+            configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+            sdkType: "common",
+            sdkVersion: "1.0.0"
+        };
+        let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+            flagOverrides: {
                 dataSource: new MapOverrideDataSource({
                     fakeKey: true,
                     nonexisting: true
-                }), 
+                }),
                 behaviour: OverrideBehaviour.RemoteOverLocal
             }
         }, null);
@@ -71,9 +83,13 @@ describe("Local Overrides", () => {
         dataSource["int-setting"] = 5;
         dataSource["double_setting"] = 3.14;
         dataSource["string-setting"] = "test";
-        let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }") };
-        let options: AutoPollOptions = new AutoPollOptions("localhost", {
-            flagOverrides: { 
+        let configCatKernel: FakeConfigCatKernel = {
+            configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+            sdkType: "common",
+            sdkVersion: "1.0.0"
+        };
+        let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+            flagOverrides: {
                 dataSource: new MapOverrideDataSource(dataSource),
                 behaviour: OverrideBehaviour.RemoteOverLocal
             }
@@ -87,4 +103,4 @@ describe("Local Overrides", () => {
         assert.equal(await client.getValueAsync("string-setting", ""), "test");
         assert.equal(await client.getValueAsync("fakeKey", true), false);
     });
-  });
+});

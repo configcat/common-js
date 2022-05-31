@@ -9,7 +9,7 @@ import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
  * @param config - Configuration for autoPoll mode
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new AutoPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    return new ConfigCatClient(new AutoPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
@@ -21,7 +21,7 @@ export function createClientWithManualPoll(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: IManualPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new ManualPollOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    return new ConfigCatClient(new ManualPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
@@ -33,7 +33,7 @@ export function createClientWithLazyLoad(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: ILazyLoadingOptions): IConfigCatClient {
-    return new ConfigCatClient(new LazyLoadOptions(apiKey, options, configCatKernel.cache), configCatKernel);
+    return new ConfigCatClient(new LazyLoadOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
 }
 
 /**
@@ -61,7 +61,7 @@ export interface ILazyLoadingOptions extends IOptions {
 
 export interface IConfigCatLogger {
     debug(message: string): void;
-    
+
     /**
      * @deprecated Use `debug(message: string)` method instead of this
      */
@@ -88,6 +88,8 @@ export interface IConfigCatKernel {
      * Default ICache implementation.
      */
     cache?: ICache;
+    sdkType: string;
+    sdkVersion: string;
 }
 
 export enum FetchStatus {
@@ -118,7 +120,7 @@ export class FetchResult {
     static error() {
         return new FetchResult(FetchStatus.Errored, "");
     }
-    
+
 }
 
 export interface IConfigFetcher {

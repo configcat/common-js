@@ -4,7 +4,6 @@ src/
 samples/
 test/
 coverage/
-gulpfile.js
 package-lock.json
 tsconfig*.json
 .gitignore
