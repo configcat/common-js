@@ -297,6 +297,6 @@ export class FakeConfigServiceBase extends ConfigServiceBase {
     }
 
     private getUrl(baseUrl: string) {
-        return baseUrl + "/configuration-files/API_KEY/config_v5.json";
+        return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.baseConfig.clientVersion;
     }
 }
