@@ -2,6 +2,9 @@ import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsBase } from "./ConfigCatClientOptions";
 import { ProjectConfig } from "./ProjectConfig";
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
+import { setupPolyfills } from "./Polyfills";
+
+setupPolyfills();
 
 /**
  * Create an instance of ConfigCatClient and setup AutoPoll mode
