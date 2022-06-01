@@ -108,7 +108,7 @@ export abstract class OptionsBase implements IOptions {
     }
 
     getUrl(): string {
-        return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + this.configFileName + ".json";
+        return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + this.configFileName + ".json" + "?sdk=" + this.clientVersion;
     }
 
     getCacheKey(): string {
