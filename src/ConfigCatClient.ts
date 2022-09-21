@@ -55,12 +55,20 @@ export interface IConfigCatClient {
 
     /** Returns the values of all feature flags or settings */
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
+
+    /** Sets the default user for feature flag evaluations. 
+     * In case the getValue function isn't called with a UserObject, this default user will be used instead. */
+    setDefaultUser(defaultUser?: User): void;
+
+    /** Clears the default user. */
+    clearDefaultUser(): void;
 }
 
 export class ConfigCatClient implements IConfigCatClient {
     private configService?: IConfigService;
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
+    private defaultUser?: User;
 
     constructor(
         options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
@@ -122,7 +130,7 @@ export class ConfigCatClient implements IConfigCatClient {
                 return;
             }
 
-            var result: any = this.evaluator.Evaluate(settings, key, defaultValue, user).Value;
+            var result: any = this.evaluator.Evaluate(settings, key, defaultValue, user ?? this.defaultUser).Value;
             resolve(result);
         });
     }
@@ -180,7 +188,7 @@ export class ConfigCatClient implements IConfigCatClient {
                 return;
             }
 
-            var result: string = this.evaluator.Evaluate(settings, key, null, user, defaultVariationId).VariationId;
+            var result: string = this.evaluator.Evaluate(settings, key, null, user ?? this.defaultUser, defaultVariationId).VariationId;
             resolve(result);
         });
     }
@@ -283,7 +291,7 @@ export class ConfigCatClient implements IConfigCatClient {
             keys.forEach(key => {
                 result.push({
                     settingKey: key,
-                    settingValue: this.evaluator.Evaluate(settings, key, undefined, user).Value
+                    settingValue: this.evaluator.Evaluate(settings, key, undefined, user ?? this.defaultUser).Value
                 });
             });
 
@@ -291,9 +299,17 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
+    setDefaultUser(defaultUser?: User) {
+        this.defaultUser = defaultUser;
+    }
+
+    clearDefaultUser() {
+        this.setDefaultUser(undefined);
+    }
+
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
         this.options.logger.debug("getSettingsAsync() called.");
-        return new Promise(async (resolve) => {            
+        return new Promise(async (resolve) => {
             if (this.options?.flagOverrides) {
                 const localSettings = await this.options.flagOverrides.dataSource.getOverrides();
                 if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOnly) {
