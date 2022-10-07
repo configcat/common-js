@@ -299,12 +299,12 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    setDefaultUser(defaultUser?: User) {
+    setDefaultUser(defaultUser: User) {
         this.defaultUser = defaultUser;
     }
 
     clearDefaultUser() {
-        this.setDefaultUser(undefined);
+        this.defaultUser = undefined;
     }
 
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
