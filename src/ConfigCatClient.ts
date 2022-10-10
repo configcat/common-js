@@ -58,7 +58,7 @@ export interface IConfigCatClient {
 
     /** Sets the default user for feature flag evaluations. 
      * In case the getValue function isn't called with a UserObject, this default user will be used instead. */
-    setDefaultUser(defaultUser?: User): void;
+    setDefaultUser(defaultUser: User): void;
 
     /** Clears the default user. */
     clearDefaultUser(): void;
