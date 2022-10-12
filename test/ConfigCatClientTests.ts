@@ -527,6 +527,11 @@ export class FakeConfigFetcherWithTwoKeysAndRules extends FakeConfigFetcherBase 
   }
 }
 
+export class FakeConfigFetcherWithRules extends FakeConfigFetcherBase {
+  constructor() {
+    super("{\"f\": { \"debug\": { \"v\": \"defaultValue\", \"i\": \"defaultVariationId\", \"t\": 0, \"p\": [], \"r\": [{ \"o\":0, \"a\":\"eyeColor\", \"t\":0, \"c\":\"red\", \"v\":\"redValue\", \"i\":\"redVariationId\"}, { \"o\":1, \"a\":\"eyeColor\", \"t\":0, \"c\":\"blue\", \"v\":\"blueValue\", \"i\":\"blueVariationId\"}] } } }");
+  }
+}
 export class FakeConfigFetcherWithNullNewConfig extends FakeConfigFetcherBase {
   constructor() {
     super(null);
