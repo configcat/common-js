@@ -5,7 +5,7 @@ import * as semver from "./Semver";
 import { isUndefined } from "./Utils"
 
 export interface IRolloutEvaluator {
-    Evaluate(settings: {[name: string]: Setting}, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
+    Evaluate(settings: { [name: string]: Setting }, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
 }
 
 /** Object for variation evaluation */
@@ -40,7 +40,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(settings: {[name: string]: Setting}, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
+    Evaluate(settings: { [name: string]: Setting }, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
         this.logger.debug("RolloutEvaluator.Evaluate() called.");
         if (!settings[key]) {
 
@@ -118,15 +118,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                 let comparisonAttribute = this.GetUserAttribute(user, rule.comparisonAttribute);
 
-                if (!comparisonAttribute) {
-                    continue;
-                }
-
                 let comparator: number = rule.comparator;
 
                 let comparisonValue: string = rule.comparisonValue;
 
                 let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
+
+                if (!comparisonAttribute) {
+                    log += "NO MATCH (Attribute is not defined on the user object)";
+                    eLog.OpAppendLine(log);
+                    continue;
+                }
 
                 switch (comparator) {
                     case 0: // is one of
