@@ -1,5 +1,5 @@
 import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
-import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache, IOverrideDataSource } from "./index";
+import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache, User } from "./index";
 import { InMemoryCache } from "./Cache";
 import { FlagOverrides } from "./FlagOverrides";
 
@@ -26,6 +26,11 @@ export interface IOptions {
      */
     cache?: ICache | null;
     flagOverrides?: FlagOverrides | null;
+    /**
+     * The default user, used as fallback when there's no user parameter is passed to the
+     * ConfigCatClient.getValue, ConfigCatClient.getValueAsync, getVariationId, getVariationIdAsync, getAllValues, getAllValuesAsync, etc. methods.
+     */
+    defaultUser?: User | null;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -51,6 +56,8 @@ export abstract class OptionsBase implements IOptions {
     public cache: ICache;
 
     public flagOverrides?: FlagOverrides;
+    
+    public defaultUser?: User | null;
 
     constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null) {
         if (!apiKey) {
@@ -103,6 +110,10 @@ export abstract class OptionsBase implements IOptions {
 
             if (options.flagOverrides) {
                 this.flagOverrides = options.flagOverrides;
+            }
+
+            if (options.defaultUser) {
+                this.defaultUser = options.defaultUser;
             }
         }
     }

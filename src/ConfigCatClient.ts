@@ -90,6 +90,10 @@ export class ConfigCatClient implements IConfigCatClient {
             throw new Error("Invalid 'configCatKernel.configFetcher' value");
         }
 
+        if (options?.defaultUser) {
+            this.setDefaultUser(options.defaultUser);
+        }
+
         this.evaluator = new RolloutEvaluator(options.logger);
 
         if (options?.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
