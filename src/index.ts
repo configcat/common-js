@@ -138,10 +138,12 @@ export interface ICache {
 
 export { ProjectConfig } from "./ProjectConfig";
 
-export { IConfigCatClient } from "./ConfigCatClient";
+export type { IConfigCatClient } from "./ConfigCatClient";
 
 export { OptionsBase, DataGovernance } from "./ConfigCatClientOptions";
 
 export { User } from "./RolloutEvaluator";
 
-export { IOverrideDataSource, FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";
+export type { IOverrideDataSource } from "./FlagOverrides";
+
+export { FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";

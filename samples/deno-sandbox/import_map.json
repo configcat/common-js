@@ -1,0 +1,22 @@
+{
+  "imports": {
+    "std/": "https://deno.land/std@0.161.0/",
+    "src/": "../../src/",
+    "../../src/index": "../../src/index.ts",
+    "../../src/AutoPollConfigService": "../../src/AutoPollConfigService.ts",
+    "../../src/Cache": "../../src/Cache.ts",
+    "../../src/ConfigCatClient": "../../src/ConfigCatClient.ts",
+    "../../src/ConfigCatClientOptions": "../../src/ConfigCatClientOptions.ts",
+    "../../src/ConfigCatLogger": "../../src/ConfigCatLogger.ts",
+    "../../src/ConfigServiceBase": "../../src/ConfigServiceBase.ts",
+    "../../src/FlagOverrides": "../../src/FlagOverrides.ts",
+    "../../src/LazyLoadConfigService": "../../src/LazyLoadConfigService.ts",
+    "../../src/ManualPollService": "../../src/ManualPollService.ts",
+    "../../src/Polyfills": "../../src/Polyfills.ts",
+    "../../src/ProjectConfig": "../../src/ProjectConfig.ts",
+    "../../src/RolloutEvaluator": "../../src/RolloutEvaluator.ts",
+    "../../src/Semver": "../../src/Semver.ts",
+    "../../src/Sha1": "../../src/Sha1.ts",
+    "../../src/Utils": "../../src/Utils.ts"
+  }
+}
