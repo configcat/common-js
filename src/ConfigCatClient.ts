@@ -1,5 +1,5 @@
-import { IConfigCatKernel } from "./index";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
+import { IConfigCatKernel, OptionsForPollingMode, PollingMode } from "./index";
+import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase, ConfigCatClientOptions } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
@@ -8,6 +8,7 @@ import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
 import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
 import { OverrideBehaviour } from "./FlagOverrides";
 import { getSettingsFromConfig } from "./Utils";
+import { ConfigCatClientCache } from "./ConfigCatClientCache";
 
 export interface IConfigCatClient {
 
@@ -64,14 +65,38 @@ export interface IConfigCatClient {
     clearDefaultUser(): void;
 }
 
+const clientInstanceCache = new ConfigCatClientCache();
+
 export class ConfigCatClient implements IConfigCatClient {
     private configService?: IConfigService;
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
     private defaultUser?: User;
 
+    public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel) {
+        if (!sdkKey) {
+            throw new Error("Invalid 'sdkKey' value");
+        }
+
+        const optionsClass =
+            pollingMode === PollingMode.AutoPoll ? AutoPollOptions :
+            pollingMode === PollingMode.ManualPoll ? ManualPollOptions :
+            pollingMode === PollingMode.LazyLoad ? LazyLoadOptions :
+            (() => { throw new Error("Invalid 'pollingMode' value"); })();
+
+        const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache);
+
+        const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
+
+        if (instanceAlreadyCreated && options) {
+            actualOptions.logger.warn(`Client for SDK key '${sdkKey}' is already created and will be reused; configuration action is being ignored.`);
+        }
+
+        return instance;
+    }
+
     constructor(
-        options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
+        options: ConfigCatClientOptions,
         configCatKernel: IConfigCatKernel) {
 
         if (!options) {
@@ -96,16 +121,14 @@ export class ConfigCatClient implements IConfigCatClient {
 
         this.evaluator = new RolloutEvaluator(options.logger);
 
-        if (options?.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
-            if (options && options instanceof LazyLoadOptions) {
-                this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, options);
-            } else if (options && options instanceof ManualPollOptions) {
-                this.configService = new ManualPollService(configCatKernel.configFetcher, options);
-            } else if (options && options instanceof AutoPollOptions) {
-                this.configService = new AutoPollConfigService(configCatKernel.configFetcher, options);
-            } else {
-                throw new Error("Invalid 'options' value");
-            }
+        if (options.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
+            const configServiceClass =
+                options instanceof AutoPollOptions ? AutoPollConfigService :
+                options instanceof ManualPollOptions ? ManualPollService :
+                options instanceof LazyLoadOptions ? LazyLoadConfigService :
+                (() => { throw new Error("Invalid 'options' value"); })();
+
+            this.configService = new configServiceClass(configCatKernel.configFetcher, options);
         }
     }
 

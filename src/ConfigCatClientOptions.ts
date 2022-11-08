@@ -193,3 +193,5 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
         }
     }
 }
+
+export type ConfigCatClientOptions = AutoPollOptions | ManualPollOptions | LazyLoadOptions;

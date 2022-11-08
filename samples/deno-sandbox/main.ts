@@ -1,6 +1,6 @@
 import * as path from "std/path/mod.ts";
 import { FakeConfigFetcher } from "./fake-config-fetcher.ts";
-import { createClientWithAutoPoll, createConsoleLogger, LogLevel, User } from "src/index.ts";
+import { getClient, createConsoleLogger, LogLevel, User, PollingMode } from "src/index.ts";
 import { InMemoryCache } from "src/Cache.ts";
 
 const basePath = path.dirname(path.fromFileUrl(Deno.mainModule));
@@ -11,17 +11,18 @@ const configFetcher = new FakeConfigFetcher();
 configFetcher.setSuccess(sampleJson);
 
 // Creating the ConfigCat client instance using the SDK Key
-const client = createClientWithAutoPoll(
+const client = getClient(
     "PKDVCLf-Hq-h-kCzMp-L7Q/HhOWfwVtZ0mb30i9wi17GQ",
+    PollingMode.AutoPoll,
+    {
+        // Setting log level to Info to show detailed feature flag evaluation
+        logger: createConsoleLogger(LogLevel.Info)
+    },
     {
         configFetcher,
         cache: new InMemoryCache(),
         sdkType: "ConfigCat-Deno",
         sdkVersion: "0.0.0-sample"
-    },
-    {
-        // Setting log level to Info to show detailed feature flag evaluation
-        logger: createConsoleLogger(LogLevel.Info)
     });
 
 try {

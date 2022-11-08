@@ -7,6 +7,20 @@ import { setupPolyfills } from "./Polyfills";
 setupPolyfills();
 
 /**
+ * Returns an instance of ConfigCatClient for the specified SDK Key.
+ * @remarks This method returns a single, shared instance per each distinct SDK Key.
+ * That is, a new client object is created only when there is none available for the specified SDK Key.
+ * Otherwise, the already created instance is returned (in which case the 'pollingMode', 'options' and 'configCatKernel' arguments are ignored).
+ * So, please keep in mind that when you make multiple calls to this method using the same SDK Key, you may end up with multiple references to the same client object.
+ * @param sdkKey SDK Key (a.k.a ApiKey) to access configuration
+ * @param pollingMode The polling mode to use
+ * @param options Options for the specified polling mode
+ */
+export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
+    return ConfigCatClient.get(sdkKey, pollingMode, options, configCatKernel);
+}
+
+/**
  * Create an instance of ConfigCatClient and setup AutoPoll mode
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for autoPoll mode
@@ -47,6 +61,12 @@ export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
     return new ConfigCatConsoleLogger(logLevel);
 }
 
+export enum PollingMode {
+    AutoPoll,
+    ManualPoll,
+    LazyLoad,
+}
+
 export interface IAutoPollOptions extends IOptions {
     pollIntervalSeconds?: number;
 
@@ -61,6 +81,12 @@ export interface IManualPollOptions extends IOptions {
 export interface ILazyLoadingOptions extends IOptions {
     cacheTimeToLiveSeconds?: number;
 }
+
+export type OptionsForPollingMode<TMode extends PollingMode> =
+    TMode extends PollingMode.AutoPoll ? IAutoPollOptions :
+    TMode extends PollingMode.ManualPoll ? IManualPollOptions :
+    TMode extends PollingMode.LazyLoad ? ILazyLoadingOptions :
+    never;
 
 export interface IConfigCatLogger {
     debug(message: string): void;
