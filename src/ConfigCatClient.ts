@@ -9,6 +9,7 @@ import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./Proje
 import { OverrideBehaviour } from "./FlagOverrides";
 import { getSettingsFromConfig } from "./Utils";
 import { ConfigCatClientCache } from "./ConfigCatClientCache";
+import { isWeakRefAvailable } from "./Polyfills";
 
 export interface IConfigCatClient {
 
@@ -73,6 +74,8 @@ export class ConfigCatClient implements IConfigCatClient {
     private options: OptionsBase;
     private defaultUser?: User;
     private suppressFinalization: () => void;
+
+    private static get instanceCache() { return clientInstanceCache; };
 
     public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel) {
         if (!sdkKey) {
@@ -433,7 +436,7 @@ if (typeof FinalizationRegistry !== "undefined") {
     };
 }
 // If not but WeakRef is available or polyfilled, we can implement something which resembles finalization callbacks using a timer + weak references.
-else if (!WeakRef.hasOwnProperty("isFallback")) {
+else if (isWeakRefAvailable()) {
     const registrations: [WeakRef<ConfigCatClient>, IFinalizationData, object][] = [];
     let timerId: ReturnType<typeof setInterval>;
 

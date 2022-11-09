@@ -51,3 +51,5 @@ function getWeakRefFallback<T extends object>() {
 
     return WeakRef as Function as WeakRefConstructor;
 }
+
+export const isWeakRefAvailable = () => typeof WeakRef === "function" && !WeakRef.hasOwnProperty("isFallback");

@@ -1,10 +1,13 @@
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
-import { IConfigFetcher, IConfigCatKernel, ICache, FetchResult } from "../src/.";
+import { IConfigFetcher, IConfigCatKernel, ICache, FetchResult, PollingMode, IManualPollOptions, LogLevel } from "../src/.";
 import { ProjectConfig } from "../src/ProjectConfig";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { User } from "../src/RolloutEvaluator";
+import { allowEventLoop } from "./helpers/utils";
+import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
+import { FakeLogger } from "./helpers/fakes";
 
 describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions should create an instance, getValue works", (done) => {
@@ -481,6 +484,188 @@ describe("ConfigCatClient", () => {
       done();
     }, 4000);
   });
+
+  for (let passOptionsToSecondGet of [false, true]) {
+    it(`get() should return cached instance ${passOptionsToSecondGet ? "with" : "without"} warning`, done => {
+      // Arrange
+
+      const sdkKey = "test";
+
+      const logger = new FakeLogger(LogLevel.Debug);
+
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+      const options: IManualPollOptions = { logger };
+
+      // Act
+
+      const client1 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, options, configCatKernel);
+      const messages1 = [...logger.messages];
+
+      logger.reset();
+      const client2 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, passOptionsToSecondGet ? options : null, configCatKernel);
+      const messages2 = [...logger.messages];
+
+      const instanceCount = ConfigCatClient["instanceCache"].count;
+
+      client2.dispose();
+      client1.dispose();
+
+      // Assert
+
+      assert.equal(1, instanceCount);
+      assert.strictEqual(client1, client2);
+      const x = messages1.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0);
+      assert.isEmpty(messages1.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
+
+      if (passOptionsToSecondGet) {
+        assert.isNotEmpty(messages2.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
+      }
+      else {
+        assert.isEmpty(messages2.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
+      }
+
+      done();
+    });
+  }
+
+  it("dispose() should remove cached instance", done => {
+    // Arrange
+
+    const sdkKey = "test";
+
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+    const client1 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, null, configCatKernel);
+
+    // Act
+
+    const instanceCount1 = ConfigCatClient["instanceCache"].count;
+
+    client1.dispose();
+
+    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+
+    // Assert
+
+    assert.equal(1, instanceCount1);
+    assert.equal(0, instanceCount2);
+
+    done();
+  });
+
+  it("dispose() should remove current cached instance only", done => {
+    // Arrange
+
+    const sdkKey = "test";
+
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+    const client1 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, null, configCatKernel);
+
+    // Act
+
+    const instanceCount1 = ConfigCatClient["instanceCache"].count;
+
+    client1.dispose();
+
+    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+
+    const client2 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, null, configCatKernel);
+
+    const instanceCount3 = ConfigCatClient["instanceCache"].count;
+
+    client1.dispose();
+
+    const instanceCount4 = ConfigCatClient["instanceCache"].count;
+
+    client2.dispose();
+
+    const instanceCount5 = ConfigCatClient["instanceCache"].count;
+
+    // Assert
+
+    assert.equal(1, instanceCount1);
+    assert.equal(0, instanceCount2);
+    assert.equal(1, instanceCount3);
+    assert.equal(1, instanceCount4);
+    assert.equal(0, instanceCount5);
+
+    done();
+  });
+
+  it("disposeAll() should remove all cached instances", done => {
+    // Arrange
+
+    const sdkKey1 = "test1", sdkKey2 = "test2";
+
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+    const client1 = ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, null, configCatKernel);
+    const client2 = ConfigCatClient.get(sdkKey2, PollingMode.ManualPoll, null, configCatKernel);
+
+    // Act
+
+    const instanceCount1 = ConfigCatClient["instanceCache"].count;
+
+    ConfigCatClient.disposeAll();
+
+    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+
+    // Assert
+
+    assert.equal(2, instanceCount1);
+    assert.equal(0, instanceCount2);
+
+    done();
+  });
+
+  it("GC should be able to collect cached instances when no strong references are left", async function() {
+    // Arrange
+
+    setupPolyfills();
+    if (!isWeakRefAvailable() || typeof gc === "undefined") {
+      this.skip();
+    }
+    const isFinalizationRegistryAvailable = typeof FinalizationRegistry !== "undefined";
+    
+    const sdkKey1 = "test1", sdkKey2 = "test2";
+
+    const logger = new FakeLogger(LogLevel.Debug);
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+    function createClients()
+    {
+        ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { logger, maxInitWaitTimeSeconds: 0 }, configCatKernel);
+        ConfigCatClient.get(sdkKey2, PollingMode.ManualPoll, { logger }, configCatKernel);
+
+        return ConfigCatClient["instanceCache"].count;
+    }
+
+    // Act
+
+    const instanceCount1 = createClients();
+
+    // We need to allow the event loop to run so the runtime can detect there's no more strong references to the created clients.
+    await allowEventLoop();
+    gc();
+   
+    if (isFinalizationRegistryAvailable) {
+      // We need to allow the finalizer callbacks to execute.
+      await allowEventLoop(10);
+    }
+
+    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+
+    // Assert
+
+    assert.equal(2, instanceCount1);
+    assert.equal(0, instanceCount2);
+
+    if (isFinalizationRegistryAvailable) {
+      assert.equal(2, logger.messages.filter(([, msg]) => msg.indexOf("finalize() called") >= 0).length)
+    }
+  });
+  
 });
 
 export class FakeConfigFetcherBase implements IConfigFetcher {
