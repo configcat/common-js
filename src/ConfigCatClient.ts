@@ -161,6 +161,26 @@ export class ConfigCatClient implements IConfigCatClient {
         this.suppressFinalization();
     }
 
+    static disposeAll() {
+        const removedInstances = clientInstanceCache.clear();
+
+        let errors: any[] | undefined;
+        for (let instance of removedInstances) {
+            try {
+                instance.dispose();
+                instance.suppressFinalization();
+            }
+            catch (err) {
+                errors ??= [];
+                errors.push(err);
+            }
+        }
+
+        if (errors !== void 0) {
+            throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
+        }
+    }
+    
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
         this.options.logger.debug("getValue() called.");
         this.getValueAsync(key, defaultValue, user).then(value => {
