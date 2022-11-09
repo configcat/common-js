@@ -24,6 +24,7 @@ export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode
  * Create an instance of ConfigCatClient and setup AutoPoll mode
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for autoPoll mode
+ * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with auto polling for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.AutoPoll, options, ...)' format.
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
     return new ConfigCatClient(new AutoPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
@@ -33,6 +34,7 @@ export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfi
  * Create an instance of ConfigCatClient and setup ManualPoll mode
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for manualPoll mode
+ * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with manual polling for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.ManualPoll, options, ...)' format.
  */
 export function createClientWithManualPoll(
     apiKey: string,
@@ -45,6 +47,7 @@ export function createClientWithManualPoll(
  * Create an instance of ConfigCatClient and setup LazyLoad mode
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for lazyLoad mode
+ * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with lazy loading for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.LazyLoad, options, ...)' format.
  */
 export function createClientWithLazyLoad(
     apiKey: string,
