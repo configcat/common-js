@@ -47,5 +47,7 @@ function getWeakRefFallback<T extends object>() {
         return this.target;
     };
 
+    WeakRef.isFallback = true;
+
     return WeakRef as Function as WeakRefConstructor;
 }

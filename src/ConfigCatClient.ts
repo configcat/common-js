@@ -1,4 +1,4 @@
-import { IConfigCatKernel, OptionsForPollingMode, PollingMode } from "./index";
+import { IConfigCatKernel, IConfigCatLogger, OptionsForPollingMode, PollingMode } from "./index";
 import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase, ConfigCatClientOptions } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
@@ -72,6 +72,7 @@ export class ConfigCatClient implements IConfigCatClient {
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
     private defaultUser?: User;
+    private suppressFinalization: () => void;
 
     public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel) {
         if (!sdkKey) {
@@ -97,7 +98,8 @@ export class ConfigCatClient implements IConfigCatClient {
 
     constructor(
         options: ConfigCatClientOptions,
-        configCatKernel: IConfigCatKernel) {
+        configCatKernel: IConfigCatKernel,
+        private cacheToken?: object) {
 
         if (!options) {
             throw new Error("Invalid 'options' value");
@@ -130,14 +132,33 @@ export class ConfigCatClient implements IConfigCatClient {
 
             this.configService = new configServiceClass(configCatKernel.configFetcher, options);
         }
+
+        this.suppressFinalization = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
+    }
+
+    static finalize(data: IFinalizationData) {
+        // Safeguard against situations where user forgets to dispose of the client instance.
+        
+        data.logger?.debug("finalize() called");
+        ConfigCatClient.close(data.sdkKey, data.cacheToken, data.configService, data.logger);
+    }
+
+    private static close(sdkKey: string, cacheToken?: object, configService?: IConfigService, logger?: IConfigCatLogger) {
+        if (cacheToken !== void 0) {
+            clientInstanceCache.remove(sdkKey, cacheToken);
+        }
+
+        if (configService instanceof AutoPollConfigService) {
+            logger?.debug("Disposing AutoPollConfigService");
+            configService.dispose();
+        }
     }
 
     dispose(): void {
-        this.options.logger.debug("dispose() called");
-        if (this.configService instanceof AutoPollConfigService) {
-            this.options.logger.debug("Disposing AutoPollConfigService");
-            this.configService.dispose();
-        }
+        const options = this.options;
+        options.logger.debug("dispose() called");
+        ConfigCatClient.close(options.apiKey, this.cacheToken, this.configService, options.logger);
+        this.suppressFinalization();
     }
 
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
@@ -369,4 +390,69 @@ export class ConfigCatClient implements IConfigCatClient {
 export class SettingKeyValue {
     settingKey!: string;
     settingValue!: any;
+}
+
+/* GC finalization support */
+
+// Defines the interface of the held value which is passed to ConfigCatClient.finalize by FinalizationRegistry (or the alternative approach, see below).
+// Since a strong reference is stored to the held value (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry),
+// objects implementing this interface MUST NOT contain a strong reference (either directly or transitively) to the ConfigCatClient object because
+// that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
+interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: IConfigCatLogger };
+
+let registerForFinalization: (client: ConfigCatClient, data: IFinalizationData) => (() => void);
+
+// Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.
+if (typeof FinalizationRegistry !== "undefined") {
+    const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient.finalize(data));
+
+    registerForFinalization = (client, data) => {
+        const unregisterToken = {};
+        finalizationRegistry.register(client, data, unregisterToken);
+        return () => finalizationRegistry.unregister(unregisterToken);
+    };
+}
+// If not but WeakRef is available or polyfilled, we can implement something which resembles finalization callbacks using a timer + weak references.
+else if (!WeakRef.hasOwnProperty("isFallback")) {
+    const registrations: [WeakRef<ConfigCatClient>, IFinalizationData, object][] = [];
+    let timerId: ReturnType<typeof setInterval>;
+
+    const updateRegistrations = () => {
+        for (let i = registrations.length - 1; i >= 0; i--) {
+            const [weakRef, data] = registrations[i];
+            if (weakRef.deref() === void 0) {
+                registrations.splice(i, 1);
+                ConfigCatClient.finalize(data);
+            }
+        }
+        if (!registrations.length) {
+            clearInterval(timerId);
+        }
+    }
+
+    registerForFinalization = (client, data) => {
+        const unregisterToken = {};
+        const startTimer = !registrations.length;
+        registrations.push([new WeakRef(client), data, unregisterToken]);
+        if (startTimer) {
+            timerId = setInterval(updateRegistrations, 60000);
+        }
+
+        return () => {
+            for (let i = registrations.length - 1; i >= 0; i--) {
+                const [, , token] = registrations[i];
+                if (token === unregisterToken) {
+                    registrations.splice(i, 1);
+                    break;
+                }
+            }
+            if (!registrations.length) {
+                clearInterval(timerId);
+            }
+        }
+    };
+}
+// If not even WeakRef is available, we're out of options, that is, can't track finalization.
+else {
+    registerForFinalization = () => () => { /* Intentional no-op */ };
 }
