@@ -347,7 +347,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
-            let hashCandidate: string = key + ((user.identifier === null || user.identifier === undefined) ? '' : user.identifier);
+            let hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? '' : user.identifier);
             let hashValue: any = sha1(hashCandidate).substring(0, 7);
             let hashScale: number = parseInt(hashValue, 16) % 100;
             let bucket: number = 0;

@@ -144,7 +144,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
         if (options) {
 
-            if (options.pollIntervalSeconds !== undefined && options.pollIntervalSeconds !== null) {
+            if (options.pollIntervalSeconds !== void 0 && options.pollIntervalSeconds !== null) {
                 this.pollIntervalSeconds = options.pollIntervalSeconds;
             }
 
@@ -152,7 +152,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
                 this.configChanged = options.configChanged;
             }
 
-            if (options.maxInitWaitTimeSeconds !== undefined && options.maxInitWaitTimeSeconds !== null) {
+            if (options.maxInitWaitTimeSeconds !== void 0 && options.maxInitWaitTimeSeconds !== null) {
                 this.maxInitWaitTimeSeconds = options.maxInitWaitTimeSeconds;
             }
         }

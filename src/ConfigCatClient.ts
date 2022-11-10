@@ -147,7 +147,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     private static close(sdkKey: string, cacheToken?: object, configService?: IConfigService, logger?: IConfigCatLogger) {
-        if (cacheToken !== void 0) {
+        if (cacheToken) {
             clientInstanceCache.remove(sdkKey, cacheToken);
         }
 
@@ -179,7 +179,7 @@ export class ConfigCatClient implements IConfigCatClient {
             }
         }
 
-        if (errors !== void 0) {
+        if (errors) {
             throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
         }
     }
@@ -362,7 +362,7 @@ export class ConfigCatClient implements IConfigCatClient {
             keys.forEach(key => {
                 result.push({
                     settingKey: key,
-                    settingValue: this.evaluator.Evaluate(settings, key, undefined, user ?? this.defaultUser).Value
+                    settingValue: this.evaluator.Evaluate(settings, key, void 0, user ?? this.defaultUser).Value
                 });
             });
 
@@ -375,7 +375,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     clearDefaultUser() {
-        this.defaultUser = undefined;
+        this.defaultUser = void 0;
     }
 
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
@@ -443,7 +443,7 @@ else if (isWeakRefAvailable()) {
     const updateRegistrations = () => {
         for (let i = registrations.length - 1; i >= 0; i--) {
             const [weakRef, data] = registrations[i];
-            if (weakRef.deref() === void 0) {
+            if (!weakRef.deref()) {
                 registrations.splice(i, 1);
                 ConfigCatClient.finalize(data);
             }
