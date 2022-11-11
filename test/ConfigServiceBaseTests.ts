@@ -454,6 +454,157 @@ describe("ConfigServiceBaseTests", () => {
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
     });
 
+    it("AutoPollConfigService - getConfig() should return cached config when cached config is not expired", async () => {
+        // Arrange 
+
+        const pollIntervalSeconds = 2;
+
+        const fr: FetchResult = createFetchResult();
+
+        const cachedPc: ProjectConfig = createConfigFromFetchResult(fr);
+        cachedPc.Timestamp -= 0.5 * pollIntervalSeconds * 1000;
+
+        const cache = new FakeCache();
+        cache.set("", cachedPc);
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [, , cb] }) => cb(fr));
+
+        const options = new AutoPollOptions(
+            "APIKEY", "common", "1.0.0",
+            {
+                pollIntervalSeconds,
+                maxInitWaitTimeSeconds: 500
+            },
+            cache);
+
+        // Act
+
+        const service = new AutoPollConfigService(fetcherMock.object(), options);
+
+        const actualPc = await service.getConfig();
+
+        // Assert
+
+        assert.strictEqual(cachedPc, actualPc);
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Never());
+    });
+
+    it("AutoPollConfigService - getConfig() should wait for fetch when cached config is expired", async () => {
+        // Arrange 
+
+        const pollIntervalSeconds = 2;
+
+        const fr: FetchResult = createFetchResult();
+
+        const cachedPc: ProjectConfig = createConfigFromFetchResult(fr);
+        cachedPc.Timestamp -= 1.5 * pollIntervalSeconds * 1000;
+
+        const cache = new FakeCache();
+        cache.set("", cachedPc);
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [, , cb] }) => { (async () => (await delay(500), cb(fr)))(); });
+
+        const options = new AutoPollOptions(
+            "APIKEY", "common", "1.0.0",
+            {
+                pollIntervalSeconds,
+                maxInitWaitTimeSeconds: 1000
+            },
+            cache);
+
+        // Act
+
+        const service = new AutoPollConfigService(fetcherMock.object(), options);
+
+        const actualPc = await service.getConfig();
+
+        // Assert
+
+        assert.notStrictEqual(cachedPc, actualPc);
+        assert.isTrue(ProjectConfig.equals(new ProjectConfig(0, fr.responseBody, fr.eTag), actualPc));
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+    });
+
+    it("LazyLoadConfigService - getConfig() should return cached config when cached config is not expired", async () => {
+        // Arrange 
+
+        const cacheTimeToLiveSeconds = 5;
+
+        const fr: FetchResult = createFetchResult();
+
+        const cachedPc: ProjectConfig = createConfigFromFetchResult(fr);
+        cachedPc.Timestamp -= 0.5 * cacheTimeToLiveSeconds * 1000;
+
+        const cache = new FakeCache();
+        cache.set("", cachedPc);
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [, , cb] }) => cb(fr));
+
+        const options = new LazyLoadOptions(
+            "APIKEY", "common", "1.0.0",
+            {
+                cacheTimeToLiveSeconds
+            },
+            cache);
+
+        // Act
+
+        const service = new LazyLoadConfigService(fetcherMock.object(), options);
+
+        const actualPc = await service.getConfig();
+
+        // Assert
+
+        assert.strictEqual(cachedPc, actualPc);
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Never());
+    });
+
+    it("LazyLoadConfigService - getConfig() should fetch when cached config is expired", async () => {
+        // Arrange 
+
+        const cacheTimeToLiveSeconds = 5;
+
+        const fr: FetchResult = createFetchResult();
+
+        const cachedPc: ProjectConfig = createConfigFromFetchResult(fr);
+        cachedPc.Timestamp -= 1.5 * cacheTimeToLiveSeconds * 1000;
+
+        const cache = new FakeCache();
+        cache.set("", cachedPc);
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [, , cb] }) => { (async () => (await delay(500), cb(fr)))(); });
+
+        const options = new LazyLoadOptions(
+            "APIKEY", "common", "1.0.0",
+            {
+                cacheTimeToLiveSeconds
+            },
+            cache);
+
+        // Act
+
+        const service = new LazyLoadConfigService(fetcherMock.object(), options);
+
+        const actualPc = await service.getConfig();
+
+        // Assert
+
+        assert.notStrictEqual(cachedPc, actualPc);
+        assert.isTrue(ProjectConfig.equals(new ProjectConfig(0, fr.responseBody, fr.eTag), actualPc));
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+    });
 });
 
 function createProjectConfig(): ProjectConfig {
