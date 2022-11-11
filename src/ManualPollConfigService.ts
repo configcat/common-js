@@ -3,7 +3,7 @@ import { ManualPollOptions } from "./ConfigCatClientOptions";
 import { IConfigFetcher } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
 
-export class ManualPollService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
+export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
 
     constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
 

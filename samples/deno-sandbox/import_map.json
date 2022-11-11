@@ -12,7 +12,7 @@
     "../../src/ConfigServiceBase": "../../src/ConfigServiceBase.ts",
     "../../src/FlagOverrides": "../../src/FlagOverrides.ts",
     "../../src/LazyLoadConfigService": "../../src/LazyLoadConfigService.ts",
-    "../../src/ManualPollService": "../../src/ManualPollService.ts",
+    "../../src/ManualPollConfigService": "../../src/ManualPollConfigService.ts",
     "../../src/Polyfills": "../../src/Polyfills.ts",
     "../../src/ProjectConfig": "../../src/ProjectConfig.ts",
     "../../src/RolloutEvaluator": "../../src/RolloutEvaluator.ts",

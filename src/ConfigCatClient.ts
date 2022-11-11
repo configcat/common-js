@@ -3,7 +3,7 @@ import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase, Confi
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
-import { ManualPollService } from "./ManualPollService";
+import { ManualPollConfigService } from "./ManualPollConfigService";
 import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
 import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
 import { OverrideBehaviour } from "./FlagOverrides";
@@ -186,7 +186,7 @@ export class ConfigCatClient implements IConfigCatClient {
         if (options.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
             const configServiceClass =
                 options instanceof AutoPollOptions ? AutoPollConfigService :
-                options instanceof ManualPollOptions ? ManualPollService :
+                options instanceof ManualPollOptions ? ManualPollConfigService :
                 options instanceof LazyLoadOptions ? LazyLoadConfigService :
                 (() => { throw new Error("Invalid 'options' value"); })();
 
