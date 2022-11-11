@@ -63,6 +63,15 @@ export interface IConfigCatClient {
 
     /** Clears the default user. */
     clearDefaultUser(): void;
+
+    /** True when the client is configured not to initiate HTTP requests, otherwise false. */
+    get isOffline(): boolean;
+
+    /** Configures the client to allow HTTP requests. */
+    setOnline(): void;
+
+    /** Configures the client to not initiate HTTP requests and work only from its cache. */
+    setOffline(): void;
 }
 
 export class ConfigCatClientCache {
@@ -191,24 +200,21 @@ export class ConfigCatClient implements IConfigCatClient {
         // Safeguard against situations where user forgets to dispose of the client instance.
         
         data.logger?.debug("finalize() called");
-        ConfigCatClient.close(data.sdkKey, data.cacheToken, data.configService, data.logger);
+        ConfigCatClient.close(data.sdkKey, data.cacheToken, data.configService);
     }
 
-    private static close(sdkKey: string, cacheToken?: object, configService?: IConfigService, logger?: IConfigCatLogger) {
+    private static close(sdkKey: string, cacheToken?: object, configService?: IConfigService) {
         if (cacheToken) {
             clientInstanceCache.remove(sdkKey, cacheToken);
         }
 
-        if (configService instanceof AutoPollConfigService) {
-            logger?.debug("Disposing AutoPollConfigService");
-            configService.dispose();
-        }
+        configService?.dispose();
     }
 
     dispose(): void {
         const options = this.options;
         options.logger.debug("dispose() called");
-        ConfigCatClient.close(options.apiKey, this.cacheToken, this.configService, options.logger);
+        ConfigCatClient.close(options.apiKey, this.cacheToken, this.configService);
         this.suppressFinalization();
     }
 
@@ -424,6 +430,23 @@ export class ConfigCatClient implements IConfigCatClient {
 
     clearDefaultUser() {
         this.defaultUser = void 0;
+    }
+
+    get isOffline(): boolean {
+        return this.configService?.isOffline ?? true;
+    }
+
+    setOnline(): void {
+        if (this.configService) {
+            this.configService.setOnline();
+        }
+        else {
+            this.options.logger.warn("Client is configured to use Local/Offline mode, thus setOnline() has no effect.");
+        }
+    }
+
+    setOffline(): void {
+        this.configService?.setOffline();
     }
 
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
