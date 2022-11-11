@@ -42,6 +42,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
     protected get disposed() { return this.status === ConfigServiceStatus.Disposed; }
 
+    abstract getConfig(): Promise<ProjectConfig | null>;
+
     async refreshConfigAsync(): Promise<ProjectConfig | null> {
         const latestConfig = await this.options.cache.get(this.options.getCacheKey());
         if (!this.isOffline) {

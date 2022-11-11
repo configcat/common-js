@@ -63,14 +63,25 @@ export class FakeCache implements ICache {
 export class FakeConfigFetcherBase implements IConfigFetcher {
     calledTimes = 0;
 
-    constructor(private config: string | null, private callbackDelay: number = 0) {
+    constructor(
+        private config: string | null,
+        private callbackDelay: number = 0,
+        private getFetchResult?: (lastConfig: string | null, lastEtag: string | null) => FetchResult) {
     }
 
-    fetchLogic(options: OptionsBase, lastEtag: string, callback: (result: FetchResult) => void): void {
+    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void {
+        const nextFetchResult = this.getFetchResult
+            ? (lastConfig: string | null, lastEtag: string | null) => { 
+                const fr = this.getFetchResult!(lastConfig, lastEtag);
+                this.config = fr.responseBody;
+                return fr; 
+            }
+            : () => this.config === null ? FetchResult.error() : FetchResult.success(this.config, this.getEtag());
+
         if (callback) {
             setTimeout(() => {
                 this.calledTimes++;
-                callback(this.config === null ? FetchResult.error() : FetchResult.success(this.config, this.getEtag()));
+                callback(nextFetchResult(this.config, lastEtag));
             }, this.callbackDelay);
         }
     }
@@ -79,7 +90,6 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
         return "etag";
     }
 }
-
 
 export class FakeConfigFetcher extends FakeConfigFetcherBase {
     constructor(private callbackDelayInMilliseconds: number = 0) {

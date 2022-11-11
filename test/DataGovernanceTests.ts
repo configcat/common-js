@@ -267,6 +267,8 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
         super(new FakeConfigFetcher(), new FakeOptions(baseUrl, dataGovernance));
     }
 
+    getConfig(): Promise<ProjectConfig | null> { return Promise.resolve(null); }
+
     refreshLogicAsync(): Promise<ProjectConfig | null> {
         return this.refreshConfigCoreAsync(null);
     }
