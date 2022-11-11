@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import { IConfigCatClient } from "../src";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./ConfigCatClientTests";
+import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 import { ConfigCatClient } from "../src/ConfigCatClient";
 import "mocha";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";

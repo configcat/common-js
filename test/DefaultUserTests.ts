@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 import { IConfigCatClient, User } from "../src";
-import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./ConfigCatClientTests";
+import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./helpers/fakes";
 import * as configcatClient from "../src/index";
 import { assert } from "chai";
 

@@ -262,13 +262,13 @@ export class FakeOptions extends OptionsBase {
     }
 }
 
-export class FakeConfigServiceBase extends ConfigServiceBase {
+export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
     constructor(dataGovernance?: DataGovernance, baseUrl?: string) {
         super(new FakeConfigFetcher(), new FakeOptions(baseUrl, dataGovernance));
     }
 
     refreshLogicAsync(): Promise<ProjectConfig | null> {
-        return this.refreshLogicBaseAsync(null);
+        return this.refreshConfigCoreAsync(null);
     }
 
     prepareResponse(baseUrl: string, jsonBaseUrl: string, jsonRedirect: number, jsonFeatureFlags: any) {
@@ -297,6 +297,6 @@ export class FakeConfigServiceBase extends ConfigServiceBase {
     }
 
     private getUrl(baseUrl: string) {
-        return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.baseConfig.clientVersion;
+        return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.options.clientVersion;
     }
 }

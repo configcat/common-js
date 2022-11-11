@@ -2,7 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import * as configcatClient from "../src/index";
 import { IConfigCatClient } from "../src/ConfigCatClient";
-import { FakeConfigFetcher, FakeConfigCatKernel } from "./ConfigCatClientTests";
+import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";
 import { InMemoryCache } from "../src/Cache";
 
 describe("ConfigCatClient index (main)", () => {

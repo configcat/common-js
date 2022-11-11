@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { User } from "../src/RolloutEvaluator";
 import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
 import { LogLevel, createClientWithManualPoll } from "../src";
-import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./ConfigCatClientTests";
+import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("MatrixTests", () => {
 
