@@ -4,7 +4,7 @@
     "strict": true,
     "target": "ES2020",
     "lib": [
-      "ES2015",
+      "ES2015", // APIs used: Promise (.race)
       "DOM", // APIs used: setTimeout, clearTimeout
       "ES2017.Object", // APIs used: Object.values, Object.entries
       "ES2019.Object", // APIs used: Object.fromEntries (polyfilled)

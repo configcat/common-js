@@ -3,22 +3,21 @@ import { ManualPollOptions } from "./ConfigCatClientOptions";
 import { IConfigFetcher } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
 
-export class ManualPollService extends ConfigServiceBase implements IConfigService {
+export class ManualPollService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
 
-    public constructor(configFetcher: IConfigFetcher, config: ManualPollOptions) {
+    constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
 
-        super(configFetcher, config);
+        super(configFetcher, options);
     }
 
     async getConfig(): Promise<ProjectConfig | null> {
 
-        this.baseConfig.logger.debug("ManualPollService.getConfig() called.");
-        return await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
+        this.options.logger.debug("ManualPollService.getConfig() called.");
+        return await this.options.cache.get(this.options.getCacheKey());
     }
 
     async refreshConfigAsync(): Promise<ProjectConfig | null> {
-        this.baseConfig.logger.debug("ManualPollService.refreshConfigAsync() called.");
-        let p = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
-        return this.refreshLogicBaseAsync(p)
+        this.options.logger.debug("ManualPollService.refreshConfigAsync() called.");
+        return super.refreshConfigAsync();
     }
 }
