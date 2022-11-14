@@ -4,10 +4,10 @@ import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
-import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
-import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
+import { User, IRolloutEvaluator, RolloutEvaluator, evaluate, IEvaluationDetails, evaluationDetailsFromDefaultValue, checkSettingsAvailable, evaluateAll, evaluateVariationId, evaluateAllVariationIds } from "./RolloutEvaluator";
+import { Setting, ConfigFile, ProjectConfig, RolloutRule, RolloutPercentageItem } from "./ProjectConfig";
 import { OverrideBehaviour } from "./FlagOverrides";
-import { getSettingsFromConfig } from "./Utils";
+import { errorToString, getSettingsFromConfig } from "./Utils";
 import { isWeakRefAvailable } from "./Polyfills";
 
 export interface IConfigCatClient {
@@ -17,6 +17,12 @@ export interface IConfigCatClient {
 
     /** Returns the value of a feature flag or setting based on it's key */
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any>;
+
+    /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
+    getValueDetails(key: string, defaultValue: any, callback: (evaluationDetails: IEvaluationDetails) => void, user?: User): void;
+
+    /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
+    getValueDetailsAsync(key: string, defaultValue: any, user?: User): Promise<IEvaluationDetails>;
 
     /** Downloads the latest feature flag and configuration values */
     forceRefresh(callback: () => void): void;
@@ -124,6 +130,8 @@ export class ConfigCatClientCache {
 }
 
 const clientInstanceCache = new ConfigCatClientCache();
+
+type SettingsWithRemoteConfig = [{ [name: string]: Setting } | null, ProjectConfig | null];
 
 export class ConfigCatClient implements IConfigCatClient {
     private configService?: IConfigService;
@@ -240,188 +248,212 @@ export class ConfigCatClient implements IConfigCatClient {
     
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
         this.options.logger.debug("getValue() called.");
-        this.getValueAsync(key, defaultValue, user).then(value => {
-            callback(value);
-        });
+        this.getValueAsync(key, defaultValue, user).then(callback);
     }
 
-    getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
+    async getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
         this.options.logger.debug("getValueAsync() called.");
-        return new Promise(async (resolve) => {
-            const settings = await this.getSettingsAsync();
-            if (!settings) {
-                this.options.logger.error("config.json is not present. Returning default value: '" + defaultValue + "'.");
-                resolve(defaultValue);
-                return;
-            }
 
-            var result: any = this.evaluator.Evaluate(settings, key, defaultValue, user ?? this.defaultUser).Value;
-            resolve(result);
-        });
+        let value: any;
+        let remoteConfig: ProjectConfig | null = null;
+        user ??= this.defaultUser;
+        try {
+            let settings: { [name: string]: Setting } | null;
+            [settings, remoteConfig] = await this.getSettingsAsync();
+            value = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger).value;
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getValueAsync().\n" + errorToString(err, true));
+            value = defaultValue;
+        }
+
+        return value;
+    }
+
+    getValueDetails(key: string, defaultValue: any, callback: (evaluationDetails: IEvaluationDetails) => void, user?: User): void {
+        this.options.logger.debug("getValueDetails() called.");
+        this.getValueDetailsAsync(key, defaultValue, user).then(callback);
+    }
+
+    async getValueDetailsAsync(key: string, defaultValue: any, user?: User): Promise<IEvaluationDetails> {
+        this.options.logger.debug("getValueDetailsAsync() called.");
+
+        let evaluationDetails: IEvaluationDetails;
+        let remoteConfig: ProjectConfig | null = null;
+        user ??= this.defaultUser;
+        try {
+            let settings: { [name: string]: Setting } | null;
+            [settings, remoteConfig] = await this.getSettingsAsync();
+            evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getValueDetailsAsync().\n" + errorToString(err, true));
+            evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
+        }
+
+        return evaluationDetails;
     }
 
     forceRefresh(callback: () => void): void {
         this.options.logger.debug("forceRefresh() called.");
-        this.forceRefreshAsync().then(() => {
-            callback();
-        });
+        this.forceRefreshAsync().then(callback);
     }
 
-    forceRefreshAsync(): Promise<void> {
+    async forceRefreshAsync(): Promise<void> {
         this.options.logger.debug("forceRefreshAsync() called.");
-        return new Promise(async (resolve) => {
+
+        try {
             await this.configService?.refreshConfigAsync();
-            resolve();
-        });
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in forceRefreshAsync().\n" + errorToString(err, true));
+        }
     }
 
     getAllKeys(callback: (value: string[]) => void): void {
         this.options.logger.debug("getAllKeys() called.");
-        this.getAllKeysAsync().then(value => {
-            callback(value);
-        })
+        this.getAllKeysAsync().then(callback);
     }
 
-    getAllKeysAsync(): Promise<string[]> {
+    async getAllKeysAsync(): Promise<string[]> {
         this.options.logger.debug("getAllKeysAsync() called.");
-        return new Promise(async (resolve) => {
-            const settings = await this.getSettingsAsync();
-            if (!settings) {
-                this.options.logger.error("config.json is not present, returning empty array");
-                resolve([]);
-                return;
-            }
 
-            resolve(Object.keys(settings));
-        });
+        try {
+            const [settings] = await this.getSettingsAsync();
+            if (!checkSettingsAvailable(settings, this.options.logger, ", returning empty array")) {
+                return [];
+            }
+            return Object.keys(settings);
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getAllKeysAsync().\n" + errorToString(err, true));
+            return [];
+        }
     }
 
     getVariationId(key: string, defaultVariationId: any, callback: (variationId: string) => void, user?: User): void {
         this.options.logger.debug("getVariationId() called.");
-        this.getVariationIdAsync(key, defaultVariationId, user).then(variationId => {
-            callback(variationId);
-        });
+        this.getVariationIdAsync(key, defaultVariationId, user).then(callback);
     }
 
-    getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
+    async getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
         this.options.logger.debug("getVariationIdAsync() called.");
-        return new Promise(async (resolve) => {
-            const settings = await this.getSettingsAsync();
-            if (!settings) {
-                this.options.logger.error("config.json is not present. Returning default variationId: '" + defaultVariationId + "'.");
-                resolve(defaultVariationId);
-                return;
-            }
 
-            var result: string = this.evaluator.Evaluate(settings, key, null, user ?? this.defaultUser, defaultVariationId).VariationId;
-            resolve(result);
-        });
+        let variationId: any;
+        let remoteConfig: ProjectConfig | null = null;
+        user ??= this.defaultUser;
+        try {
+            let settings: { [name: string]: Setting } | null;
+            [settings, remoteConfig] = await this.getSettingsAsync();
+            variationId = evaluateVariationId(this.evaluator, settings, key, defaultVariationId, user, remoteConfig, this.options.logger).variationId;
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getVariationIdAsync().\n" + errorToString(err, true));
+            variationId = defaultVariationId;
+        }
+
+        return variationId;
     }
 
     getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void {
         this.options.logger.debug("getAllVariationIds() called.");
-        this.getAllVariationIdsAsync(user).then(variationIds => {
-            callback(variationIds);
-        });
+        this.getAllVariationIdsAsync(user).then(callback);
     }
 
-    getAllVariationIdsAsync(user?: User): Promise<string[]> {
+    async getAllVariationIdsAsync(user?: User): Promise<string[]> {
         this.options.logger.debug("getAllVariationIdsAsync() called.");
-        return new Promise(async (resolve) => {
-            const keys = await this.getAllKeysAsync();
 
-            if (keys.length === 0) {
-                resolve([]);
-                return;
+        let result: string[];
+        user ??= this.defaultUser;
+        try {
+            const [settings, remoteConfig] = await this.getSettingsAsync();
+            const [evaluationDetailsArray, errors] = evaluateAllVariationIds(this.evaluator, settings, user, remoteConfig, this.options.logger);
+            if (errors?.length) {
+                throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
             }
+            result = evaluationDetailsArray.map(details => details.variationId);
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getAllVariationIdsAsync().\n" + errorToString(err, true));
+            result = [];
+        }
 
-            const promises = keys.map(key => this.getVariationIdAsync(key, null, user));
-            const variationIds = await Promise.all(promises);
-            resolve(variationIds);
-        });
+        return result;
     }
 
     getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
         this.options.logger.debug("getKeyAndValue() called.");
-        this.getKeyAndValueAsync(variationId).then(settingKeyAndValue => {
-            callback(settingKeyAndValue);
-        })
+        this.getKeyAndValueAsync(variationId).then(callback);
     }
 
-    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
+    async getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
         this.options.logger.debug("getKeyAndValueAsync() called.");
-        return new Promise(async (resolve) => {
-            const settings = await this.getSettingsAsync();
-            if (!settings) {
-                this.options.logger.error("config.json is not present, returning empty array");
-                resolve(null);
-                return;
+
+        try {
+            const [settings] = await this.getSettingsAsync();
+            if (!checkSettingsAvailable(settings, this.options.logger, ", returning null")) {
+                return null;
             }
 
-            for (let settingKey in settings) {
-                if (variationId === settings[settingKey].variationId) {
-                    resolve({ settingKey: settingKey, settingValue: settings[settingKey].value });
-                    return;
+            for (const [settingKey, setting] of Object.entries(settings)) {
+                if (variationId === setting.variationId) {
+                    return new SettingKeyValue(settingKey, setting.value);
                 }
 
                 const rolloutRules = settings[settingKey].rolloutRules;
                 if (rolloutRules && rolloutRules.length > 0) {
-                    for (let i: number = 0; i < rolloutRules.length; i++) {
+                    for (let i = 0; i < rolloutRules.length; i++) {
                         const rolloutRule: RolloutRule = rolloutRules[i];
                         if (variationId === rolloutRule.variationId) {
-                            resolve({ settingKey: settingKey, settingValue: rolloutRule.value });
-                            return;
+                            return new SettingKeyValue(settingKey, rolloutRule.value);
                         }
                     }
                 }
 
                 const percentageItems = settings[settingKey].rolloutPercentageItems;
                 if (percentageItems && percentageItems.length > 0) {
-                    for (let i: number = 0; i < percentageItems.length; i++) {
+                    for (let i = 0; i < percentageItems.length; i++) {
                         const percentageItem: RolloutPercentageItem = percentageItems[i];
                         if (variationId === percentageItem.variationId) {
-                            resolve({ settingKey: settingKey, settingValue: percentageItem.value });
-                            return;
+                            return new SettingKeyValue(settingKey,  percentageItem.value);
                         }
                     }
                 }
             }
 
             this.options.logger.error("Could not find the setting for the given variation ID: " + variationId);
-            resolve(null);
-        });
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getKeyAndValueAsync().\n" + errorToString(err, true));
+        }
+
+        return null;
     }
 
     getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {
         this.options.logger.debug("getAllValues() called.");
-        this.getAllValuesAsync(user).then(value => {
-            callback(value);
-        });
+        this.getAllValuesAsync(user).then(callback);
     }
 
-    getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
+    async getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
         this.options.logger.debug("getAllValuesAsync() called.");
-        return new Promise(async (resolve) => {
-            const settings = await this.getSettingsAsync();
-            if (!settings) {
-                this.options.logger.error("config.json is not present, returning empty array");
-                resolve([]);
-                return;
+
+        let result: SettingKeyValue[];
+        user ??= this.defaultUser;
+        try {
+            const [settings, remoteConfig] = await this.getSettingsAsync();
+            const [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger);
+            if (errors?.length) {
+                throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
             }
+            result = evaluationDetailsArray.map(details => new SettingKeyValue(details.key, details.value));
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getAllValuesAsync().\n" + errorToString(err, true));
+            result = [];
+        }
 
-            const keys: string[] = Object.keys(settings);
-
-            let result: SettingKeyValue[] = [];
-
-            keys.forEach(key => {
-                result.push({
-                    settingKey: key,
-                    settingValue: this.evaluator.Evaluate(settings, key, void 0, user ?? this.defaultUser).Value
-                });
-            });
-
-            resolve(result);
-        });
+        return result;
     }
 
     setDefaultUser(defaultUser: User) {
@@ -449,41 +481,42 @@ export class ConfigCatClient implements IConfigCatClient {
         this.configService?.setOffline();
     }
 
-    private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
+    private async getSettingsAsync(): Promise<SettingsWithRemoteConfig> {
         this.options.logger.debug("getSettingsAsync() called.");
-        return new Promise(async (resolve) => {
-            if (this.options?.flagOverrides) {
-                const localSettings = await this.options.flagOverrides.dataSource.getOverrides();
-                if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOnly) {
-                    resolve(localSettings);
-                    return;
-                }
-                const remoteConfig = await this.configService?.getConfig();
-                const remoteSettings = getSettingsFromConfig(remoteConfig?.ConfigJSON);
 
-                if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOverRemote) {
-                    resolve({ ...remoteSettings, ...localSettings });
-                    return;
-                } else if (this.options.flagOverrides.behaviour == OverrideBehaviour.RemoteOverLocal) {
-                    resolve({ ...localSettings, ...remoteSettings });
-                    return;
-                }
-            }
-
+        const getRemoteConfigAsync: () => Promise<SettingsWithRemoteConfig> = async () => {
             const config = await this.configService?.getConfig();
-            if (!config || !config.ConfigJSON || !config.ConfigJSON[ConfigFile.FeatureFlags]) {
-                resolve(null);
-                return;
-            }
+            const json = config?.ConfigJSON;
+            const settings = json?.[ConfigFile.FeatureFlags] ? getSettingsFromConfig(json) : null;
+            return [settings, config ?? null];
+        }
 
-            resolve(getSettingsFromConfig(config.ConfigJSON));
-        });
+        const flagOverrides = this.options?.flagOverrides;
+        if (flagOverrides) {
+            let remoteSettings: { [name: string]: Setting } | null;
+            let remoteConfig: ProjectConfig | null;
+            const localSettings = await flagOverrides.dataSource.getOverrides();
+            switch (flagOverrides.behaviour) {
+                case OverrideBehaviour.LocalOnly:
+                    return [localSettings, null];
+                case OverrideBehaviour.LocalOverRemote:
+                    [remoteSettings, remoteConfig] = await getRemoteConfigAsync();
+                    return [{ ...(remoteSettings ?? {}), ...localSettings }, remoteConfig];
+                case OverrideBehaviour.RemoteOverLocal:
+                    [remoteSettings, remoteConfig] = await getRemoteConfigAsync();
+                    return [{ ...localSettings, ...(remoteSettings ?? {}) }, remoteConfig];
+            }
+        }
+
+        return await getRemoteConfigAsync();
     }
 }
 
 export class SettingKeyValue {
-    settingKey!: string;
-    settingValue!: any;
+    constructor(
+        public settingKey: string,
+        public settingValue: any)
+    { }
 }
 
 /* GC finalization support */

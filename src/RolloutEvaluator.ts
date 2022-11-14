@@ -1,11 +1,43 @@
 import { IConfigCatLogger } from "./index";
-import { ProjectConfig, Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
+import { Setting, RolloutRule, RolloutPercentageItem, ProjectConfig } from "./ProjectConfig";
 import { sha1 } from "./Sha1";
 import * as semver from "./Semver";
-import { isUndefined } from "./Utils"
+import { errorToString, isUndefined } from "./Utils"
 
 export interface IRolloutEvaluator {
-    Evaluate(settings: { [name: string]: Setting }, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId;
+    Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails;
+}
+
+export interface IEvaluationDetails {
+    /** Key of the feature or setting flag. */
+    key: string;
+
+    /** Evaluated value of the feature or setting flag. */
+    value: any;
+
+    /** Variation ID of the feature or setting flag (if available). */
+    variationId?: any;
+
+    /** Time of last successful download of config.json (if there has been a successful download already). */
+    fetchTime?: Date;
+
+    /** The User object used for the evaluation (if available). */
+    user?: User
+
+    /** Indicates whether the default value passed to IConfigCatClient.getValue or IConfigCatClient.getValueAsync is used as the result of the evaluation. */
+    isDefaultValue: boolean;
+
+    /** Error message in case evaluation failed. */
+    errorMessage?: string;
+
+    /** The exception object related to the error in case evaluation failed (if any). */
+    errorException?: any
+
+    /** The comparison-based targeting rule which was used to select the evaluated value (if any). */
+    matchedEvaluationRule?: RolloutRule;
+
+    /** The percentage-based targeting rule which was used to select the evaluated value (if any). */
+    matchedEvaluationPercentageRule?: RolloutPercentageItem;
 }
 
 /** Object for variation evaluation */
@@ -40,19 +72,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(settings: { [name: string]: Setting }, key: string, defaultValue: any, user?: User, defaultVariationId?: any): ValueAndVariationId {
+    Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
         this.logger.debug("RolloutEvaluator.Evaluate() called.");
-        if (!settings[key]) {
-
-            let s: string = "Evaluating getValue('" + key + "') failed. Returning default value: '" + defaultValue + "'.";
-            s += " Here are the available keys: {" + Object.keys(settings).join() + "}.";
-
-            this.logger.error(s);
-
-            return { Value: defaultValue, VariationId: defaultVariationId };
-        }
-
-        const featureFlag = settings[key];
 
         let eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -60,55 +81,61 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         eLog.KeyName = key;
         eLog.ReturnValue = defaultValue;
 
-        let result: EvaluateResult = new EvaluateResult();
-        result.EvaluateLog = eLog;
+        let result: IEvaluateResult<object | undefined> | null;
 
-        if (user) {
+        try {
+            if (user) {
+                // evaluate comparison-based rules
 
-            result = this.EvaluateRules(featureFlag.rolloutRules, user, eLog);
+                result = this.EvaluateRules(setting.rolloutRules, user, eLog);
+                if (result !== null) {
+                    eLog.ReturnValue = result.value;
 
-            if (result.ValueAndVariationId == null) {
-
-                result.ValueAndVariationId = this.EvaluateVariations(featureFlag.rolloutPercentageItems, key, user);
-                if (result.ValueAndVariationId) {
-                    result.EvaluateLog.ReturnValue = result.ValueAndVariationId.Value;
-                }
-                if (featureFlag.rolloutPercentageItems.length > 0) {
-                    result.EvaluateLog.OpAppendLine("Evaluating % options => " + (result.ValueAndVariationId == null ? "user not targeted" : "user targeted"));
+                    return evaluationDetailsFromEvaluateResult(key, result, remoteConfig?.getTimestampAsDate(), user);
                 }
 
+                // evaluate percentage-based rules
+
+                result = this.EvaluatePercentageRules(setting.rolloutPercentageItems, key, user);
+
+                if (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0) {
+                    eLog.OpAppendLine("Evaluating % options => " + (!result ? "user not targeted" : "user targeted"));
+                }
+
+                if (result !== null) {
+                    eLog.ReturnValue = result.value;
+
+                    return evaluationDetailsFromEvaluateResult(key, result, remoteConfig?.getTimestampAsDate(), user);
+                }
             }
-        }
-        else {
+            else {
+                if ((setting.rolloutRules && setting.rolloutRules.length > 0) ||
+                    (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
+                    let s: string = "Evaluating getValue('" + key + "'). "
+                    s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
+                    s += "Read more: https://configcat.com/docs/advanced/user-object";
 
-            if ((featureFlag.rolloutRules && featureFlag.rolloutRules.length > 0) ||
-                (featureFlag.rolloutPercentageItems && featureFlag.rolloutPercentageItems.length > 0)) {
-                let s: string = "Evaluating getValue('" + key + "'). "
-                s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
-                s += "Read more: https://configcat.com/docs/advanced/user-object";
-
-                this.logger.warn(s);
+                    this.logger.warn(s);
+                }
             }
+
+            // regular evaluate
+            result = {
+                value: setting.value,
+                variationId: setting.variationId
+            };
+            eLog.ReturnValue = result.value;
+
+            return evaluationDetailsFromEvaluateResult(key, result, remoteConfig?.getTimestampAsDate(), user);
         }
-
-        if (result.ValueAndVariationId == null) {
-            result.ValueAndVariationId = {
-                Value: featureFlag.value,
-                VariationId: featureFlag.variationId,
-            }
-            result.EvaluateLog.ReturnValue = result.ValueAndVariationId.Value;
+        finally {
+            this.logger.info(eLog.GetLog());
         }
-
-        this.logger.info(result.EvaluateLog.GetLog());
-
-        return result.ValueAndVariationId;
     }
 
-    private EvaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): EvaluateResult {
+    private EvaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
 
         this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
-        let result: EvaluateResult = new EvaluateResult();
-        result.ValueAndVariationId = null;
 
         if (rolloutRules && rolloutRules.length > 0) {
 
@@ -130,6 +157,12 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                     continue;
                 }
 
+                let result: IEvaluateResult<RolloutRule> = {
+                    value: rule.value,
+                    variationId: rule.variationId,
+                    matchedRule: rule
+                };
+                
                 switch (comparator) {
                     case 0: // is one of
 
@@ -139,16 +172,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                             if (cvs[ci].trim() === comparisonAttribute) {
                                 log += "MATCH";
-
                                 eLog.OpAppendLine(log);
-
-                                result.ValueAndVariationId = {
-                                    Value: rule.value,
-                                    VariationId: rule.variationId
-                                };
-                                eLog.ReturnValue = result.ValueAndVariationId.Value;
-
-                                result.EvaluateLog = eLog;
 
                                 return result;
                             }
@@ -168,16 +192,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             return false;
                         })) {
                             log += "MATCH";
-
                             eLog.OpAppendLine(log);
-
-                            result.ValueAndVariationId = {
-                                Value: rule.value,
-                                VariationId: rule.variationId
-                            };
-                            eLog.ReturnValue = result.ValueAndVariationId.Value;
-
-                            result.EvaluateLog = eLog;
 
                             return result;
                         }
@@ -190,16 +205,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                         if (comparisonAttribute.indexOf(comparisonValue) !== -1) {
                             log += "MATCH";
-
                             eLog.OpAppendLine(log);
-
-                            result.ValueAndVariationId = {
-                                Value: rule.value,
-                                VariationId: rule.variationId
-                            };
-                            eLog.ReturnValue = result.ValueAndVariationId.Value;
-
-                            result.EvaluateLog = eLog;
 
                             return result;
                         }
@@ -212,16 +218,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                         if (comparisonAttribute.indexOf(comparisonValue) === -1) {
                             log += "MATCH";
-
                             eLog.OpAppendLine(log);
-
-                            result.ValueAndVariationId = {
-                                Value: rule.value,
-                                VariationId: rule.variationId
-                            };
-                            eLog.ReturnValue = result.ValueAndVariationId.Value;
-
-                            result.EvaluateLog = eLog;
 
                             return result;
                         }
@@ -239,15 +236,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                         if (this.EvaluateSemver(comparisonAttribute, comparisonValue, comparator)) {
                             log += "MATCH";
-
                             eLog.OpAppendLine(log);
-
-                            result.ValueAndVariationId = {
-                                Value: rule.value,
-                                VariationId: rule.variationId
-                            };
-                            eLog.ReturnValue = result.ValueAndVariationId.Value;
-                            result.EvaluateLog = eLog;
 
                             return result;
                         }
@@ -265,15 +254,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                         if (this.EvaluateNumber(comparisonAttribute, comparisonValue, comparator)) {
                             log += "MATCH";
-
                             eLog.OpAppendLine(log);
-
-                            result.ValueAndVariationId = {
-                                Value: rule.value,
-                                VariationId: rule.variationId
-                            };
-                            eLog.ReturnValue = result.ValueAndVariationId.Value;
-                            result.EvaluateLog = eLog;
 
                             return result;
                         }
@@ -288,15 +269,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
                             if (values[ci].trim() === sha1(comparisonAttribute)) {
                                 log += "MATCH";
-
                                 eLog.OpAppendLine(log);
-
-                                result.ValueAndVariationId = {
-                                    Value: rule.value,
-                                    VariationId: rule.variationId
-                                };
-                                eLog.ReturnValue = result.ValueAndVariationId.Value;
-                                result.EvaluateLog = eLog;
 
                                 return result;
                             }
@@ -315,15 +288,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                             return false;
                         })) {
                             log += "MATCH";
-
                             eLog.OpAppendLine(log);
-
-                            result.ValueAndVariationId = {
-                                Value: rule.value,
-                                VariationId: rule.variationId
-                            };
-                            eLog.ReturnValue = result.ValueAndVariationId.Value;
-                            result.EvaluateLog = eLog;
 
                             return result;
                         }
@@ -338,12 +303,11 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                 eLog.OpAppendLine(log);
             }
         }
-        result.EvaluateLog = eLog;
 
-        return result;
+        return null;
     }
 
-    private EvaluateVariations(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): ValueAndVariationId | null {
+    private EvaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
         this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
         if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
@@ -353,13 +317,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             let bucket: number = 0;
 
             for (let i: number = 0; i < rolloutPercentageItems.length; i++) {
-                const variation: RolloutPercentageItem = rolloutPercentageItems[i];
-                bucket += +variation.percentage;
+                const percentageRule: RolloutPercentageItem = rolloutPercentageItems[i];
+                bucket += +percentageRule.percentage;
 
                 if (hashScale < bucket) {
                     return {
-                        Value: variation.value,
-                        VariationId: variation.variationId
+                        value: percentageRule.value,
+                        variationId: percentageRule.variationId,
+                        matchedRule: percentageRule
                     };
                 }
             }
@@ -545,17 +510,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 }
 
-
-class ValueAndVariationId {
-    public Value!: any;
-
-    public VariationId!: any;
-}
-
-class EvaluateResult {
-    public ValueAndVariationId!: ValueAndVariationId | null;
-
-    public EvaluateLog!: EvaluateLogger;
+interface IEvaluateResult<TRule> {
+    value: any;
+    variationId: string;
+    matchedRule?: TRule;
 }
 
 class EvaluateLogger {
@@ -577,4 +535,141 @@ class EvaluateLogger {
             + "\n" + this.Operations
             + " Returning value : " + this.ReturnValue;
     }
+}
+
+/* Helper functions */
+
+function evaluationDetailsFromEvaluateResult(key: string, evaluateResult: IEvaluateResult<object | undefined>, fetchTime?: Date, user?: User): IEvaluationDetails {
+    return {
+        key,
+        value: evaluateResult.value,
+        variationId: evaluateResult.variationId,
+        fetchTime,
+        user,
+        isDefaultValue: false,
+        matchedEvaluationRule: evaluateResult.matchedRule instanceof RolloutRule ? evaluateResult.matchedRule : void 0,
+        matchedEvaluationPercentageRule: evaluateResult.matchedRule instanceof RolloutPercentageItem ? evaluateResult.matchedRule : void 0,
+    };
+}
+
+export function evaluationDetailsFromDefaultValue(key: string, defaultValue: any, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
+    return {
+        key,
+        value: defaultValue,
+        fetchTime,
+        user,
+        isDefaultValue: true,
+        errorMessage,
+        errorException
+    };
+}
+
+export function evaluationDetailsFromDefaultVariationId(key: string, defaultVariationId: any, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
+    return {
+        key,
+        value: null,
+        variationId: defaultVariationId,
+        fetchTime,
+        user,
+        isDefaultValue: true,
+        errorMessage,
+        errorException
+    };
+}
+
+export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: any,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): IEvaluationDetails {
+
+    let errorMessage: string;
+    if (!settings) {
+        errorMessage = `config.json is not present. Returning default value: '${defaultValue}'.`;
+        logger.error(errorMessage);
+        return evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+    }
+
+    const setting = settings[key];
+    if (!setting) {
+        errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default value: '${defaultValue}'. These are the available keys: ${keysToString(settings)}.`;
+        logger.error(errorMessage);
+        return evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+    }
+
+    return evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
+}
+
+export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: any,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): IEvaluationDetails {
+
+    let errorMessage: string;
+    if (!settings) {
+        errorMessage = `config.json is not present. Returning default variationId: '${defaultVariationId}'.`;
+        logger.error(errorMessage);
+        return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+    }
+
+    const setting = settings[key];
+    if (!setting) {
+        errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default variationId: '${defaultVariationId}'. These are the available keys: ${keysToString(settings)}.`;
+        logger.error(errorMessage);
+        return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+    }
+
+    return evaluator.Evaluate(setting, key, null, user, remoteConfig, defaultVariationId);
+}
+
+function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger,
+    getDetailsForError: (key: string, fetchTime: Date | undefined, user: User | undefined, err: any) => IEvaluationDetails): [IEvaluationDetails[], any[] | undefined] {
+
+    let errors: any[] | undefined;
+
+    if (!checkSettingsAvailable(settings, logger, ", returning empty array")) {
+        return [[], errors];
+    }
+
+    const evaluationDetailsArray: IEvaluationDetails[] = [];
+
+    let index = 0;
+    for (const [key, setting] of Object.entries(settings)) {
+        let evaluationDetails: IEvaluationDetails;
+        try {
+            evaluationDetails = evaluator.Evaluate(setting, key, null, user, remoteConfig);
+        }
+        catch (err) {
+            errors ??= [];
+            errors.push(err);
+            evaluationDetails = getDetailsForError(key, remoteConfig?.getTimestampAsDate(), user, err);
+        }
+
+        evaluationDetailsArray[index++] = evaluationDetails;
+    }
+
+    return [evaluationDetailsArray, errors];
+}
+
+export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): [IEvaluationDetails[], any[] | undefined] {
+
+    return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
+        (key, fetchTime, user, err) => evaluationDetailsFromDefaultValue(key, null, fetchTime, user, errorToString(err), err));
+}
+
+export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): [IEvaluationDetails[], any[] | undefined] {
+
+    return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
+        (key, fetchTime, user, err) => evaluationDetailsFromDefaultVariationId(key, null, fetchTime, user, errorToString(err), err));
+}
+
+export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: IConfigCatLogger, appendix: string = ""): settings is { [name: string]: Setting } {
+    if (!settings) {
+        logger.error(`config.json is not present${appendix}`);
+        return false;
+    }
+
+    return true;
+}
+
+function keysToString(settings: { [name: string]: Setting }) {
+    return Object.keys(settings).join();
 }

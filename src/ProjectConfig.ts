@@ -6,6 +6,9 @@ export class ProjectConfig {
     /** Timestamp of last successful download (regardless of whether the config has changed or not) in milliseconds */
     Timestamp: number;
 
+    /** Returns Timestamp as a JavaScript Date object. */
+    getTimestampAsDate(): Date { return new Date(this.Timestamp); }
+
     constructor(timeStamp: number, jsonConfig: string | object, httpETag?: string) {
         this.Timestamp = timeStamp;
         this.ConfigJSON = typeof jsonConfig === "string" ? JSON.parse(jsonConfig) : jsonConfig;
