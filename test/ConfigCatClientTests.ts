@@ -2,12 +2,12 @@ import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
 import { PollingMode, IManualPollOptions, LogLevel, FetchResult, OptionsBase, IConfigCatKernel, ICache } from "../src/.";
-import { ProjectConfig } from "../src/ProjectConfig";
+import { ProjectConfig, Setting } from "../src/ProjectConfig";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
-import { User } from "../src/RolloutEvaluator";
+import { IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { allowEventLoop } from "./helpers/utils";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
 import { delay } from "../src/Utils";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
@@ -261,6 +261,210 @@ describe("ConfigCatClient", () => {
     const keys = await client.getAllKeysAsync();
     assert.equal(keys.length, 0);
   });
+
+  for (let isAsync of [false, true]) {
+    it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is not available`, async () => {
+
+      // Arrange
+  
+      const key = "notexists";
+      const defaultValue = false;
+      const timestamp = new Date().getTime();
+  
+      const configFetcherClass = FakeConfigFetcherWithTwoKeys;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+  
+      const user = new User("a@configcat.com");
+  
+      // Act
+  
+      const actual = await (isAsync
+        ? client.getValueDetailsAsync(key, defaultValue, user)
+        : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
+      );
+  
+      // Assert
+  
+      assert.strictEqual(key, actual.key);
+      assert.strictEqual(defaultValue, actual.value);
+      assert.isTrue(actual.isDefaultValue);
+      assert.isUndefined(actual.variationId);
+      assert.strictEqual(cachedPc.Timestamp, actual.fetchTime?.getTime());
+      assert.strictEqual(user, actual.user);
+      assert.isDefined(actual.errorMessage);
+      assert.isUndefined(actual.errorException);
+      assert.isUndefined(actual.matchedEvaluationRule);
+      assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    });
+  
+    it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available but no rule applies`, async () => {
+  
+      // Arrange
+  
+      const key = "debug";
+      const defaultValue = false;
+      const timestamp = new Date().getTime();
+  
+      const configFetcherClass = FakeConfigFetcherWithTwoKeys;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+  
+      const user = new User("a@configcat.com");
+  
+      // Act
+  
+      const actual = await (isAsync
+        ? client.getValueDetailsAsync(key, defaultValue, user)
+        : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
+      );
+  
+      // Assert
+  
+      assert.strictEqual(key, actual.key);
+      assert.strictEqual(true, actual.value);
+      assert.isFalse(actual.isDefaultValue);
+      assert.strictEqual("abcdefgh", actual.variationId);
+      assert.strictEqual(cachedPc.Timestamp, actual.fetchTime?.getTime());
+      assert.strictEqual(user, actual.user);
+      assert.isUndefined(actual.errorMessage);
+      assert.isUndefined(actual.errorException);
+      assert.isUndefined(actual.matchedEvaluationRule);
+      assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    });
+  
+    it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available and a comparison-based rule applies`, async () => {
+  
+      // Arrange
+  
+      const key = "debug";
+      const defaultValue = false;
+      const timestamp = new Date().getTime();
+  
+      const configFetcherClass = FakeConfigFetcherWithRules;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+  
+      const user = new User("a@configcat.com");
+      user.custom = { eyeColor: "red" };
+  
+      // Act
+  
+      const actual = await (isAsync
+        ? client.getValueDetailsAsync(key, defaultValue, user)
+        : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
+      );
+  
+      // Assert
+  
+      assert.strictEqual(key, actual.key);
+      assert.strictEqual("redValue", actual.value);
+      assert.isFalse(actual.isDefaultValue);
+      assert.strictEqual("redVariationId", actual.variationId);
+      assert.strictEqual(cachedPc.Timestamp, actual.fetchTime?.getTime());
+      assert.strictEqual(user, actual.user);
+      assert.isUndefined(actual.errorMessage);
+      assert.isUndefined(actual.errorException);
+      assert.isDefined(actual.matchedEvaluationRule);
+      assert.strictEqual(actual.value, actual.matchedEvaluationRule?.value);
+      assert.strictEqual(actual.variationId, actual.matchedEvaluationRule?.variationId);
+      assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    });
+  
+    it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available and a percentage-based rule applies`, async () => {
+  
+      // Arrange
+  
+      const key = "string25Cat25Dog25Falcon25Horse";
+      const defaultValue = false;
+      const timestamp = new Date().getTime();
+  
+      const configFetcherClass = FakeConfigFetcherWithPercantageRules;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+  
+      const user = new User("a@configcat.com");
+  
+      // Act
+  
+      const actual = await (isAsync
+        ? client.getValueDetailsAsync(key, defaultValue, user)
+        : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
+      );
+  
+      // Assert
+  
+      assert.strictEqual(key, actual.key);
+      assert.strictEqual("Cat", actual.value);
+      assert.isFalse(actual.isDefaultValue);
+      assert.strictEqual("CatVariationId", actual.variationId);
+      assert.strictEqual(cachedPc.Timestamp, actual.fetchTime?.getTime());
+      assert.strictEqual(user, actual.user);
+      assert.isUndefined(actual.errorMessage);
+      assert.isUndefined(actual.errorException);
+      assert.isUndefined(actual.matchedEvaluationRule);
+      assert.isDefined(actual.matchedEvaluationPercentageRule);
+      assert.strictEqual(actual.value, actual.matchedEvaluationPercentageRule?.value);
+      assert.strictEqual(actual.variationId, actual.matchedEvaluationPercentageRule?.variationId);
+    });
+    
+    it(`getValueDetails${isAsync ? "Async" : ""}() should return default value when exception thrown`, async () => {
+  
+      // Arrange
+  
+      const key = "debug";
+      const defaultValue = false;
+      const timestamp = new Date().getTime();
+  
+      const configFetcherClass = FakeConfigFetcherWithTwoKeys;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+  
+      const err = new Error("Something went wrong.");
+      client["evaluator"] = new class implements IRolloutEvaluator {
+        Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+          throw err;
+        }
+      };
+  
+      const user = new User("a@configcat.com");
+  
+      // Act
+  
+      const actual = await (isAsync
+        ? client.getValueDetailsAsync(key, defaultValue, user)
+        : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
+      );
+  
+      // Assert
+  
+      assert.strictEqual(key, actual.key);
+      assert.strictEqual(defaultValue, actual.value);
+      assert.isTrue(actual.isDefaultValue);
+      assert.isUndefined(actual.variationId);
+      assert.strictEqual(cachedPc.Timestamp, actual.fetchTime?.getTime());
+      assert.strictEqual(user, actual.user);
+      assert.isDefined(actual.errorMessage);
+      assert.strictEqual(err, actual.errorException);
+      assert.isUndefined(actual.matchedEvaluationRule);
+      assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    });
+  }
 
   it("Initialization With AutoPollOptions - config changed in every fetch - should fire configChanged every polling iteration", async () => {
 
