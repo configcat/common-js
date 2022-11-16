@@ -25,31 +25,31 @@ export function setupPolyfills() {
 function getWeakRefPolyfill<T extends object>() {
     const weakMap = new WeakMap<WeakRef<T>, T>();
 
-    function WeakRef(this: WeakRef<T>, target: T) {
+    const WeakRef = function (this: WeakRef<T>, target: T) {
         weakMap.set(this, target);
-    }
+    } as Function as WeakRefConstructor;
 
-    (WeakRef.prototype as WeakRef<T>).deref = function () {
+    WeakRef.prototype.deref = function () {
         return weakMap.get(this);
     };
 
-    return WeakRef as Function as WeakRefConstructor;
+    return WeakRef;
 }
 
 function getWeakRefFallback<T extends object>() {
     type WeakRefImpl = WeakRef<T> & { target: T };
 
-    function WeakRef(this: WeakRefImpl, target: T) {
+    const WeakRef = function (this: WeakRefImpl, target: T) {
         this.target = target;
-    };
+    } as Function as WeakRefConstructor & { isFallback: boolean };
 
-    (WeakRef.prototype as WeakRef<T>).deref = function (this: WeakRefImpl) {
+    WeakRef.prototype.deref = function (this: WeakRefImpl) {
         return this.target;
     };
 
     WeakRef.isFallback = true;
 
-    return WeakRef as Function as WeakRefConstructor;
+    return WeakRef;
 }
 
 export const isWeakRefAvailable = () => typeof WeakRef === "function" && !WeakRef.hasOwnProperty("isFallback");
