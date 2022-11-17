@@ -1,8 +1,8 @@
-import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
+import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { FakeConfigCatKernel, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeConfigFetcherWithNullNewConfig } from "./helpers/fakes";
+import { FakeConfigCatKernel, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules } from "./helpers/fakes";
 
 describe("ConfigCatClient", () => {
     it("getVariationId() works", (done) => {

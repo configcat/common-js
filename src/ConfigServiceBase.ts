@@ -1,5 +1,5 @@
-import { FetchResult, FetchStatus, IConfigFetcher } from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
+import { FetchResult, FetchStatus, IConfigFetcher } from "./ConfigFetcher";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
 export interface IConfigService {

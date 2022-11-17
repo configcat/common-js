@@ -1,18 +1,20 @@
-import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
-import { PollingMode, IManualPollOptions, LogLevel, FetchResult, OptionsBase, IConfigCatKernel, ICache } from "../src/.";
-import { ProjectConfig, Setting } from "../src/ProjectConfig";
-import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
-import { IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
-import { allowEventLoop } from "./helpers/utils";
-import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
-import { delay } from "../src/Utils";
-import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
+import { ICache } from "../src/Cache";
+import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
+import { AutoPollOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
+import { LogLevel } from "../src/ConfigCatLogger";
+import { FetchResult } from "../src/ConfigFetcher";
+import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
+import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
+import { ProjectConfig, Setting } from "../src/ProjectConfig";
+import { IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
+import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
+import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions should create an instance, getValue works", (done) => {

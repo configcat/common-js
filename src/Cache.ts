@@ -1,5 +1,10 @@
 import { ProjectConfig } from "./ProjectConfig";
-import { ICache } from "./index";
+
+export interface ICache {
+    set(key: string, config: ProjectConfig): Promise<void> | void;
+
+    get(key: string): Promise<ProjectConfig | null> | ProjectConfig | null;
+}
 
 export class InMemoryCache implements ICache {
     cache:  { [apiKey: string] : ProjectConfig; } = {};

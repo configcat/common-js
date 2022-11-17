@@ -1,10 +1,9 @@
 import { assert } from "chai";
-import { IConfigCatClient } from "../src";
-import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
-import { ConfigCatClient } from "../src/ConfigCatClient";
 import "mocha";
+import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
+import { AutoPollOptions } from "../src/ConfigCatClientOptions";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
+import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("Local Overrides", () => {
     it("Values from map - LocalOnly", async () => {

@@ -1,8 +1,13 @@
-import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
-import { IConfigCatLogger, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LogLevel, ICache, User } from "./index";
-import { InMemoryCache } from "./Cache";
+import { ICache, InMemoryCache } from "./Cache";
+import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
 import { FlagOverrides } from "./FlagOverrides";
+import { User } from "./RolloutEvaluator";
 
+export enum PollingMode {
+    AutoPoll,
+    ManualPoll,
+    LazyLoad,
+}
 
 /** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
 export enum DataGovernance {
@@ -37,11 +42,32 @@ export interface IOptions {
     offline?: boolean | null;
 }
 
+export interface IAutoPollOptions extends IOptions {
+    pollIntervalSeconds?: number;
+
+    maxInitWaitTimeSeconds?: number;
+
+    configChanged?: () => void;
+}
+
+export interface IManualPollOptions extends IOptions {
+}
+
+export interface ILazyLoadingOptions extends IOptions {
+    cacheTimeToLiveSeconds?: number;
+}
+
+export type OptionsForPollingMode<TMode extends PollingMode> =
+    TMode extends PollingMode.AutoPoll ? IAutoPollOptions :
+    TMode extends PollingMode.ManualPoll ? IManualPollOptions :
+    TMode extends PollingMode.LazyLoad ? ILazyLoadingOptions :
+    never;
+
 export abstract class OptionsBase implements IOptions {
 
     private configFileName = "config_v5";
 
-    public logger: IConfigCatLogger = new ConfigCatConsoleLogger(LogLevel.Warn);
+    public logger: LoggerWrapper;
 
     public apiKey: string;
 
@@ -88,10 +114,10 @@ export abstract class OptionsBase implements IOptions {
                 break;
         }
 
+        let logger: IConfigCatLogger | null | undefined;
+
         if (options) {
-            if (options.logger) {
-                this.logger = options.logger;
-            }
+            logger = options.logger;
 
             if (options.requestTimeoutMs) {
                 if (options.requestTimeoutMs < 0) {
@@ -126,6 +152,8 @@ export abstract class OptionsBase implements IOptions {
                 this.offline = options.offline;
             }
         }
+
+        this.logger = new LoggerWrapper(logger ?? new ConfigCatConsoleLogger());
     }
 
     getUrl(): string {

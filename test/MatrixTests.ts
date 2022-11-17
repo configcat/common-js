@@ -1,9 +1,9 @@
 import { assert } from "chai";
-import "mocha";
 import * as fs from "fs";
+import "mocha";
+import { createClientWithManualPoll } from "../src";
+import { ConfigCatConsoleLogger, LogLevel } from "../src/ConfigCatLogger";
 import { User } from "../src/RolloutEvaluator";
-import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
-import { LogLevel, createClientWithManualPoll } from "../src";
 import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("MatrixTests", () => {

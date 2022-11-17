@@ -1,9 +1,9 @@
 import { assert, expect } from "chai";
 import "mocha";
-import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
-import { ICache, IConfigCatLogger, LogLevel, OptionsBase, ProjectConfig } from "../src";
-import { ConfigCatConsoleLogger } from "../src/ConfigCatLogger";
-import { InMemoryCache } from "../src/Cache";
+import { ICache, InMemoryCache } from "../src/Cache";
+import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
+import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "../src/ConfigCatLogger";
+import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("Options", () => {
 
@@ -42,7 +42,7 @@ describe("Options", () => {
       null);
 
     assert.isDefined(options);
-    assert.equal(fakeLogger, options.logger);
+    assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
     assert.equal(10, options.requestTimeoutMs);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
@@ -67,7 +67,8 @@ describe("Options", () => {
   it("AutoPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
-    assert.isTrue(options.logger instanceof ConfigCatConsoleLogger);
+    assert.isTrue(options.logger instanceof LoggerWrapper);
+    assert.isTrue(options.logger["logger"] instanceof ConfigCatConsoleLogger);
     assert.equal("APIKEY", options.apiKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(60, options.pollIntervalSeconds);
@@ -91,7 +92,7 @@ describe("Options", () => {
       null);
 
     assert.isDefined(options);
-    assert.equal(fakeLogger, options.logger);
+    assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(59, options.pollIntervalSeconds);
@@ -237,7 +238,7 @@ describe("Options", () => {
       null);
 
     assert.isDefined(options);
-    assert.equal(fakeLogger, options.logger);
+    assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
     assert.equal(59, options.cacheTimeToLiveSeconds);
@@ -335,7 +336,6 @@ class FakeCache implements ICache {
 
 export class FakeLogger implements IConfigCatLogger {
 
-
   // tslint:disable-next-line:no-empty
   debug(message: string): void {
   }
@@ -345,9 +345,7 @@ export class FakeLogger implements IConfigCatLogger {
   // tslint:disable-next-line:no-empty
   warn(message: string): void {
   }
-  isLogLevelEnabled(logLevel: LogLevel): boolean {
-    return false;
-  }
+
   // tslint:disable-next-line:no-empty
   log(message: string): void {
   }

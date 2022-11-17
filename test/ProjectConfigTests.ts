@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import "mocha";
-import { ProjectConfig } from "../src";
+import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("ProjectConfig", () => {
   it("Equals - Same etag values - Should equal", () => {

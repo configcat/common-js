@@ -1,14 +1,16 @@
-import { IConfigCatKernel, IConfigCatLogger, OptionsForPollingMode, PollingMode } from "./index";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase, ConfigCatClientOptions } from "./ConfigCatClientOptions";
-import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
+import type { ICache } from "./Cache";
+import { AutoPollOptions, ConfigCatClientOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, OptionsForPollingMode, PollingMode } from "./ConfigCatClientOptions";
+import { LoggerWrapper } from "./ConfigCatLogger";
+import type { IConfigFetcher } from "./ConfigFetcher";
+import type { IConfigService } from "./ConfigServiceBase";
+import { OverrideBehaviour } from "./FlagOverrides";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
-import { User, IRolloutEvaluator, RolloutEvaluator, evaluate, IEvaluationDetails, evaluationDetailsFromDefaultValue, checkSettingsAvailable, evaluateAll, evaluateVariationId, evaluateAllVariationIds } from "./RolloutEvaluator";
-import { Setting, ConfigFile, ProjectConfig, RolloutRule, RolloutPercentageItem } from "./ProjectConfig";
-import { OverrideBehaviour } from "./FlagOverrides";
-import { errorToString, getSettingsFromConfig } from "./Utils";
 import { isWeakRefAvailable } from "./Polyfills";
+import { ConfigFile, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
+import { checkSettingsAvailable, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, IEvaluationDetails, IRolloutEvaluator, RolloutEvaluator, User } from "./RolloutEvaluator";
+import { errorToString, getSettingsFromConfig } from "./Utils";
 
 export interface IConfigCatClient {
 
@@ -78,6 +80,16 @@ export interface IConfigCatClient {
 
     /** Configures the client to not initiate HTTP requests and work only from its cache. */
     setOffline(): void;
+}
+
+export interface IConfigCatKernel {
+    configFetcher: IConfigFetcher;
+    /**
+     * Default ICache implementation.
+     */
+    cache?: ICache;
+    sdkType: string;
+    sdkVersion: string;
 }
 
 export class ConfigCatClientCache {
@@ -525,7 +537,7 @@ export class SettingKeyValue {
 // Since a strong reference is stored to the held value (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry),
 // objects implementing this interface MUST NOT contain a strong reference (either directly or transitively) to the ConfigCatClient object because
 // that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
-interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: IConfigCatLogger };
+interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: LoggerWrapper };
 
 let registerForFinalization: (client: ConfigCatClient, data: IFinalizationData) => (() => void);
 

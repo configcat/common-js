@@ -1,8 +1,8 @@
-import { IConfigCatLogger } from "./index";
-import { Setting, RolloutRule, RolloutPercentageItem, ProjectConfig } from "./ProjectConfig";
-import { sha1 } from "./Sha1";
+import { LoggerWrapper } from "./ConfigCatLogger";
+import { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
 import * as semver from "./Semver";
-import { errorToString, isUndefined } from "./Utils"
+import { sha1 } from "./Sha1";
+import { errorToString, isUndefined } from "./Utils";
 
 export interface IRolloutEvaluator {
     Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails;
@@ -65,9 +65,9 @@ export class User {
 
 export class RolloutEvaluator implements IRolloutEvaluator {
 
-    private logger: IConfigCatLogger;
+    private logger: LoggerWrapper;
 
-    constructor(logger: IConfigCatLogger) {
+    constructor(logger: LoggerWrapper) {
 
         this.logger = logger;
     }
@@ -578,7 +578,7 @@ export function evaluationDetailsFromDefaultVariationId(key: string, defaultVari
 }
 
 export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: any,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): IEvaluationDetails {
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
 
     let errorMessage: string;
     if (!settings) {
@@ -598,7 +598,7 @@ export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string
 }
 
 export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: any,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): IEvaluationDetails {
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
 
     let errorMessage: string;
     if (!settings) {
@@ -618,7 +618,7 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 }
 
 function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper,
     getDetailsForError: (key: string, fetchTime: Date | undefined, user: User | undefined, err: any) => IEvaluationDetails): [IEvaluationDetails[], any[] | undefined] {
 
     let errors: any[] | undefined;
@@ -648,20 +648,20 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
 }
 
 export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): [IEvaluationDetails[], any[] | undefined] {
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): [IEvaluationDetails[], any[] | undefined] {
 
     return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
         (key, fetchTime, user, err) => evaluationDetailsFromDefaultValue(key, null, fetchTime, user, errorToString(err), err));
 }
 
 export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: IConfigCatLogger): [IEvaluationDetails[], any[] | undefined] {
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): [IEvaluationDetails[], any[] | undefined] {
 
     return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
         (key, fetchTime, user, err) => evaluationDetailsFromDefaultVariationId(key, null, fetchTime, user, errorToString(err), err));
 }
 
-export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: IConfigCatLogger, appendix: string = ""): settings is { [name: string]: Setting } {
+export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, appendix: string = ""): settings is { [name: string]: Setting } {
     if (!settings) {
         logger.error(`config.json is not present${appendix}`);
         return false;
