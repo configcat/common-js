@@ -28,11 +28,14 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
                 resolve();
             });
 
+            this.initialization.then(() => !this.disposed && options.hooks.emit("clientReady"));
+
             setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
         }
         else {
             this.initialized = true;
             this.initialization = Promise.resolve();
+            options.hooks.emit("clientReady");
         }
 
         if (!options.offline) {

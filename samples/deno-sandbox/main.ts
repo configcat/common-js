@@ -16,7 +16,10 @@ const client = getClient(
     PollingMode.AutoPoll,
     {
         // Setting log level to Info to show detailed feature flag evaluation
-        logger: createConsoleLogger(LogLevel.Info)
+        logger: createConsoleLogger(LogLevel.Info),
+        setupHooks: hooks => hooks
+            .on("clientReady", () => console.log("Client is ready!"))
+            .on("beforeClientDispose", () => console.log("Client is disposing..."))
     },
     {
         configFetcher,

@@ -1,3 +1,6 @@
+import { Hooks } from "./Hooks";
+import { errorToString } from "./Utils";
+
 export enum LogLevel {
     Debug = 4,
     Info = 3,
@@ -26,7 +29,7 @@ export interface IConfigCatLogger {
 export class LoggerWrapper implements IConfigCatLogger {
     get level() { return this.logger.level ?? LogLevel.Warn; }
 
-    constructor(private logger: IConfigCatLogger) {
+    constructor(private logger: IConfigCatLogger, private hooks?: Hooks) {
     }
 
     log(message: string): void {
@@ -51,10 +54,16 @@ export class LoggerWrapper implements IConfigCatLogger {
         }
     }
 
-    error(message: string): void {
+    error(message: string, err?: any): void {
         if (this.isLogLevelEnabled(LogLevel.Error)) {
-            this.logger.error(message);
+            const logMessage = err
+                ? message + '\n' + errorToString(err, true)
+                : message;
+
+            this.logger.error(logMessage);
         }
+
+        this.hooks?.emit("clientError", message, err);
     }
 
     private isLogLevelEnabled(logLevel: LogLevel): boolean {

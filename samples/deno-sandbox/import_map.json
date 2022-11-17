@@ -1,6 +1,7 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.161.0/",
+    "std/": "https://deno.land/std/",
+    "3rdparty/": "https://deno.land/x/",
     "src/": "../../src/",
     "../../src/index": "../../src/index.ts",
     "../../src/AutoPollConfigService": "../../src/AutoPollConfigService.ts",
@@ -10,7 +11,10 @@
     "../../src/ConfigCatLogger": "../../src/ConfigCatLogger.ts",
     "../../src/ConfigFetcher": "../../src/ConfigFetcher.ts",
     "../../src/ConfigServiceBase": "../../src/ConfigServiceBase.ts",
+    "../../src/DefaultEventEmitter": "../../src/DefaultEventEmitter.ts",
+    "../../src/EventEmitter": "../../src/EventEmitter.ts",
     "../../src/FlagOverrides": "../../src/FlagOverrides.ts",
+    "../../src/Hooks": "../../src/Hooks.ts",
     "../../src/LazyLoadConfigService": "../../src/LazyLoadConfigService.ts",
     "../../src/ManualPollConfigService": "../../src/ManualPollConfigService.ts",
     "../../src/Polyfills": "../../src/Polyfills.ts",

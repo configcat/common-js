@@ -1,6 +1,9 @@
 import { ICache, InMemoryCache } from "./Cache";
 import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
+import { DefaultEventEmitter } from "./DefaultEventEmitter";
+import type { IEventEmitter } from "./EventEmitter";
 import { FlagOverrides } from "./FlagOverrides";
+import { Hooks, IProvidesHooks } from "./Hooks";
 import { User } from "./RolloutEvaluator";
 
 export enum PollingMode {
@@ -40,6 +43,8 @@ export interface IOptions {
      * Indicates whether the client should be initialized to offline mode or not. Defaults to false.
      */
     offline?: boolean | null;
+    /** Provides an opportunity to add listeners to client hooks (events) at client initalization time. */
+    setupHooks?: (hooks: IProvidesHooks) => void;
 }
 
 export interface IAutoPollOptions extends IOptions {
@@ -91,7 +96,9 @@ export abstract class OptionsBase implements IOptions {
 
     public offline: boolean = false;
 
-    constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null) {
+    public hooks: Hooks;
+
+    constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
         if (!apiKey) {
             throw new Error("Invalid 'apiKey' value");
         }
@@ -113,6 +120,9 @@ export abstract class OptionsBase implements IOptions {
                 this.baseUrl = "https://cdn-global.configcat.com";
                 break;
         }
+
+        const eventEmitter = eventEmitterFactory?.() ?? new DefaultEventEmitter();
+        this.hooks = new Hooks(eventEmitter);
 
         let logger: IConfigCatLogger | null | undefined;
 
@@ -151,9 +161,11 @@ export abstract class OptionsBase implements IOptions {
             if (options.offline) {
                 this.offline = options.offline;
             }
+
+            options.setupHooks?.(this.hooks);
         }
 
-        this.logger = new LoggerWrapper(logger ?? new ConfigCatConsoleLogger());
+        this.logger = new LoggerWrapper(logger ?? new ConfigCatConsoleLogger(), this.hooks);
     }
 
     getUrl(): string {
@@ -170,15 +182,17 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
     /** The client's poll interval in seconds. Default: 60 seconds. */
     public pollIntervalSeconds: number = 60;
 
-    /** You can subscribe to configuration changes with this callback. */
+    /** You can subscribe to configuration changes with this callback. 
+     * @deprecated This property is obsolete and will be removed from the public API in a future major version. Please use the 'options.setupHooks = hooks => hooks.on("configChanged", ...)' format instead.
+    */
     public configChanged: () => void = () => { };
 
     /** Maximum waiting time between the client initialization and the first config acquisition in seconds. */
     public maxInitWaitTimeSeconds: number = 5;
 
-    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null) {
+    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-        super(apiKey, sdkType + "/a-" + sdkVersion, options, defaultCache);
+        super(apiKey, sdkType + "/a-" + sdkVersion, options, defaultCache, eventEmitterFactory);
 
         if (options) {
 
@@ -206,8 +220,8 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 }
 
 export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null, defaultCache?: ICache | null) {
-        super(apiKey, sdkType + "/m-" + sdkVersion, options, defaultCache);
+    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
+        super(apiKey, sdkType + "/m-" + sdkVersion, options, defaultCache, eventEmitterFactory);
     }
 }
 
@@ -216,9 +230,9 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
     /** The cache TTL. */
     public cacheTimeToLiveSeconds: number = 60;
 
-    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null) {
+    constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-        super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCache);
+        super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCache, eventEmitterFactory);
 
         if (options) {
             if (options.cacheTimeToLiveSeconds) {

@@ -13,6 +13,8 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
         super(configFetcher, options);
 
         this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
+
+        options.hooks.emit("clientReady");
     }
 
     async getConfig(): Promise<ProjectConfig | null> {

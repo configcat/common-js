@@ -8,6 +8,8 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
     constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
 
         super(configFetcher, options);
+
+        options.hooks.emit("clientReady");
     }
 
     async getConfig(): Promise<ProjectConfig | null> {
