@@ -1,12 +1,13 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import "mocha";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { ICache } from "../src/Cache";
 import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
-import { AutoPollOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
+import { AutoPollOptions, IAutoPollOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
 import { LogLevel } from "../src/ConfigCatLogger";
 import { FetchResult } from "../src/ConfigFetcher";
-import { ConfigServiceBase } from "../src/ConfigServiceBase";
+import { ConfigServiceBase, IConfigService } from "../src/ConfigServiceBase";
+import { IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import { ProjectConfig, Setting } from "../src/ProjectConfig";
@@ -212,8 +213,14 @@ describe("ConfigCatClient", () => {
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
+    const flagEvaluatedEvents: IEvaluationDetails[] = [];
+    client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+    
     const value = await client.getValueAsync("debug", true);
     assert.equal(true, value);
+
+    assert.equal(1, flagEvaluatedEvents.length);
+    assert.strictEqual(value, flagEvaluatedEvents[0].value);
   });
 
   it("getAllKeys() works", (done) => {
@@ -281,7 +288,10 @@ describe("ConfigCatClient", () => {
       const client = new ConfigCatClient(options, configCatKernel);
   
       const user = new User("a@configcat.com");
-  
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
       // Act
   
       const actual = await (isAsync
@@ -301,6 +311,9 @@ describe("ConfigCatClient", () => {
       assert.isUndefined(actual.errorException);
       assert.isUndefined(actual.matchedEvaluationRule);
       assert.isUndefined(actual.matchedEvaluationPercentageRule);
+
+      assert.equal(1, flagEvaluatedEvents.length);
+      assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
   
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available but no rule applies`, async () => {
@@ -319,7 +332,10 @@ describe("ConfigCatClient", () => {
       const client = new ConfigCatClient(options, configCatKernel);
   
       const user = new User("a@configcat.com");
-  
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
       // Act
   
       const actual = await (isAsync
@@ -339,6 +355,9 @@ describe("ConfigCatClient", () => {
       assert.isUndefined(actual.errorException);
       assert.isUndefined(actual.matchedEvaluationRule);
       assert.isUndefined(actual.matchedEvaluationPercentageRule);
+
+      assert.equal(1, flagEvaluatedEvents.length);
+      assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
   
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available and a comparison-based rule applies`, async () => {
@@ -358,7 +377,10 @@ describe("ConfigCatClient", () => {
   
       const user = new User("a@configcat.com");
       user.custom = { eyeColor: "red" };
-  
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
       // Act
   
       const actual = await (isAsync
@@ -380,6 +402,9 @@ describe("ConfigCatClient", () => {
       assert.strictEqual(actual.value, actual.matchedEvaluationRule?.value);
       assert.strictEqual(actual.variationId, actual.matchedEvaluationRule?.variationId);
       assert.isUndefined(actual.matchedEvaluationPercentageRule);
+
+      assert.equal(1, flagEvaluatedEvents.length);
+      assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
   
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available and a percentage-based rule applies`, async () => {
@@ -398,7 +423,10 @@ describe("ConfigCatClient", () => {
       const client = new ConfigCatClient(options, configCatKernel);
   
       const user = new User("a@configcat.com");
-  
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
       // Act
   
       const actual = await (isAsync
@@ -420,6 +448,9 @@ describe("ConfigCatClient", () => {
       assert.isDefined(actual.matchedEvaluationPercentageRule);
       assert.strictEqual(actual.value, actual.matchedEvaluationPercentageRule?.value);
       assert.strictEqual(actual.variationId, actual.matchedEvaluationPercentageRule?.variationId);
+
+      assert.equal(1, flagEvaluatedEvents.length);
+      assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
     
     it(`getValueDetails${isAsync ? "Async" : ""}() should return default value when exception thrown`, async () => {
@@ -445,7 +476,12 @@ describe("ConfigCatClient", () => {
       };
   
       const user = new User("a@configcat.com");
-  
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      const errorEvents: [string, any][] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+      client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]))
+
       // Act
   
       const actual = await (isAsync
@@ -465,6 +501,14 @@ describe("ConfigCatClient", () => {
       assert.strictEqual(err, actual.errorException);
       assert.isUndefined(actual.matchedEvaluationRule);
       assert.isUndefined(actual.matchedEvaluationPercentageRule);
+
+      assert.equal(1, flagEvaluatedEvents.length);
+      assert.strictEqual(actual, flagEvaluatedEvents[0]);
+
+      assert.equal(1, errorEvents.length);
+      const [actualErrorMessage, actualErrorException] = errorEvents[0];
+      expect(actualErrorMessage).to.include("Error occurred in getValueDetailsAsync().");
+      assert.strictEqual(err, actualErrorException);
     });
   }
 
@@ -472,13 +516,21 @@ describe("ConfigCatClient", () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithAlwaysVariableEtag(), sdkType: 'common', sdkVersion: '1.0.0' };
     let counter: number = 0;
+    let configChangedEventCount = 0;
     const pollIntervalSeconds = 1;
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null, pollIntervalSeconds, configChanged: () => { counter++; } }, null);
+    const userOptions: IAutoPollOptions = { 
+      logger: null,
+      pollIntervalSeconds,
+      configChanged: () => { counter++; },
+      setupHooks: hooks => hooks.on("configChanged", () => configChangedEventCount++)
+    };
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", userOptions, null);
     new ConfigCatClient(options, configCatKernel);
 
     await delay(2.5 * pollIntervalSeconds * 1000);
 
     assert.equal(counter, 3);
+    assert.equal(configChangedEventCount, 3);
   });
 
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait", async () => {
@@ -586,9 +638,14 @@ describe("ConfigCatClient", () => {
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
+    const flagEvaluatedEvents: IEvaluationDetails[] = [];
+    client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
     let actual = await client.getAllValuesAsync();
 
     assert.equal(actual.length, 2);
+
+    assert.deepEqual(flagEvaluatedEvents.map(evt => [evt.key, evt.value]), actual.map(kv => [kv.settingKey, kv.settingValue]));
   });
 
   it("getAllValues - works", (done) => {
@@ -609,12 +666,16 @@ describe("ConfigCatClient", () => {
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
+    const flagEvaluatedEvents: IEvaluationDetails[] = [];
+    client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
     let actual = await client.getAllValuesAsync();
 
     assert.isDefined(actual);
     assert.equal(actual.length, 0);
-  });
 
+    assert.equal(flagEvaluatedEvents.length, 0);
+  });
 
   it("Initialization With LazyLoadOptions - multiple getValueAsync should not cause multiple config fetches", async () => {
 
@@ -941,7 +1002,7 @@ describe("ConfigCatClient", () => {
       const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => FetchResult.success(lastConfig!, (lastETag as any | 0) + 1 + ""));
       const configCache = new FakeCache();
       const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
-      const options = new AutoPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, { offline: false, pollIntervalSeconds: 100_000, maxInitWaitTimeSeconds: 1 }, configCache);
+      const options = optionsFactory("APIKEY", configCatKernel, configCache, false);
       const client = new ConfigCatClient(options, configCatKernel);
       const configService = client["configService"] as ConfigServiceBase<OptionsBase>;
   
@@ -982,7 +1043,7 @@ describe("ConfigCatClient", () => {
       await client.forceRefreshAsync();
   
       assert.isTrue(client.isOffline);
-      assert.equal(1, configFetcher.calledTimes);
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
   
       assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
   
@@ -991,6 +1052,103 @@ describe("ConfigCatClient", () => {
   
       client.setOnline();
       assert.isTrue(client.isOffline);
+    });
+  }
+
+  for (const addListenersViaOptions of [false, true]) {
+    it(`ConfigCatClient should emit events, which listeners added ${addListenersViaOptions ? "via options" : "directly on the client"} should get notified of.`, async () => {
+      let clientReadyEventCount = 0;
+      const configChangedEvents: ProjectConfig[] = [];
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      const errorEvents: [string, any][] = [];
+      let beforeClientDisposeEventCount = 0;
+
+      const handleClientReady = () => clientReadyEventCount++;
+      const handleConfigChanged = (pc: ProjectConfig) => configChangedEvents.push(pc);
+      const handleFlagEvaluated = (ed: IEvaluationDetails) => flagEvaluatedEvents.push(ed);
+      const handleClientError = (msg: string, err: any) => errorEvents.push([msg, err]);
+      const handleBeforeClientDispose = () => beforeClientDisposeEventCount++;
+
+      function setupHooks(hooks: IProvidesHooks) {
+        hooks.on("clientReady", handleClientReady);
+        hooks.on("configChanged", handleConfigChanged);
+        hooks.on("flagEvaluated", handleFlagEvaluated);
+        hooks.on("clientError", handleClientError);
+        hooks.on("beforeClientDispose", handleBeforeClientDispose);
+      }
+
+      const configFetcher = new FakeConfigFetcherWithTwoKeys();
+      const configCache = new FakeCache();
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
+      const userOptions: IManualPollOptions = addListenersViaOptions ? { setupHooks } : {};
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, userOptions, configCache);
+
+      const expectedErrorMessage = "Error occurred in forceRefreshAsync().";
+      const expectedErrorException = new Error("Something went wrong.");
+
+      // 1. Client gets created
+      const client = new ConfigCatClient(options, configCatKernel);
+
+      if (!addListenersViaOptions) {
+        setupHooks(client);
+      }
+
+      const expectedClientReadyEventCount = addListenersViaOptions ? 1 : 0;
+      assert.equal(expectedClientReadyEventCount, clientReadyEventCount);
+      assert.equal(0, configChangedEvents.length);
+      assert.equal(0, flagEvaluatedEvents.length);
+      assert.equal(0, errorEvents.length);
+      assert.equal(0, beforeClientDisposeEventCount);
+
+      // 2. Fetch fails
+      const originalConfigService = client["configService"] as ConfigServiceBase<OptionsBase>;
+      client["configService"] = new class implements IConfigService {
+        getConfig(): Promise<ProjectConfig | null> { return Promise.resolve(null); }
+        refreshConfigAsync(): Promise<ProjectConfig | null> { return Promise.reject(expectedErrorException); }
+        get isOffline(): boolean { return false; }
+        setOnline(): void { }
+        setOffline(): void { }
+        dispose(): void { }
+      };
+
+      await client.forceRefreshAsync();
+
+      assert.equal(0, configChangedEvents.length);
+      assert.equal(1, errorEvents.length);
+      const [actualErrorMessage, actualErrorException] = errorEvents[0];
+      expect(actualErrorMessage).to.includes(expectedErrorMessage);
+      assert.strictEqual(expectedErrorException, actualErrorException);
+
+      // 3. Fetch succeeds
+      client["configService"] = originalConfigService;
+
+      await client.forceRefreshAsync();
+      const cachedPc = configCache.get("");
+
+      assert.equal(1, configChangedEvents.length);
+      assert.strictEqual(cachedPc, configChangedEvents[0]);
+
+      // 4. All flags are evaluated
+      const keys = await client.getAllKeysAsync();
+      var evaluationDetails: IEvaluationDetails[] = [];
+      for (let key of keys)
+      {
+          evaluationDetails.push(await client.getValueDetailsAsync(key, ""));
+      }
+
+      assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);
+      assert.deepEqual(evaluationDetails, flagEvaluatedEvents);
+
+      assert.equal(0, beforeClientDisposeEventCount);
+
+      // 5. Client gets disposed
+      client.dispose();
+
+      assert.equal(expectedClientReadyEventCount, clientReadyEventCount);
+      assert.equal(1, configChangedEvents.length);
+      assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);
+      assert.equal(1, errorEvents.length);
+      assert.equal(1, beforeClientDisposeEventCount);
     });
   }
 });
