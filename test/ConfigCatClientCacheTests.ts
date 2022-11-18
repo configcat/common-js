@@ -6,6 +6,7 @@ import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOption
 import { FakeConfigCatKernel, FakeConfigFetcher } from "./ConfigCatClientTests";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import { allowEventLoop } from "./helpers/utils";
+import "./helpers/ConfigCatClientCacheExtensions";
 
 describe("ConfigCatClientCache", () => {
   it("getOrCreate() should return shared instance when cached instance is alive", (done) => {
@@ -25,8 +26,8 @@ describe("ConfigCatClientCache", () => {
 
     // Assert
 
-    assert.strictEqual(1, cache.count);
-    assert.strictEqual(1, Object.keys(cache["instances"]).length);
+    assert.strictEqual(1, cache.getAliveCount());
+    assert.strictEqual(1, cache.getSize());
     const cachedInstance = cache["instances"][sdkKey][0].deref();
 
     assert.instanceOf(client1, ConfigCatClient);
@@ -67,8 +68,8 @@ describe("ConfigCatClientCache", () => {
 
     // Assert
 
-    assert.strictEqual(1, cache.count);
-    assert.strictEqual(1, Object.keys(cache["instances"]).length);
+    assert.strictEqual(1, cache.getAliveCount());
+    assert.strictEqual(1, cache.getSize());
     const cachedInstance = cache["instances"][sdkKey][0].deref();
 
     assert.isUndefined(client1.deref());
@@ -98,8 +99,8 @@ describe("ConfigCatClientCache", () => {
     // Assert
 
     assert.isTrue(success);
-    assert.strictEqual(0, cache.count);
-    assert.strictEqual(0, Object.keys(cache["instances"]).length);
+    assert.strictEqual(0, cache.getAliveCount());
+    assert.strictEqual(0, cache.getSize());
 
     assert.instanceOf(client1, ConfigCatClient);
     assert.isFalse(instanceAlreadyCreated1);
@@ -129,8 +130,8 @@ describe("ConfigCatClientCache", () => {
     // Assert
 
     assert.isFalse(success);
-    assert.strictEqual(1, cache.count);
-    assert.strictEqual(1, Object.keys(cache["instances"]).length);
+    assert.strictEqual(1, cache.getAliveCount());
+    assert.strictEqual(1, cache.getSize());
     const cachedInstance = cache["instances"][sdkKey][0].deref();
 
     assert.instanceOf(client1, ConfigCatClient);
@@ -172,8 +173,8 @@ describe("ConfigCatClientCache", () => {
     // Assert
 
     assert.isFalse(success);
-    assert.strictEqual(0, cache.count);
-    assert.strictEqual(0, Object.keys(cache["instances"]).length);
+    assert.strictEqual(0, cache.getAliveCount());
+    assert.strictEqual(0, cache.getSize());
 
     assert.isUndefined(client1.deref());
     assert.isFalse(instanceAlreadyCreated1);
@@ -198,8 +199,8 @@ describe("ConfigCatClientCache", () => {
     // Assert
 
     assert.isFalse(success);
-    assert.strictEqual(1, cache.count);
-    assert.strictEqual(1, Object.keys(cache["instances"]).length);
+    assert.strictEqual(1, cache.getAliveCount());
+    assert.strictEqual(1, cache.getSize());
     const cachedInstance = cache["instances"][sdkKey][0].deref();
 
     assert.instanceOf(client1, ConfigCatClient);
@@ -240,8 +241,8 @@ describe("ConfigCatClientCache", () => {
     // Assert
 
     assert.strictEqual(2, cacheCountBefore);
-    assert.strictEqual(0, cache.count);
-    assert.strictEqual(0, Object.keys(cache["instances"]).length);
+    assert.strictEqual(0, cache.getAliveCount());
+    assert.strictEqual(0, cache.getSize());
 
     assert.instanceOf(client1, ConfigCatClient);
     assert.isFalse(instanceAlreadyCreated1);
@@ -256,5 +257,5 @@ describe("ConfigCatClientCache", () => {
 
 function getOrCreateClientWeakRef(cache: ConfigCatClientCache, options: any, configCatKernel: any): [WeakRef<ConfigCatClient>, boolean, number] {
   const [client, instanceAlreadyCreated] = cache.getOrCreate(options, configCatKernel);
-  return [new WeakRef(client), instanceAlreadyCreated, cache.count];
+  return [new WeakRef(client), instanceAlreadyCreated, cache.getAliveCount()];
 }

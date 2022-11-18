@@ -5,11 +5,6 @@ import { ConfigCatClient } from "./ConfigCatClient";
 export class ConfigCatClientCache {
     private instances: Record<string, [WeakRef<ConfigCatClient>, object]> = {};
 
-    // For testing purposes only
-    public get count() {
-        return Object.values(this.instances).filter(([weakRef]) => !!weakRef.deref()).length;
-    }
-
     public getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
         let instance: ConfigCatClient | undefined;
 

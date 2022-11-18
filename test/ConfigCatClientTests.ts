@@ -8,6 +8,7 @@ import { User } from "../src/RolloutEvaluator";
 import { allowEventLoop } from "./helpers/utils";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import { FakeLogger } from "./helpers/fakes";
+import "./helpers/ConfigCatClientCacheExtensions";
 
 describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions should create an instance, getValue works", (done) => {
@@ -505,7 +506,7 @@ describe("ConfigCatClient", () => {
       const client2 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, passOptionsToSecondGet ? options : null, configCatKernel);
       const messages2 = [...logger.messages];
 
-      const instanceCount = ConfigCatClient["instanceCache"].count;
+      const instanceCount = ConfigCatClient["instanceCache"].getAliveCount();
 
       client2.dispose();
       client1.dispose();
@@ -539,11 +540,11 @@ describe("ConfigCatClient", () => {
 
     // Act
 
-    const instanceCount1 = ConfigCatClient["instanceCache"].count;
+    const instanceCount1 = ConfigCatClient["instanceCache"].getAliveCount();
 
     client1.dispose();
 
-    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+    const instanceCount2 = ConfigCatClient["instanceCache"].getAliveCount();
 
     // Assert
 
@@ -564,23 +565,23 @@ describe("ConfigCatClient", () => {
 
     // Act
 
-    const instanceCount1 = ConfigCatClient["instanceCache"].count;
+    const instanceCount1 = ConfigCatClient["instanceCache"].getAliveCount();
 
     client1.dispose();
 
-    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+    const instanceCount2 = ConfigCatClient["instanceCache"].getAliveCount();
 
     const client2 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, null, configCatKernel);
 
-    const instanceCount3 = ConfigCatClient["instanceCache"].count;
+    const instanceCount3 = ConfigCatClient["instanceCache"].getAliveCount();
 
     client1.dispose();
 
-    const instanceCount4 = ConfigCatClient["instanceCache"].count;
+    const instanceCount4 = ConfigCatClient["instanceCache"].getAliveCount();
 
     client2.dispose();
 
-    const instanceCount5 = ConfigCatClient["instanceCache"].count;
+    const instanceCount5 = ConfigCatClient["instanceCache"].getAliveCount();
 
     // Assert
 
@@ -605,11 +606,11 @@ describe("ConfigCatClient", () => {
 
     // Act
 
-    const instanceCount1 = ConfigCatClient["instanceCache"].count;
+    const instanceCount1 = ConfigCatClient["instanceCache"].getAliveCount();
 
     ConfigCatClient.disposeAll();
 
-    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+    const instanceCount2 = ConfigCatClient["instanceCache"].getAliveCount();
 
     // Assert
 
@@ -638,7 +639,7 @@ describe("ConfigCatClient", () => {
         ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { logger, maxInitWaitTimeSeconds: 0 }, configCatKernel);
         ConfigCatClient.get(sdkKey2, PollingMode.ManualPoll, { logger }, configCatKernel);
 
-        return ConfigCatClient["instanceCache"].count;
+        return ConfigCatClient["instanceCache"].getAliveCount();
     }
 
     // Act
@@ -654,7 +655,7 @@ describe("ConfigCatClient", () => {
       await allowEventLoop(10);
     }
 
-    const instanceCount2 = ConfigCatClient["instanceCache"].count;
+    const instanceCount2 = ConfigCatClient["instanceCache"].getAliveCount();
 
     // Assert
 
