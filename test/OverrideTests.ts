@@ -76,6 +76,27 @@ describe("Local Overrides", () => {
         assert.equal(await client.getValueAsync("nonexisting", false), true);
     });
 
+    it("Values from map - RemoteOverLocal - failing remote", async () => {
+        let configCatKernel: FakeConfigCatKernel = {
+            configFetcher: new FakeConfigFetcherBase(null),
+            sdkType: "common",
+            sdkVersion: "1.0.0"
+        };
+        let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+            flagOverrides: {
+                dataSource: new MapOverrideDataSource({
+                    fakeKey: true,
+                    nonexisting: true
+                }),
+                behaviour: OverrideBehaviour.RemoteOverLocal
+            },
+        }, null);
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        assert.equal(await client.getValueAsync("fakeKey", false), true);
+        assert.equal(await client.getValueAsync("nonexisting", false), true);
+    });
+
     it("Values from map - another map style", async () => {
         let dataSource: { [name: string]: any } = {}
         dataSource["enabled-feature"] = true;

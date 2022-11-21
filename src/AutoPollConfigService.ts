@@ -63,8 +63,8 @@ export class AutoPollConfigService extends ConfigServiceBase implements IConfigS
             if (weDontHaveCachedYetButHaveNew || weHaveBothButTheyDiffers) {
                 this.configChanged();
             }
-
-            resolve(newConfig)
+            
+            resolve(newConfig);
         });
     }
 
