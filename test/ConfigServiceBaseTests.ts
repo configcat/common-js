@@ -47,7 +47,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const _: ConfigServiceBase = new AutoPollConfigService(
+        const service: AutoPollConfigService = new AutoPollConfigService(
             fetcherMock.object(),
             new AutoPollOptions(
                 "APIKEY", "common", "1.0.0",
@@ -60,6 +60,8 @@ describe("ConfigServiceBaseTests", () => {
 
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Once());
         fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.AtLeast(3));
+        
+        service.dispose();
     });
 
     it("AutoPollConfigService - with forceRefresh - invokes 'cache.set' operation two times", async () => {
@@ -97,6 +99,8 @@ describe("ConfigServiceBaseTests", () => {
         // Assert
 
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(2));
+        
+        service.dispose();
     });
 
     it("AutoPollConfigService - ProjectConfig is cached and fetch returns same value - should invoke the 'cache.set' operation only once (at first)", async () => {
@@ -133,6 +137,9 @@ describe("ConfigServiceBaseTests", () => {
             It.IsAny<string>(),
             It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))),
             Times.Once());
+
+            
+        service.dispose();
     });
 
     it("AutoPollConfigService - Cached config is the same as ProjectConfig but older than the polling time - Should wait until the cache is updated with the new etag", async () => {
@@ -184,6 +191,8 @@ describe("ConfigServiceBaseTests", () => {
         assert.isNotNull(actualProjectConfig?.ConfigJSON);
         assert.equal(actualProjectConfig?.HttpETag, projectConfigNew.HttpETag);
         assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigNew?.ConfigJSON));
+        
+        service.dispose();
     });
 
     it("AutoPollConfigService - Cached config is the same as ProjectConfig but older than the polling time - Should return cached item", async () => {
@@ -236,6 +245,8 @@ describe("ConfigServiceBaseTests", () => {
         assert.equal(actualProjectConfig?.HttpETag, projectConfigOld.HttpETag);
         assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigOld?.ConfigJSON));
         assert.equal(actualProjectConfig?.Timestamp, projectConfigOld.Timestamp);
+
+        service.dispose();
     });
 
     it("AutoPollConfigService - ProjectConfigs are same but cache stores older config than poll interval and fetch operation is longer than maxInitWaitTimeSeconds - Should return cached item", async () => {
@@ -280,6 +291,8 @@ describe("ConfigServiceBaseTests", () => {
         assert.isNotNull(actualProjectConfig?.ConfigJSON);
         assert.equal(actualProjectConfig?.HttpETag, projectConfigOld.HttpETag);
         assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigOld?.ConfigJSON));
+
+        service.dispose();
     });
 
     it("LazyLoadConfigService - ProjectConfig is different in the cache - should fetch a new config and put into cache", async () => {
