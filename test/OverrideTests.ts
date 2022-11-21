@@ -90,6 +90,7 @@ describe("Local Overrides", () => {
                 }),
                 behaviour: OverrideBehaviour.RemoteOverLocal
             },
+            maxInitWaitTimeSeconds: 1
         }, null);
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
