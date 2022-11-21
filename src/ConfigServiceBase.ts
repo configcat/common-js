@@ -47,8 +47,8 @@ export abstract class ConfigServiceBase {
         this.baseConfig.logger.debug("ConfigServiceBase.fetchLogic() - called.");
         const calledBaseUrl = this.baseConfig.baseUrl;
         this.fetchLogicInternal(this.baseConfig, lastEtag, retries, (result) => {
-            this.baseConfig.logger.debug("ConfigServiceBase.fetchLogic(): result.status: " + result.status);
-            if (result.status != FetchStatus.Fetched || ProjectConfig.compareEtags(lastEtag ?? '', result.eTag)) {
+            this.baseConfig.logger.debug("ConfigServiceBase.fetchLogic(): result.status: " + result?.status);
+            if (!result || result.status != FetchStatus.Fetched || ProjectConfig.compareEtags(lastEtag ?? '', result.eTag)) {
                 this.baseConfig.logger.debug("ConfigServiceBase.fetchLogic(): result.status != FetchStatus.Fetched or etags are the same. Returning null.");
                 callback(null);
                 return;
