@@ -321,7 +321,7 @@ export class ConfigCatClient implements IConfigCatClient {
                     return;
                 }
                 const remoteConfig = await this.configService?.getConfig();
-                const remoteSettings = getSettingsFromConfig(remoteConfig?.ConfigJSON ?? {});
+                const remoteSettings = getSettingsFromConfig(remoteConfig?.ConfigJSON);
 
                 if (this.options.flagOverrides.behaviour == OverrideBehaviour.LocalOverRemote) {
                     resolve({ ...remoteSettings, ...localSettings });
