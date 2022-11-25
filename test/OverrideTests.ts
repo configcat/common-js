@@ -1,7 +1,7 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import "mocha";
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
-import { AutoPollOptions } from "../src/ConfigCatClientOptions";
+import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
@@ -123,5 +123,32 @@ describe("Local Overrides", () => {
         assert.equal(await client.getValueAsync("double_setting", 0), 3.14);
         assert.equal(await client.getValueAsync("string-setting", ""), "test");
         assert.equal(await client.getValueAsync("fakeKey", true), false);
+    });
+
+    it("LocalOnly - forceRefresh() should return failure", async () => {
+        let configCatKernel: FakeConfigCatKernel = {
+            configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+            sdkType: "common",
+            sdkVersion: "1.0.0"
+        };
+        let options: ManualPollOptions = new ManualPollOptions("localhost", "common", "1.0.0", {
+            flagOverrides: {
+                dataSource: new MapOverrideDataSource({
+                    "fakeKey": true,
+                    "nonexisting": true,
+                }),
+                behaviour: OverrideBehaviour.LocalOnly
+            }
+        }, null);
+        let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+        var refreshResult = await client.forceRefreshAsync();
+
+        assert.isTrue(await client.getValueAsync("fakeKey", false));
+        assert.isTrue(await client.getValueAsync("nonexisting", false));
+
+        assert.isFalse(refreshResult.isSuccess);
+        expect(refreshResult.errorMessage).to.contain("LocalOnly");
+        assert.isUndefined(refreshResult.errorException);
     });
 });

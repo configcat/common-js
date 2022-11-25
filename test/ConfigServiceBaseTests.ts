@@ -695,7 +695,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const projectConfig =  await service.refreshConfigAsync();
+        const [, projectConfig] = await service.refreshConfigAsync();
 
         // Assert
 
@@ -727,7 +727,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const projectConfig =  await service.refreshConfigAsync();
+        const [, projectConfig] = await service.refreshConfigAsync();
 
         // Assert
 

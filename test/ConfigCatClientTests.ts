@@ -979,7 +979,7 @@ describe("ConfigCatClient", () => {
       (expectedFetchTimes > 0 ? assert.notEqual : assert.equal)(0, etag1);
 
       // 4. Checks that forceRefreshAsync() initiates a HTTP call in online mode
-      await client.forceRefreshAsync();
+      const refreshResult = await client.forceRefreshAsync();
       expectedFetchTimes++;
   
       assert.isFalse(client.isOffline);
@@ -988,6 +988,10 @@ describe("ConfigCatClient", () => {
       const etag2 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;
       assert.isTrue(etag2 > etag1);
   
+      assert.isTrue(refreshResult.isSuccess);
+      assert.isNull(refreshResult.errorMessage);
+      assert.isUndefined(refreshResult.errorException);
+
       // 5. Checks that setOnline() has no effect after client gets disposed
       client.dispose();
   
@@ -1040,13 +1044,17 @@ describe("ConfigCatClient", () => {
       assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
   
       // 4. Checks that forceRefreshAsync() does not initiate a HTTP call in offline mode
-      await client.forceRefreshAsync();
+      const refreshResult = await client.forceRefreshAsync();
   
       assert.isTrue(client.isOffline);
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
   
       assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
   
+      assert.isFalse(refreshResult.isSuccess);
+      expect(refreshResult.errorMessage).to.contain("offline mode");
+      assert.isUndefined(refreshResult.errorException);
+
       // 5. Checks that setOnline() has no effect after client gets disposed
       client.dispose();
   
@@ -1151,4 +1159,49 @@ describe("ConfigCatClient", () => {
       assert.equal(1, beforeClientDisposeEventCount);
     });
   }
+
+  it("forceRefresh() should return failure including error in case of failed fetch", async () => {
+    const errorMessage = "Something went wrong";
+    const errorException = new Error(errorMessage);
+
+    const configFetcher = new FakeConfigFetcherBase(null, 100, (config, etag) => FetchResult.error(errorMessage, errorException));
+    const configCache = new FakeCache();
+    const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+
+    const client = new ConfigCatClient(options, configCatKernel);
+
+    const refreshResult = await client.forceRefreshAsync();
+
+    assert.isFalse(refreshResult.isSuccess);
+    assert.strictEqual(refreshResult.errorMessage, errorMessage);
+    assert.strictEqual(refreshResult.errorException, errorException);
+  });
+
+  it("forceRefresh() should return failure including error in case of unexpected exception", async () => {
+    const errorMessage = "Something went wrong";
+    const errorException = new Error(errorMessage);
+
+    const configFetcher = new FakeConfigFetcherBase(null, 100, (config, etag) => FetchResult.error(errorMessage, errorException));
+    const configCache = new FakeCache();
+    const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+
+    const client = new ConfigCatClient(options, configCatKernel);
+
+    client["configService"] = new class implements IConfigService {
+      getConfig(): Promise<ProjectConfig | null> { return Promise.resolve(null); }
+      refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> { throw errorException; }
+      get isOffline(): boolean { return false; }
+      setOnline(): void { }
+      setOffline(): void { }
+      dispose(): void { }
+    };
+
+    const refreshResult = await client.forceRefreshAsync();
+
+    assert.isFalse(refreshResult.isSuccess);
+    expect(refreshResult.errorMessage).to.include(errorMessage);
+    assert.strictEqual(refreshResult.errorException, errorException);
+  });
 });
