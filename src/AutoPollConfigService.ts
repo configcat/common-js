@@ -1,7 +1,7 @@
 import { AutoPollOptions } from "./ConfigCatClientOptions";
 import { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { ConfigServiceBase, IConfigService } from "./ConfigServiceBase";
+import { ConfigServiceBase, IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
@@ -84,7 +84,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         return cacheConfig;
     }
 
-    refreshConfigAsync(): Promise<ProjectConfig | null> {
+    refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
         this.options.logger.debug("AutoPollConfigService.refreshConfigAsync() called.");
         return super.refreshConfigAsync();
     }

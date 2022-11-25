@@ -6,7 +6,7 @@ import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/Conf
 import { AutoPollOptions, IAutoPollOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
 import { LogLevel } from "../src/ConfigCatLogger";
 import { FetchResult } from "../src/ConfigFetcher";
-import { ConfigServiceBase, IConfigService } from "../src/ConfigServiceBase";
+import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
 import { IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
@@ -1104,7 +1104,7 @@ describe("ConfigCatClient", () => {
       const originalConfigService = client["configService"] as ConfigServiceBase<OptionsBase>;
       client["configService"] = new class implements IConfigService {
         getConfig(): Promise<ProjectConfig | null> { return Promise.resolve(null); }
-        refreshConfigAsync(): Promise<ProjectConfig | null> { return Promise.reject(expectedErrorException); }
+        refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> { return Promise.reject(expectedErrorException); }
         get isOffline(): boolean { return false; }
         setOnline(): void { }
         setOffline(): void { }

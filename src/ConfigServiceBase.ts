@@ -2,10 +2,34 @@ import { OptionsBase } from "./ConfigCatClientOptions";
 import { FetchResult, FetchStatus, IConfigFetcher } from "./ConfigFetcher";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
+export class RefreshResult {
+    constructor(
+        public errorMessage: string | null,
+        public errorException?: any
+    ) {
+    }
+
+    public get isSuccess(): boolean { return this.errorMessage === null; }
+
+    static from(fetchResult: FetchResult): RefreshResult {
+        return fetchResult.status !== FetchStatus.Errored
+            ? RefreshResult.success()
+            : RefreshResult.failure(fetchResult.errorMessage!, fetchResult.errorException);
+    }
+
+    static success(): RefreshResult {
+        return new RefreshResult(null);
+    }
+
+    static failure(errorMessage: string, errorException?: any): RefreshResult {
+        return new RefreshResult(errorMessage, errorException);
+    }
+}
+
 export interface IConfigService {
     getConfig(): Promise<ProjectConfig | null>;
 
-    refreshConfigAsync(): Promise<ProjectConfig | null>;
+    refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]>;
 
     get isOffline(): boolean;
 
@@ -27,7 +51,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     protected options: TOptions;
     private status: ConfigServiceStatus;
 
-    private pendingFetch: Promise<ProjectConfig | null> | null = null;
+    private pendingFetch: Promise<[FetchResult, ProjectConfig | null]> | null = null;
 
     constructor(configFetcher: IConfigFetcher, options: TOptions) {
 
@@ -44,19 +68,20 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
     abstract getConfig(): Promise<ProjectConfig | null>;
 
-    async refreshConfigAsync(): Promise<ProjectConfig | null> {
+    async refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
         const latestConfig = await this.options.cache.get(this.options.getCacheKey());
         if (!this.isOffline) {
-            return await this.refreshConfigCoreAsync(latestConfig);
+            const [fetchResult, config] = await this.refreshConfigCoreAsync(latestConfig);
+            return [RefreshResult.from(fetchResult), config];
         }
         else {
             this.logOfflineModeWarning();
-            return latestConfig;
+            return [RefreshResult.failure("Client is in offline mode, it can't initiate HTTP calls."), latestConfig];
         }
     }
 
-    protected async refreshConfigCoreAsync(latestConfig: ProjectConfig | null): Promise<ProjectConfig | null> {
-        const newConfig = await this.fetchAsync(latestConfig);
+    protected async refreshConfigCoreAsync(latestConfig: ProjectConfig | null): Promise<[FetchResult, ProjectConfig | null]> {
+        const [fetchResult, newConfig] = await this.fetchAsync(latestConfig);
 
         const configContentHasChanged = !ProjectConfig.equals(latestConfig, newConfig);
         // NOTE: Reason why the usage of the non-null assertion operator (!) below is safe:
@@ -71,10 +96,10 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
                 this.onConfigChanged(newConfig);
             }
 
-            return newConfig;
+            return [fetchResult, newConfig];
         }
 
-        return latestConfig;
+        return [fetchResult, latestConfig];
     }
 
     protected onConfigUpdated(newConfig: ProjectConfig): void { }
@@ -84,7 +109,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         this.options.hooks.emit("configChanged", newConfig);
     }
 
-    private fetchAsync(lastConfig: ProjectConfig | null): Promise<ProjectConfig | null> {
+    private fetchAsync(lastConfig: ProjectConfig | null): Promise<[FetchResult, ProjectConfig | null]> {
         return this.pendingFetch ??= (async () => {
             try {
                 return await this.fetchLogicAsync(lastConfig);
@@ -95,7 +120,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         })();
     }
 
-    private async fetchLogicAsync(lastConfig: ProjectConfig | null): Promise<ProjectConfig | null> {
+    private async fetchLogicAsync(lastConfig: ProjectConfig | null): Promise<[FetchResult, ProjectConfig | null]> {
         const options = this.options;
         options.logger.debug("ConfigServiceBase.fetchLogicAsync() - called.");
 
@@ -105,25 +130,25 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
             case FetchStatus.Fetched:
                 if (!configJson) {
                     options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was successful but response is invalid. Returning null.");
-                    return null;
+                    return [result, null];
                 }
 
                 options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was successful. Returning new config.");
-                return new ProjectConfig(new Date().getTime(), configJson, result.eTag);
+                return [result, new ProjectConfig(new Date().getTime(), configJson, result.eTag)];
             case FetchStatus.NotModified:
                 if (!lastConfig) {
                     options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): received status '${FetchStatus[result.status]}' when no config was cached locally. Returning null.`);
-                    return null;
+                    return [result, null];
                 }
 
                 options.logger.debug("ConfigServiceBase.fetchLogicAsync(): content was not modified. Returning last config with updated timestamp.");
-                return new ProjectConfig(new Date().getTime(), lastConfig.ConfigJSON, lastConfig.HttpETag);
+                return [result, new ProjectConfig(new Date().getTime(), lastConfig.ConfigJSON, lastConfig.HttpETag)];
             case FetchStatus.Errored:
                 options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
-                return null;
+                return [result, null];
             default:
                 options.logger.error(`ConfigServiceBase.fetchLogicAsync(): invalid fetch status '${FetchStatus[result.status]}'. Returning null.`);
-                return null;
+                return [result, null];
         }
     }
 

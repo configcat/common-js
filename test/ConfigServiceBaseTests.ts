@@ -407,7 +407,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const actualConfig = await service.refreshConfigAsync()
+        const [, actualConfig] = await service.refreshConfigAsync()
 
         // Assert
 
@@ -445,7 +445,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const actualConfig = await service.refreshConfigAsync()
+        const [, actualConfig] = await service.refreshConfigAsync()
 
         // Assert
 
@@ -629,7 +629,7 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const [config1, config2] = await Promise.all([service.refreshConfigAsync(), service.refreshConfigAsync()]);
+        const [[, config1], [, config2]] = await Promise.all([service.refreshConfigAsync(), service.refreshConfigAsync()]);
 
         // Assert
 
@@ -661,8 +661,8 @@ describe("ConfigServiceBaseTests", () => {
 
         // Act
 
-        const config1 = await service.refreshConfigAsync();
-        const config2 = await service.refreshConfigAsync();
+        const [, config1] = await service.refreshConfigAsync();
+        const [, config2] = await service.refreshConfigAsync();
 
         // Assert
 
