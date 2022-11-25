@@ -7,10 +7,10 @@ import { ICache, InMemoryCache } from "../src/Cache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher } from "../src/ConfigFetcher";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
+import { ManualPollConfigService } from "../src/ManualPollConfigService";
 import { ProjectConfig } from "../src/ProjectConfig";
 import { delay } from "../src/Utils";
 import { FakeCache } from "./helpers/fakes";
-import { ManualPollConfigService } from "../src/ManualPollConfigService";
 
 describe("ConfigServiceBaseTests", () => {
 
@@ -606,6 +606,72 @@ describe("ConfigServiceBaseTests", () => {
 
         fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
     });
+
+    it("fetchAsync() should not initiate a request when there is a pending one", async () => {
+        // Arrange 
+
+        const fr: FetchResult = createFetchResult();
+        const pc: ProjectConfig = createConfigFromFetchResult(fr);
+
+        const cache = new FakeCache();
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [, , cb] }) => { (async () => (await delay(100), cb(fr)))(); });
+
+        const options = new ManualPollOptions(
+            "APIKEY", "common", "1.0.0",
+            {
+            },
+            cache);
+
+        const service = new ManualPollConfigService(fetcherMock.object(), options);
+
+        // Act
+
+        const [config1, config2] = await Promise.all([service.refreshConfigAsync(), service.refreshConfigAsync()]);
+
+        // Assert
+
+        assert.strictEqual(config1, config2);
+        assert.isTrue(ProjectConfig.equals(config1, pc));
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+    })
+
+    it("fetchAsync() should initiate a request when there is not a pending one", async () => {
+        // Arrange 
+
+        const fr: FetchResult = createFetchResult();
+        const pc: ProjectConfig = createConfigFromFetchResult(fr);
+
+        const cache = new FakeCache();
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [, , cb] }) => { (async () => (await delay(100), cb(fr)))(); });
+
+        const options = new ManualPollOptions(
+            "APIKEY", "common", "1.0.0",
+            {
+            },
+            cache);
+
+        const service = new ManualPollConfigService(fetcherMock.object(), options);
+
+        // Act
+
+        const config1 = await service.refreshConfigAsync();
+        const config2 = await service.refreshConfigAsync();
+
+        // Assert
+
+        assert.notStrictEqual(config1, config2);
+        assert.isTrue(ProjectConfig.equals(config1, pc));
+        assert.isTrue(ProjectConfig.equals(config2, pc));
+
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Exactly(2));
+    })
 
     it("refreshConfigAsync() should return null config when cache is empty and fetch fails.", async () => {
 

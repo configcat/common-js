@@ -32,5 +32,6 @@ export class FetchResult {
 }
 
 export interface IConfigFetcher {
+    /** @remarks Implementers must ensure that callback is called under all circumstances, i.e. in case of successful or failed requests and potential exceptions as well! */
     fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void;
 }
