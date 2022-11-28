@@ -19,8 +19,20 @@ export class ProjectConfig {
      * Determines whether the specified ProjectConfig instances are considered equal.
      */
     public static equals(projectConfig1: ProjectConfig | null, projectConfig2: ProjectConfig | null): boolean {
-        // If both configs are null, we consider them equal.
-        return projectConfig1 ? !!projectConfig2 && this.compareEtags(projectConfig1.HttpETag, projectConfig2.HttpETag) : !projectConfig2;
+        if (!projectConfig1) {
+            // If both configs are null, we consider them equal.
+            return !projectConfig2;
+        }
+
+        if (!projectConfig2) {
+            return false;
+        }
+
+        // When both ETags are available, we don't need to check the JSON content
+        // (because of how HTTP ETags work - see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag).
+        return !!projectConfig1.HttpETag && !!projectConfig2.HttpETag
+            ? this.compareEtags(projectConfig1.HttpETag, projectConfig2.HttpETag)
+            : JSON.stringify(projectConfig1.ConfigJSON) === JSON.stringify(projectConfig2.ConfigJSON);
     }
 
     public static compareEtags(etag1?: string, etag2?: string): boolean {
