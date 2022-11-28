@@ -5,7 +5,7 @@ import { ICache } from "../src/Cache";
 import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
 import { AutoPollOptions, IAutoPollOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
 import { LogLevel } from "../src/ConfigCatLogger";
-import { FetchResult } from "../src/ConfigFetcher";
+import { IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
 import { IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
@@ -941,7 +941,12 @@ describe("ConfigCatClient", () => {
   for (const [pollingMode, optionsFactory] of optionsFactoriesForOfflineModeTests) {
     it(`setOnline() should make a(n) ${PollingMode[pollingMode]} client created in offline mode transition to online mode.`, async () => {
 
-      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => FetchResult.success(lastConfig!, (lastETag as any | 0) + 1 + ""));
+      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => ({
+        statusCode: 200,
+        reasonPhrase: "OK",
+        eTag: (lastETag as any | 0) + 1 + "",
+        body: lastConfig
+      } as IFetchResponse));
       const configCache = new FakeCache();
       const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
       const options = optionsFactory("APIKEY", configCatKernel, configCache, true);
@@ -1003,7 +1008,13 @@ describe("ConfigCatClient", () => {
   for (const [pollingMode, optionsFactory] of optionsFactoriesForOfflineModeTests) {
     it(`setOffline() should make a(n) ${PollingMode[pollingMode]} client created in online mode transition to offline mode.`, async () => {
 
-      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => FetchResult.success(lastConfig!, (lastETag as any | 0) + 1 + ""));
+      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => ({
+        statusCode: 200,
+        reasonPhrase: "OK",
+        eTag: (lastETag as any | 0) + 1 + "",
+        body: lastConfig
+      } as IFetchResponse));
+
       const configCache = new FakeCache();
       const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
       const options = optionsFactory("APIKEY", configCatKernel, configCache, false);
@@ -1164,7 +1175,7 @@ describe("ConfigCatClient", () => {
     const errorMessage = "Something went wrong";
     const errorException = new Error(errorMessage);
 
-    const configFetcher = new FakeConfigFetcherBase(null, 100, (config, etag) => FetchResult.error(errorMessage, errorException));
+    const configFetcher = new FakeConfigFetcherBase(null, 100, (lastConfig, lastETag) => { throw errorException; });
     const configCache = new FakeCache();
     const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
@@ -1174,7 +1185,7 @@ describe("ConfigCatClient", () => {
     const refreshResult = await client.forceRefreshAsync();
 
     assert.isFalse(refreshResult.isSuccess);
-    assert.strictEqual(refreshResult.errorMessage, errorMessage);
+    assert.isString(refreshResult.errorMessage);
     assert.strictEqual(refreshResult.errorException, errorException);
   });
 
@@ -1182,7 +1193,7 @@ describe("ConfigCatClient", () => {
     const errorMessage = "Something went wrong";
     const errorException = new Error(errorMessage);
 
-    const configFetcher = new FakeConfigFetcherBase(null, 100, (config, etag) => FetchResult.error(errorMessage, errorException));
+    const configFetcher = new FakeConfigFetcherBase(null, 100, (lastConfig, lastETag) => { throw errorException; });
     const configCache = new FakeCache();
     const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);

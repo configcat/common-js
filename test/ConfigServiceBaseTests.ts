@@ -5,7 +5,7 @@ import { MimicsRejectedAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, Pre
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { ICache, InMemoryCache } from "../src/Cache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
-import { FetchResult, IConfigFetcher } from "../src/ConfigFetcher";
+import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { ManualPollConfigService } from "../src/ManualPollConfigService";
 import { ProjectConfig } from "../src/ProjectConfig";
@@ -37,8 +37,8 @@ describe("ConfigServiceBaseTests", () => {
         const pc: ProjectConfig = createConfigFromFetchResult(fr);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         let callNo: number = 1;
 
@@ -64,7 +64,7 @@ describe("ConfigServiceBaseTests", () => {
         // Assert
 
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(3));
-        fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.AtLeast(3));
+        fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.AtLeast(3));
         
         service.dispose();
     });
@@ -77,8 +77,8 @@ describe("ConfigServiceBaseTests", () => {
         const pc: ProjectConfig = createConfigFromFetchResult(fr);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         let callNo: number = 1;
 
@@ -116,11 +116,15 @@ describe("ConfigServiceBaseTests", () => {
 
         const pc: ProjectConfig = createProjectConfig();
         const fr: FetchResult = createFetchResult();
-        let currentFr: FetchResult = fr;
+        let currentResp: IFetchResponse = { statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody };
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => (cb(currentFr), currentFr = FetchResult.error()));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(() => {
+                var result = Promise.resolve(currentResp);
+                currentResp = { statusCode: 500, reasonPhrase: "Internal Server Error" };
+                return result;
+            });
 
         const cacheMock = new Mock<ICache>()
             .setup(m => m.get(It.IsAny<string>()))
@@ -182,10 +186,9 @@ describe("ConfigServiceBaseTests", () => {
         await cache.set(options.getCacheKey(), projectConfigOld);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [_, __, cb] }) => {
-                setTimeout(() => cb(frNew), 100);
-            });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(() => new Promise(resolve =>
+                setTimeout(() => resolve({ statusCode: 200, reasonPhrase: "OK", eTag: frNew.eTag, body: frNew.responseBody }), 100)));
 
         // Act
 
@@ -235,10 +238,9 @@ describe("ConfigServiceBaseTests", () => {
         await cache.set(options.getCacheKey(), projectConfigOld);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [_, __, cb] }) => {
-                setTimeout(() => cb(projectConfigNew), 100);
-            });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(() => new Promise(resolve =>
+                setTimeout(() => resolve({ statusCode: 200, reasonPhrase: "OK", eTag: frNew.eTag, body: frNew.responseBody }), 100)));
 
         // Act
 
@@ -282,10 +284,9 @@ describe("ConfigServiceBaseTests", () => {
         await cache.set(options.getCacheKey(), projectConfigOld);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>(), It.IsAny<any>()))
-            .callback(({ args: [_, __, cb] }) => {
-                setTimeout(() => cb(FetchResult.error()), 2000)
-            });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<ProjectConfig>()))
+            .callback(() => new Promise(resolve =>
+                setTimeout(() => resolve({ statusCode: 500, reasonPhrase: "Internal Server Error" }), 2000)));
 
         // Act
 
@@ -320,8 +321,8 @@ describe("ConfigServiceBaseTests", () => {
         const newConfig: ProjectConfig = createConfigFromFetchResult(fr);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         const cacheMock = new Mock<ICache>()
             .setup(m => m.get(It.IsAny<string>()))
@@ -344,7 +345,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, newConfig));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), "oldConfig", It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), "oldConfig"), Times.Once());
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(newConfig.ConfigJSON))), Times.Once());
     });
 
@@ -376,7 +377,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Never());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Never());
     });
 
     it("LazyLoadConfigService - refreshConfigAsync - should invoke fetch and cache.set operation", async () => {
@@ -389,8 +390,8 @@ describe("ConfigServiceBaseTests", () => {
         const fr: FetchResult = createFetchResult();
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         const cacheMock = new Mock<ICache>()
             .setup(m => m.get(It.IsAny<string>()))
@@ -413,7 +414,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Once());
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
     });
 
@@ -427,8 +428,8 @@ describe("ConfigServiceBaseTests", () => {
         const fr: FetchResult = createFetchResult();
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
             .setup(async m => m.get(It.IsAny<string>()))
@@ -451,7 +452,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.isTrue(ProjectConfig.equals(actualConfig, config));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Once());
         cacheMock.verify(v => v.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()), Times.Once());
     });
 
@@ -469,8 +470,8 @@ describe("ConfigServiceBaseTests", () => {
         cache.set("", cachedPc);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [, , cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         const options = new AutoPollOptions(
             "APIKEY", "common", "1.0.0",
@@ -490,7 +491,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.strictEqual(cachedPc, actualPc);
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Never());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Never());
     });
 
     it("AutoPollConfigService - getConfig() should wait for fetch when cached config is expired", async () => {
@@ -507,8 +508,11 @@ describe("ConfigServiceBaseTests", () => {
         cache.set("", cachedPc);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [, , cb] }) => { (async () => (await delay(500), cb(fr)))(); });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(async () => {
+                await delay(500);
+                return { statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody };
+            });
 
         const options = new AutoPollOptions(
             "APIKEY", "common", "1.0.0",
@@ -529,7 +533,7 @@ describe("ConfigServiceBaseTests", () => {
         assert.notStrictEqual(cachedPc, actualPc);
         assert.isTrue(ProjectConfig.equals(new ProjectConfig(0, fr.responseBody, fr.eTag), actualPc));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Once());
     });
 
     it("LazyLoadConfigService - getConfig() should return cached config when cached config is not expired", async () => {
@@ -546,8 +550,8 @@ describe("ConfigServiceBaseTests", () => {
         cache.set("", cachedPc);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [, , cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
         const options = new LazyLoadOptions(
             "APIKEY", "common", "1.0.0",
@@ -566,7 +570,7 @@ describe("ConfigServiceBaseTests", () => {
 
         assert.strictEqual(cachedPc, actualPc);
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Never());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Never());
     });
 
     it("LazyLoadConfigService - getConfig() should fetch when cached config is expired", async () => {
@@ -583,8 +587,11 @@ describe("ConfigServiceBaseTests", () => {
         cache.set("", cachedPc);
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [, , cb] }) => { (async () => (await delay(500), cb(fr)))(); });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(async () => {
+                await delay(500);
+                return { statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody };
+            });
 
         const options = new LazyLoadOptions(
             "APIKEY", "common", "1.0.0",
@@ -604,7 +611,7 @@ describe("ConfigServiceBaseTests", () => {
         assert.notStrictEqual(cachedPc, actualPc);
         assert.isTrue(ProjectConfig.equals(new ProjectConfig(0, fr.responseBody, fr.eTag), actualPc));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Once());
     });
 
     it("fetchAsync() should not initiate a request when there is a pending one", async () => {
@@ -616,8 +623,11 @@ describe("ConfigServiceBaseTests", () => {
         const cache = new FakeCache();
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [, , cb] }) => { (async () => (await delay(100), cb(fr)))(); });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(async () => {
+                await delay(100);
+                return { statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody };
+            });
 
         const options = new ManualPollOptions(
             "APIKEY", "common", "1.0.0",
@@ -636,7 +646,7 @@ describe("ConfigServiceBaseTests", () => {
         assert.strictEqual(config1, config2);
         assert.isTrue(ProjectConfig.equals(config1, pc));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Once());
     })
 
     it("fetchAsync() should initiate a request when there is not a pending one", async () => {
@@ -648,8 +658,11 @@ describe("ConfigServiceBaseTests", () => {
         const cache = new FakeCache();
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [, , cb] }) => { (async () => (await delay(100), cb(fr)))(); });
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .callback(async () => {
+                await delay(100);
+                return { statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody };
+            });
 
         const options = new ManualPollOptions(
             "APIKEY", "common", "1.0.0",
@@ -670,7 +683,7 @@ describe("ConfigServiceBaseTests", () => {
         assert.isTrue(ProjectConfig.equals(config1, pc));
         assert.isTrue(ProjectConfig.equals(config2, pc));
 
-        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Exactly(2));
+        fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Exactly(2));
     })
 
     it("refreshConfigAsync() should return null config when cache is empty and fetch fails.", async () => {
@@ -680,9 +693,8 @@ describe("ConfigServiceBaseTests", () => {
         const fr: FetchResult = FetchResult.error();
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
-
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 502, reasonPhrase: "Bad Gateway" });
 
         const cache = new InMemoryCache();
 
@@ -711,8 +723,8 @@ describe("ConfigServiceBaseTests", () => {
         const fr: FetchResult = FetchResult.error();
 
         const fetcherMock = new Mock<IConfigFetcher>()
-            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
-            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
+            .returnsAsync({ statusCode: 502, reasonPhrase: "Bad Gateway" });
 
         const cache = new InMemoryCache();
 

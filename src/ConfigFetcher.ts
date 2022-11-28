@@ -28,7 +28,13 @@ export class FetchResult {
     }
 }
 
+export interface IFetchResponse {
+    statusCode: number;
+    reasonPhrase: string;
+    eTag?: string;
+    body?: string;
+}
+
 export interface IConfigFetcher {
-    /** @remarks Implementers must ensure that callback is called under all circumstances, i.e. in case of successful or failed requests and potential exceptions as well! */
-    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void;
+    fetchLogic(options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse>;
 }
