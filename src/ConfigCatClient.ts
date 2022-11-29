@@ -16,43 +16,61 @@ import { errorToString, getSettingsFromConfig } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {
 
-    /** Returns the value of a feature flag or setting based on it's key */
+    /** Returns the value of a feature flag or setting based on it's key
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueAsync() method instead.
+     */
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
 
     /** Returns the value of a feature flag or setting based on it's key */
     getValueAsync(key: string, defaultValue: any, user?: User): Promise<any>;
 
-    /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
+    /** Returns the value along with evaluation details of a feature flag or setting based on it's key
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetailsAsync() method instead.
+     */
     getValueDetails(key: string, defaultValue: any, callback: (evaluationDetails: IEvaluationDetails) => void, user?: User): void;
 
     /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
     getValueDetailsAsync(key: string, defaultValue: any, user?: User): Promise<IEvaluationDetails>;
 
-    /** Downloads the latest feature flag and configuration values */
+    /** Downloads the latest feature flag and configuration values
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the forceRefreshAsync() method instead.
+     */
     forceRefresh(callback: (result: RefreshResult) => void): void;
 
     /** Downloads the latest feature flag and configuration values */
     forceRefreshAsync(): Promise<RefreshResult>;
 
-    /** Gets a list of keys for all your feature flags and settings */
+    /** Gets a list of keys for all your feature flags and settings
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllKeysAsync() method instead.
+     */
     getAllKeys(callback: (value: string[]) => void): void;
 
     /** Gets a list of keys for all your feature flags and settings */
     getAllKeysAsync(): Promise<string[]>;
 
-    /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key */
+    /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetails() method instead.
+     */
     getVariationId(key: string, defaultVariationId: any, callback: (variationId: string) => void, user?: User): void;
 
-    /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key */
+    /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetailsAsync() method instead.
+     */
     getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string>;
 
-    /** Returns the Variation IDs (analytics) of all feature flags or settings */
+    /** Returns the Variation IDs (analytics) of all feature flags or settings
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValueDetails() method instead.
+     */
     getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void;
 
-    /** Returns the Variation IDs (analytics) of all feature flags or settings */
+    /** Returns the Variation IDs (analytics) of all feature flags or settings
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValueDetailsAsync() method instead.
+     */
     getAllVariationIdsAsync(user?: User): Promise<string[]>;
 
-    /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
+    /** Returns the key of a setting and it's value identified by the given Variation ID (analytics)
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getKeyAndValueAsync() method instead.
+     */
     getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void;
 
     /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
@@ -61,13 +79,17 @@ export interface IConfigCatClient extends IProvidesHooks {
     /** Releases all resources used by IConfigCatClient */
     dispose(): void;
 
-    /** Returns the values of all feature flags or settings */
+    /** Returns the values of all feature flags or settings
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValuesAsync() method instead.
+     */
     getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void;
 
     /** Returns the values of all feature flags or settings */
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
 
-    /** Returns the values along with evaluation details of all feature flags or settings */
+    /** Returns the values along with evaluation details of all feature flags or settings
+     * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValueDetailsAsync() method instead.
+     */
     getAllValueDetails(callback: (result: IEvaluationDetails[]) => void, user?: User): void;
 
     /** Returns the values along with evaluation details of all feature flags or settings */
@@ -539,7 +561,7 @@ export class ConfigCatClient implements IConfigCatClient {
             }
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getAllValuesAsync().", err);
+            this.options.logger.error("Error occurred in getAllValueDetailsAsync().", err);
             evaluationDetailsArray ??= [];
         }
 
