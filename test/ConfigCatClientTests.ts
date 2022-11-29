@@ -512,6 +512,123 @@ describe("ConfigCatClient", () => {
     });
   }
 
+  for (let isAsync of [false, true]) {
+    it(`getAllValueDetails${isAsync ? "Async" : ""}() should return correct result`, async () => {
+
+      // Arrange
+
+      const timestamp = new Date().getTime();
+
+      const configFetcherClass = FakeConfigFetcherWithTwoKeys;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+
+      const user = new User("a@configcat.com");
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
+      // Act
+
+      const actual = await (isAsync
+        ? client.getAllValueDetailsAsync(user)
+        : new Promise<IEvaluationDetails[]>(resolve => client.getAllValueDetails(resolve, user))
+      );
+
+      // Assert
+
+      const expected = [
+        { key: "debug", value: true, variationId: "abcdefgh" },
+        { key: "debug2", value: true, variationId: "12345678" },
+      ];
+
+      for (const { key, value, variationId } of expected) {
+        const actualDetails = actual.find(details => details.key === key)!;
+
+        assert.isDefined(actualDetails);
+        assert.strictEqual(value, actualDetails.value);
+        assert.isFalse(actualDetails.isDefaultValue);
+        assert.strictEqual(variationId, actualDetails.variationId);
+        assert.strictEqual(cachedPc.Timestamp, actualDetails.fetchTime?.getTime());
+        assert.strictEqual(user, actualDetails.user);
+        assert.isUndefined(actualDetails.errorMessage);
+        assert.isUndefined(actualDetails.errorException);
+        assert.isUndefined(actualDetails.matchedEvaluationRule);
+        assert.isUndefined(actualDetails.matchedEvaluationPercentageRule);
+
+        const flagEvaluatedDetails = flagEvaluatedEvents.find(details => details.key === key)!;
+
+        assert.isDefined(flagEvaluatedDetails);
+        assert.strictEqual(actualDetails, flagEvaluatedDetails);
+      }
+    });
+
+    it(`getAllValueDetails${isAsync ? "Async" : ""}() should return default value when exception thrown`, async () => {
+  
+      // Arrange
+  
+      const timestamp = new Date().getTime();
+  
+      const configFetcherClass = FakeConfigFetcherWithTwoKeys;
+      const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
+      const configCache = new FakeCache(cachedPc);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+  
+      const err = new Error("Something went wrong.");
+      client["evaluator"] = new class implements IRolloutEvaluator {
+        Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+          throw err;
+        }
+      };
+  
+      const user = new User("a@configcat.com");
+
+      const flagEvaluatedEvents: IEvaluationDetails[] = [];
+      const errorEvents: [string, any][] = [];
+      client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+      client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]))
+
+      // Act
+  
+      const actual = await (isAsync
+        ? client.getAllValueDetailsAsync(user)
+        : new Promise<IEvaluationDetails[]>(resolve => client.getAllValueDetails(resolve, user))
+      );
+  
+      // Assert
+
+      for (const key of [ "debug", "debug2" ]) {
+        const actualDetails = actual.find(details => details.key === key)!;
+
+        assert.isNull(actualDetails.value);
+        assert.isTrue(actualDetails.isDefaultValue);
+        assert.isUndefined(actualDetails.variationId);
+        assert.strictEqual(cachedPc.Timestamp, actualDetails.fetchTime?.getTime());
+        assert.strictEqual(user, actualDetails.user);
+        assert.isDefined(actualDetails.errorMessage);
+        assert.strictEqual(err, actualDetails.errorException);
+        assert.isUndefined(actualDetails.matchedEvaluationRule);
+        assert.isUndefined(actualDetails.matchedEvaluationPercentageRule);
+
+        const flagEvaluatedDetails = flagEvaluatedEvents.find(details => details.key === key)!;
+
+        assert.isDefined(flagEvaluatedDetails);
+        assert.strictEqual(actualDetails, flagEvaluatedDetails);
+      }
+
+      assert.equal(1, errorEvents.length);
+      const [actualErrorMessage, actualErrorException] = errorEvents[0];
+      expect(actualErrorMessage).to.include("Error occurred in getAllValueDetailsAsync().");
+      assert.instanceOf(actualErrorException, AggregateError);
+      assert.deepEqual(Array(actual.length).fill(err), (actualErrorException as AggregateError).errors);
+    });
+  }
+
   it("Initialization With AutoPollOptions - config changed in every fetch - should fire configChanged every polling iteration", async () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithAlwaysVariableEtag(), sdkType: 'common', sdkVersion: '1.0.0' };
