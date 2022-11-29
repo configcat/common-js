@@ -67,6 +67,12 @@ export interface IConfigCatClient extends IProvidesHooks {
     /** Returns the values of all feature flags or settings */
     getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
 
+    /** Returns the values along with evaluation details of all feature flags or settings */
+    getAllValueDetails(callback: (result: IEvaluationDetails[]) => void, user?: User): void;
+
+    /** Returns the values along with evaluation details of all feature flags or settings */
+    getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]>;
+
     /** Sets the default user for feature flag evaluations. 
      * In case the getValue function isn't called with a UserObject, this default user will be used instead. */
     setDefaultUser(defaultUser: User): void;
@@ -512,6 +518,36 @@ export class ConfigCatClient implements IConfigCatClient {
         }
 
         return result;
+    }
+
+    getAllValueDetails(callback: (result: IEvaluationDetails[]) => void, user?: User): void {
+        this.options.logger.debug("getAllValueDetails() called.");
+        this.getAllValueDetailsAsync(user).then(callback);
+    }
+
+    async getAllValueDetailsAsync(user?: User | undefined): Promise<IEvaluationDetails[]> {
+        this.options.logger.debug("getAllValueDetailsAsync() called.");
+
+        let evaluationDetailsArray: IEvaluationDetails[];
+        user ??= this.defaultUser;
+        try {
+            const [settings, remoteConfig] = await this.getSettingsAsync();
+            let errors: any[] | undefined;
+            [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger);
+            if (errors?.length) {
+                throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
+            }
+        }
+        catch (err) {
+            this.options.logger.error("Error occurred in getAllValuesAsync().", err);
+            evaluationDetailsArray ??= [];
+        }
+
+        for (let evaluationDetail of evaluationDetailsArray) {
+            this.options.hooks.emit("flagEvaluated", evaluationDetail);
+        }
+
+        return evaluationDetailsArray;
     }
 
     setDefaultUser(defaultUser: User) {
