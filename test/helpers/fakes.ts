@@ -1,8 +1,8 @@
-import { IConfigCatKernel } from "../../src";
 import { ICache } from "../../src/Cache";
+import { IConfigCatKernel } from "../../src/ConfigCatClient";
 import { OptionsBase } from "../../src/ConfigCatClientOptions";
 import { IConfigCatLogger, LogLevel } from "../../src/ConfigCatLogger";
-import { FetchResult, IConfigFetcher, IFetchResponse } from "../../src/ConfigFetcher";
+import { IConfigFetcher, IFetchResponse } from "../../src/ConfigFetcher";
 import { ProjectConfig } from "../../src/ProjectConfig";
 import { delay } from "../../src/Utils";
 
