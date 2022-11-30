@@ -1,5 +1,5 @@
 import { OptionsBase } from "./ConfigCatClientOptions";
-import { FetchResult, FetchStatus, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
+import { FetchError, FetchResult, FetchStatus, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
 export class RefreshResult {
@@ -163,7 +163,10 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
             }
         }
         catch (err) {
-            errorMessage = "Unexpected error occured during fetching.";
+            const errorMessage = err instanceof FetchError
+                ? err.message
+                : "Unexpected error occurred during fetching.";
+
             options.logger.error(errorMessage, err);
             options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
             return [FetchResult.error(errorMessage, err), null];
