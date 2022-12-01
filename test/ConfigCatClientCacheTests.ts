@@ -1,7 +1,7 @@
 import "mocha";
 import { assert } from "chai";
 import { ConfigCatClient } from "../src/ConfigCatClient";
-import { ConfigCatClientCache } from "../src/ConfigCatClientCache";
+import { ConfigCatClientCache } from "../src/ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { FakeConfigCatKernel, FakeConfigFetcher } from "./ConfigCatClientTests";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";

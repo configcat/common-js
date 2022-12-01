@@ -1,6 +1,6 @@
-import { ConfigCatClientCache } from "../../src/ConfigCatClientCache";
+import { ConfigCatClientCache } from "../../src/ConfigCatClient";
 
-declare module "../../src/ConfigCatClientCache" {
+declare module "../../src/ConfigCatClient" {
     interface ConfigCatClientCache {
         getSize(): number;
         getAliveCount(): number;
