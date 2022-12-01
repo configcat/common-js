@@ -8,7 +8,7 @@ export class ConfigCatClientCache {
     public getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
         let instance: ConfigCatClient | undefined;
 
-        let cachedInstance = this.instances[options.apiKey];
+        const cachedInstance = this.instances[options.apiKey];
         if (cachedInstance) {
             const [weakRef] = cachedInstance;
             instance = weakRef.deref();
@@ -19,11 +19,11 @@ export class ConfigCatClientCache {
 
         const token = {};
         instance = new ConfigCatClient(options, configCatKernel, token);
-        this.instances[options.apiKey] = cachedInstance = [new WeakRef(instance), token];
+        this.instances[options.apiKey] = [new WeakRef(instance), token];
         return [instance, false];
     }
 
-    public remove(sdkKey: string, cacheToken: object) {
+    public remove(sdkKey: string, cacheToken: object): boolean {
         const cachedInstance = this.instances[sdkKey];
 
         if (cachedInstance) {
@@ -38,7 +38,7 @@ export class ConfigCatClientCache {
         return false;
     }
 
-    public clear() {
+    public clear(): ConfigCatClient[] {
         const removedInstances: ConfigCatClient[] = [];
         for (let [sdkKey, [weakRef]] of Object.entries(this.instances)) {
             let instance = weakRef.deref();

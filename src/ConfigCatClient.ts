@@ -77,7 +77,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     private static get instanceCache() { return clientInstanceCache; };
 
-    public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel) {
+    public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
         if (!sdkKey) {
             throw new Error("Invalid 'sdkKey' value");
         }
@@ -139,7 +139,7 @@ export class ConfigCatClient implements IConfigCatClient {
         this.suppressFinalization = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
     }
 
-    static finalize(data: IFinalizationData) {
+    private static finalize(data: IFinalizationData) {
         // Safeguard against situations where user forgets to dispose of the client instance.
         
         data.logger?.debug("finalize() called");
@@ -164,7 +164,7 @@ export class ConfigCatClient implements IConfigCatClient {
         this.suppressFinalization();
     }
 
-    static disposeAll() {
+    static disposeAll(): void {
         const removedInstances = clientInstanceCache.clear();
 
         let errors: any[] | undefined;
@@ -427,7 +427,7 @@ let registerForFinalization: (client: ConfigCatClient, data: IFinalizationData) 
 
 // Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.
 if (typeof FinalizationRegistry !== "undefined") {
-    const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient.finalize(data));
+    const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient["finalize"](data));
 
     registerForFinalization = (client, data) => {
         const unregisterToken = {};
@@ -445,7 +445,7 @@ else if (isWeakRefAvailable()) {
             const [weakRef, data] = registrations[i];
             if (!weakRef.deref()) {
                 registrations.splice(i, 1);
-                ConfigCatClient.finalize(data);
+                ConfigCatClient["finalize"](data);
             }
         }
         if (!registrations.length) {
