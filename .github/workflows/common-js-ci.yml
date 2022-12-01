@@ -39,8 +39,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: checked-out-src
-          path: src
+          name: checked-out-lib
+          path: lib
         
   publish:
     needs: test
