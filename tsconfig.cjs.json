@@ -1,22 +1,11 @@
 {
-  "compilerOptions": {    
-    "strict": true,
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
     "target": "ES5",
     "module": "CommonJS",
     "outDir": "./lib/cjs",
     "sourceMap": false,
     "declaration": true,
-    "declarationMap": true,
-    "lib": [
-      "ES2015", // APIs used: Object.keys
-      "DOM", // APIs used: setTimeout, clearTimeout
-      "ES2017.Object", // APIs used: Object.values, Object.entries
-      "ES2019.Object", // APIs used: Object.fromEntries (polyfilled)
-      "ES2021.WeakRef", // APIs used: WeakRef (polyfilled)
-      "ES2021.Promise" // APIs used: AggregateError
-    ]
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+    "declarationMap": true
+  }
 }
