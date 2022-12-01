@@ -15,9 +15,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
         
@@ -35,21 +35,21 @@ jobs:
       - name: Upload coverage report
         run: codecov
 
-      - name: Archive logs
+      - name: Archive
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: npm-logs
-          path: /home/runner/.npm/_logs
+          name: checked-out-src
+          path: src
         
   publish:
     needs: test
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
           registry-url: 'https://registry.npmjs.org'
