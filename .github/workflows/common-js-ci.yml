@@ -17,6 +17,7 @@ jobs:
     strategy:
       matrix:
         node: [ 14, 16, 18 ]
+      fail-fast: false
     name: Test with Node ${{ matrix.node }}
     steps:
       - uses: actions/checkout@v3
