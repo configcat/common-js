@@ -13,12 +13,13 @@ on:
   
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         node: [ 14, 16, 18 ]
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
       fail-fast: false
-    name: Test with Node ${{ matrix.node }}
+    name: Test [${{ matrix.os }}, Node ${{ matrix.node }}]
     steps:
       - uses: actions/checkout@v3
 
