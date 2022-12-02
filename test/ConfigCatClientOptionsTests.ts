@@ -106,6 +106,14 @@ describe("Options", () => {
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
+  it("AutoPollOptions initialization With NaN 'pollIntervalSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('pollIntervalSeconds', undefined);
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: +(myConfig.get('pollIntervalSeconds')) }, null);
+    }).to.throw("Invalid 'pollIntervalSeconds' value");
+  });
+
   it("AutoPollOptions initialization With 0 'pollIntervalSeconds' ShouldThrowError", () => {
     expect(() => {
       new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: -1 }, null);
@@ -132,6 +140,14 @@ describe("Options", () => {
   it("AutoPollOptions initialization With -1 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     expect(() => {
       new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: -1 }, null);
+    }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With NaN 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('maxInitWaitTimeSeconds', undefined);
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: +(myConfig.get('maxInitWaitTimeSeconds')) }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 

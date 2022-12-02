@@ -18,7 +18,7 @@ export interface IOptions {
     baseUrl?: string | null;
     /** You can set a base_url if you want to use a proxy server between your application and ConfigCat */
     proxy?: string | null;
-    /** Default: Global. Set this parameter to be in sync with the Data Governance preference on the Dashboard: 
+    /** Default: Global. Set this parameter to be in sync with the Data Governance preference on the Dashboard:
      * https://app.configcat.com/organization/data-governance (Only Organization Admins have access) */
     dataGovernance?: DataGovernance | null;
     /**
@@ -56,7 +56,7 @@ export abstract class OptionsBase implements IOptions {
     public cache: ICache;
 
     public flagOverrides?: FlagOverrides;
-    
+
     public defaultUser?: User | null;
 
     constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null) {
@@ -157,11 +157,11 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
             }
         }
 
-        if (this.pollIntervalSeconds < 1) {
+        if (this.pollIntervalSeconds < 1 || isNaN(this.pollIntervalSeconds)) {
             throw new Error("Invalid 'pollIntervalSeconds' value");
         }
 
-        if (this.maxInitWaitTimeSeconds < 0) {
+        if (this.maxInitWaitTimeSeconds < 0 || isNaN(this.maxInitWaitTimeSeconds)) {
             throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
         }
     }
