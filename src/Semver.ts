@@ -37,7 +37,7 @@ const createToken = (name: string, value: any) => {
     const index = R++;
     t[name] = index;
     src[index] = value;
-    re[index] = new RegExp(value, undefined);
+    re[index] = new RegExp(value);
 }
 
 createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*');
@@ -212,11 +212,11 @@ class SemVer {
         do {
             const a = this.prerelease[i]
             const b = other.prerelease[i]
-            if (a === undefined && b === undefined) {
+            if (a === void 0 && b === void 0) {
                 return 0
-            } else if (b === undefined) {
+            } else if (b === void 0) {
                 return 1
-            } else if (a === undefined) {
+            } else if (a === void 0) {
                 return -1
             } else if (a === b) {
                 continue
@@ -235,11 +235,11 @@ class SemVer {
         do {
             const a = this.build[i]
             const b = other.build[i]
-            if (a === undefined && b === undefined) {
+            if (a === void 0 && b === void 0) {
                 return 0
-            } else if (b === undefined) {
+            } else if (b === void 0) {
                 return 1
-            } else if (a === undefined) {
+            } else if (a === void 0) {
                 return -1
             } else if (a === b) {
                 continue

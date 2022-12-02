@@ -1,14 +1,11 @@
 {
-  "compilerOptions": {    
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
     "target": "ES5",
     "module": "CommonJS",
     "outDir": "./lib/cjs",
     "sourceMap": false,
     "declaration": true,
-    "declarationMap": true,
-    "lib": ["ES2015"]
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+    "declarationMap": true
+  }
 }

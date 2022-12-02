@@ -13,11 +13,43 @@ on:
   
 jobs:
   test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node: [ 14, 16, 18 ]
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+      fail-fast: false
+    name: Test [${{ matrix.os }}, Node ${{ matrix.node }}]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+        
+      - name: Install dependencies
+        run: |
+          npm install
+          
+      - name: Build
+        run: npm run build
+        
+      - name: Test
+        run: npm run test
+
+      - name: Archive
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: checked-out-lib
+          path: lib
+
+  coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
         
@@ -36,13 +68,13 @@ jobs:
         run: codecov
         
   publish:
-    needs: test
+    needs: [ test, coverage ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
           registry-url: 'https://registry.npmjs.org'

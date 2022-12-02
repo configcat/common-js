@@ -1,6 +1,6 @@
 import { ConfigFile, Setting } from "./ProjectConfig";
 
-export const isUndefined = (comp: any) => comp === undefined;
+export const isUndefined = (comp: any) => comp === void 0;
 
 export function getSettingsFromConfig(json: any): { [name: string]: Setting } {
     if (!json) {

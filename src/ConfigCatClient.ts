@@ -1,5 +1,5 @@
-import { IConfigCatKernel } from "./index";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase } from "./ConfigCatClientOptions";
+import { IConfigCatKernel, IConfigCatLogger, OptionsForPollingMode, PollingMode } from "./index";
+import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase, ConfigCatClientOptions } from "./ConfigCatClientOptions";
 import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
@@ -8,6 +8,7 @@ import { User, IRolloutEvaluator, RolloutEvaluator } from "./RolloutEvaluator";
 import { Setting, RolloutRule, RolloutPercentageItem, ConfigFile } from "./ProjectConfig";
 import { OverrideBehaviour } from "./FlagOverrides";
 import { getSettingsFromConfig } from "./Utils";
+import { isWeakRefAvailable } from "./Polyfills";
 
 export interface IConfigCatClient {
 
@@ -64,15 +65,92 @@ export interface IConfigCatClient {
     clearDefaultUser(): void;
 }
 
+export class ConfigCatClientCache {
+    private instances: Record<string, [WeakRef<ConfigCatClient>, object]> = {};
+
+    public getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
+        let instance: ConfigCatClient | undefined;
+
+        const cachedInstance = this.instances[options.apiKey];
+        if (cachedInstance) {
+            const [weakRef] = cachedInstance;
+            instance = weakRef.deref();
+            if (instance) {
+                return [instance, true];
+            }
+        }
+
+        const token = {};
+        instance = new ConfigCatClient(options, configCatKernel, token);
+        this.instances[options.apiKey] = [new WeakRef(instance), token];
+        return [instance, false];
+    }
+
+    public remove(sdkKey: string, cacheToken: object): boolean {
+        const cachedInstance = this.instances[sdkKey];
+
+        if (cachedInstance) {
+            const [weakRef, token] = cachedInstance;
+            const instanceIsAvailable = !!weakRef.deref();
+            if (!instanceIsAvailable || token === cacheToken) {
+                delete this.instances[sdkKey];
+                return instanceIsAvailable;
+            }
+        }
+
+        return false;
+    }
+
+    public clear(): ConfigCatClient[] {
+        const removedInstances: ConfigCatClient[] = [];
+        for (let [sdkKey, [weakRef]] of Object.entries(this.instances)) {
+            let instance = weakRef.deref();
+            if (instance) {
+                removedInstances.push(instance);
+            }
+            delete this.instances[sdkKey];
+        }
+        return removedInstances;
+    }
+}
+
+const clientInstanceCache = new ConfigCatClientCache();
+
 export class ConfigCatClient implements IConfigCatClient {
     private configService?: IConfigService;
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
     private defaultUser?: User;
+    private suppressFinalization: () => void;
+
+    private static get instanceCache() { return clientInstanceCache; };
+
+    public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
+        if (!sdkKey) {
+            throw new Error("Invalid 'sdkKey' value");
+        }
+
+        const optionsClass =
+            pollingMode === PollingMode.AutoPoll ? AutoPollOptions :
+            pollingMode === PollingMode.ManualPoll ? ManualPollOptions :
+            pollingMode === PollingMode.LazyLoad ? LazyLoadOptions :
+            (() => { throw new Error("Invalid 'pollingMode' value"); })();
+
+        const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache);
+
+        const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
+
+        if (instanceAlreadyCreated && options) {
+            actualOptions.logger.warn(`Client for SDK key '${sdkKey}' is already created and will be reused; configuration action is being ignored.`);
+        }
+
+        return instance;
+    }
 
     constructor(
-        options: AutoPollOptions | ManualPollOptions | LazyLoadOptions,
-        configCatKernel: IConfigCatKernel) {
+        options: ConfigCatClientOptions,
+        configCatKernel: IConfigCatKernel,
+        private cacheToken?: object) {
 
         if (!options) {
             throw new Error("Invalid 'options' value");
@@ -96,27 +174,64 @@ export class ConfigCatClient implements IConfigCatClient {
 
         this.evaluator = new RolloutEvaluator(options.logger);
 
-        if (options?.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
-            if (options && options instanceof LazyLoadOptions) {
-                this.configService = new LazyLoadConfigService(configCatKernel.configFetcher, options);
-            } else if (options && options instanceof ManualPollOptions) {
-                this.configService = new ManualPollService(configCatKernel.configFetcher, options);
-            } else if (options && options instanceof AutoPollOptions) {
-                this.configService = new AutoPollConfigService(configCatKernel.configFetcher, options);
-            } else {
-                throw new Error("Invalid 'options' value");
-            }
+        if (options.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
+            const configServiceClass =
+                options instanceof AutoPollOptions ? AutoPollConfigService :
+                options instanceof ManualPollOptions ? ManualPollService :
+                options instanceof LazyLoadOptions ? LazyLoadConfigService :
+                (() => { throw new Error("Invalid 'options' value"); })();
+
+            this.configService = new configServiceClass(configCatKernel.configFetcher, options);
+        }
+
+        this.suppressFinalization = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
+    }
+
+    private static finalize(data: IFinalizationData) {
+        // Safeguard against situations where user forgets to dispose of the client instance.
+        
+        data.logger?.debug("finalize() called");
+        ConfigCatClient.close(data.sdkKey, data.cacheToken, data.configService, data.logger);
+    }
+
+    private static close(sdkKey: string, cacheToken?: object, configService?: IConfigService, logger?: IConfigCatLogger) {
+        if (cacheToken) {
+            clientInstanceCache.remove(sdkKey, cacheToken);
+        }
+
+        if (configService instanceof AutoPollConfigService) {
+            logger?.debug("Disposing AutoPollConfigService");
+            configService.dispose();
         }
     }
 
     dispose(): void {
-        this.options.logger.debug("dispose() called");
-        if (this.configService instanceof AutoPollConfigService) {
-            this.options.logger.debug("Disposing AutoPollConfigService");
-            this.configService.dispose();
-        }
+        const options = this.options;
+        options.logger.debug("dispose() called");
+        ConfigCatClient.close(options.apiKey, this.cacheToken, this.configService, options.logger);
+        this.suppressFinalization();
     }
 
+    static disposeAll(): void {
+        const removedInstances = clientInstanceCache.clear();
+
+        let errors: any[] | undefined;
+        for (let instance of removedInstances) {
+            try {
+                instance.dispose();
+                instance.suppressFinalization();
+            }
+            catch (err) {
+                errors ??= [];
+                errors.push(err);
+            }
+        }
+
+        if (errors) {
+            throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
+        }
+    }
+    
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
         this.options.logger.debug("getValue() called.");
         this.getValueAsync(key, defaultValue, user).then(value => {
@@ -295,7 +410,7 @@ export class ConfigCatClient implements IConfigCatClient {
             keys.forEach(key => {
                 result.push({
                     settingKey: key,
-                    settingValue: this.evaluator.Evaluate(settings, key, undefined, user ?? this.defaultUser).Value
+                    settingValue: this.evaluator.Evaluate(settings, key, void 0, user ?? this.defaultUser).Value
                 });
             });
 
@@ -308,7 +423,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     clearDefaultUser() {
-        this.defaultUser = undefined;
+        this.defaultUser = void 0;
     }
 
     private getSettingsAsync(): Promise<{ [name: string]: Setting } | null> {
@@ -346,4 +461,69 @@ export class ConfigCatClient implements IConfigCatClient {
 export class SettingKeyValue {
     settingKey!: string;
     settingValue!: any;
+}
+
+/* GC finalization support */
+
+// Defines the interface of the held value which is passed to ConfigCatClient.finalize by FinalizationRegistry (or the alternative approach, see below).
+// Since a strong reference is stored to the held value (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry),
+// objects implementing this interface MUST NOT contain a strong reference (either directly or transitively) to the ConfigCatClient object because
+// that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
+interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: IConfigCatLogger };
+
+let registerForFinalization: (client: ConfigCatClient, data: IFinalizationData) => (() => void);
+
+// Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.
+if (typeof FinalizationRegistry !== "undefined") {
+    const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient["finalize"](data));
+
+    registerForFinalization = (client, data) => {
+        const unregisterToken = {};
+        finalizationRegistry.register(client, data, unregisterToken);
+        return () => finalizationRegistry.unregister(unregisterToken);
+    };
+}
+// If not but WeakRef is available or polyfilled, we can implement something which resembles finalization callbacks using a timer + weak references.
+else if (isWeakRefAvailable()) {
+    const registrations: [WeakRef<ConfigCatClient>, IFinalizationData, object][] = [];
+    let timerId: ReturnType<typeof setInterval>;
+
+    const updateRegistrations = () => {
+        for (let i = registrations.length - 1; i >= 0; i--) {
+            const [weakRef, data] = registrations[i];
+            if (!weakRef.deref()) {
+                registrations.splice(i, 1);
+                ConfigCatClient["finalize"](data);
+            }
+        }
+        if (!registrations.length) {
+            clearInterval(timerId);
+        }
+    }
+
+    registerForFinalization = (client, data) => {
+        const unregisterToken = {};
+        const startTimer = !registrations.length;
+        registrations.push([new WeakRef(client), data, unregisterToken]);
+        if (startTimer) {
+            timerId = setInterval(updateRegistrations, 60000);
+        }
+
+        return () => {
+            for (let i = registrations.length - 1; i >= 0; i--) {
+                const [, , token] = registrations[i];
+                if (token === unregisterToken) {
+                    registrations.splice(i, 1);
+                    break;
+                }
+            }
+            if (!registrations.length) {
+                clearInterval(timerId);
+            }
+        }
+    };
+}
+// If not even WeakRef is available, we're out of options, that is, can't track finalization.
+else {
+    registerForFinalization = () => () => { /* Intentional no-op */ };
 }
