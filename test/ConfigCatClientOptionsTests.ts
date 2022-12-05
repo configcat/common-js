@@ -114,6 +114,30 @@ describe("Options", () => {
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
+  it("AutoPollOptions initialization With boolean value 'pollIntervalSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('pollIntervalSeconds', true);
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+    }).to.throw("Invalid 'pollIntervalSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With whitespaces value 'pollIntervalSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('pollIntervalSeconds', ' ');
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+    }).to.throw("Invalid 'pollIntervalSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With new line value 'pollIntervalSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('pollIntervalSeconds', '\n');
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+    }).to.throw("Invalid 'pollIntervalSeconds' value");
+  });
+
   it("AutoPollOptions initialization With 0 'pollIntervalSeconds' ShouldThrowError", () => {
     expect(() => {
       new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: -1 }, null);
@@ -148,6 +172,30 @@ describe("Options", () => {
     myConfig.set('maxInitWaitTimeSeconds', undefined);
     expect(() => {
       new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: +(myConfig.get('maxInitWaitTimeSeconds')) }, null);
+    }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With boolean value 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('maxInitWaitTimeSeconds', true);
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
+    }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
+  });
+
+  it("AutoPollOptions initialization With whitespaces value 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
+    const myConfig = new Map();
+    myConfig.set('maxInitWaitTimeSeconds', ' ');
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
+    }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
+  });
+
+  it(`AutoPollOptions initialization With new line value 'maxInitWaitTimeSeconds' ShouldThrowError`, () => {
+    const myConfig = new Map();
+    myConfig.set('maxInitWaitTimeSeconds', '\n');
+    expect(() => {
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
