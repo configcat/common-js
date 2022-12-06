@@ -1,4 +1,5 @@
 import { OptionsBase } from "./ConfigCatClientOptions";
+import { errorToString } from "./Utils";
 
 export enum FetchStatus {
     Fetched = 0,
@@ -36,7 +37,9 @@ export interface IFetchResponse {
 }
 
 export type FetchErrorCauses = {
+    abort: [];
     timeout: [timeoutMs: number];
+    failure: [err?: any];
 };
 
 export class FetchError<TCause extends keyof FetchErrorCauses> extends Error {
@@ -45,9 +48,19 @@ export class FetchError<TCause extends keyof FetchErrorCauses> extends Error {
     constructor(public cause: TCause, ...args: FetchErrorCauses[TCause]) {
         let message: string | undefined;
         switch (cause) {
+            case "abort":
+                message = "Request was aborted.";
+                break;
             case "timeout":
-                const [timeoutMs] = args;
+                const [timeoutMs] = args as [number];
                 message = `Request timed out. Timeout value: ${timeoutMs}ms`;
+                break;
+            case "failure":
+                const [err] = args as [any?];
+                message = "Request failed due to a network or protocol error.";
+                if (err) {
+                    message += " " + (err instanceof Error ? err.message : err + "");
+                }
                 break;
         }
         super(message);
