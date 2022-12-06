@@ -149,6 +149,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
                     options.logger.debug("ConfigServiceBase.fetchLogicAsync(): content was not modified. Returning last config with updated timestamp.");
                     return [FetchResult.notModified(), new ProjectConfig(new Date().getTime(), lastConfig.ConfigJSON, lastConfig.HttpETag)];
 
+                case 403: // Forbidden
                 case 404: // Not Found
                     errorMessage = "Double-check your SDK Key at https://app.configcat.com/sdkkey";
                     options.logger.error(errorMessage);
