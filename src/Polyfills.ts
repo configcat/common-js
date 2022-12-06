@@ -1,42 +1,65 @@
 export function setupPolyfills() {
+    // Object.values
+    if (typeof Object.values === "undefined") {
+        Object.values = ObjectValuesPolyfill;
+    }
+
+    // Object.entries
+    if (typeof Object.entries === "undefined") {
+        Object.entries = ObjectEntriesPolyfill;
+    }
+
     // Object.fromEntries
     if (typeof Object.fromEntries === "undefined") {
-        Object.fromEntries = function (entries: any) {
-            if (!entries || !entries[Symbol.iterator]) { throw new Error('Object.fromEntries() requires a single iterable argument'); }
-            let obj: any = {};
-            for (let [key, value] of entries) {
-                obj[key] = value;
-            }
-            return obj;
-        };
+        Object.fromEntries = ObjectFromEntriesPolyfill;
     }
 
     // WeakRef
     if (typeof WeakRef === "undefined") {
-        WeakRef = typeof WeakMap !== "undefined"
-            // Polyfill WeakRef using WeakMap, which was introduced much earlier
-            // (see https://caniuse.com/mdn-javascript_builtins_weakref and https://caniuse.com/mdn-javascript_builtins_weakmap).
-            ? getWeakRefPolyfill()
-            // If not even WeakMap is available, we can't really do anything else than using strong references.
-            : getWeakRefFallback();
+        // There's no way to correctly polyfill WeakRef (https://stackoverflow.com/a/69971312/8656352),
+        // so we just polyfill its API (which means falling back on strong references in this case).
+        WeakRef = getWeakRefFallback();
     }
 }
 
-function getWeakRefPolyfill<T extends object>() {
-    const weakMap = new WeakMap<WeakRef<T>, T>();
-
-    const WeakRef = function (this: WeakRef<T>, target: T) {
-        weakMap.set(this, target);
-    } as Function as WeakRefConstructor;
-
-    WeakRef.prototype.deref = function () {
-        return weakMap.get(this);
-    };
-
-    return WeakRef;
+export function ObjectValuesPolyfill<T>(o: { [s: string]: T } | ArrayLike<T>): T[] {
+    const result: T[] = [];
+    for (const key of Object.keys(o)) {
+        result.push((o as any)[key]);
+    }
+    return result;
 }
 
-function getWeakRefFallback<T extends object>() {
+export function ObjectEntriesPolyfill<T>(o: { [s: string]: T } | ArrayLike<T>): [string, T][] {
+    const result: [string, T][] = [];
+    for (const key of Object.keys(o)) {
+        result.push([key, (o as any)[key]]);
+    }
+    return result;
+}
+
+export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [PropertyKey, T]>): { [k: PropertyKey]: T } {
+    const result: { [k: PropertyKey]: T } = {};
+    if (Array.isArray(entries)) {
+        for (const [key, value] of entries) {
+            result[key] = value;
+        }
+    }
+    else if (typeof Symbol !== "undefined" && entries?.[Symbol.iterator]) {
+        const iterator = entries[Symbol.iterator]();
+        let element: readonly [PropertyKey, T], done: boolean | undefined;
+        while (({ value: element, done } = iterator.next(), !done)) {
+            const [key, value] = element;
+            result[key] = value;
+        }
+    }
+    else {
+        throw new Error('Object.fromEntries() requires a single iterable argument');
+    }
+    return result;
+}
+
+export function getWeakRefFallback<T extends object>(): WeakRefConstructor {
     type WeakRefImpl = WeakRef<T> & { target: T };
 
     const WeakRef = function (this: WeakRefImpl, target: T) {

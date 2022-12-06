@@ -682,65 +682,31 @@ export class SettingKeyValue {
 
 /* GC finalization support */
 
-// Defines the interface of the held value which is passed to ConfigCatClient.finalize by FinalizationRegistry (or the alternative approach, see below).
+// Defines the interface of the held value which is passed to ConfigCatClient.finalize by FinalizationRegistry.
 // Since a strong reference is stored to the held value (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry),
 // objects implementing this interface MUST NOT contain a strong reference (either directly or transitively) to the ConfigCatClient object because
 // that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
 interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: LoggerWrapper };
 
-let registerForFinalization: (client: ConfigCatClient, data: IFinalizationData) => (() => void);
+let registerForFinalization = function (client: ConfigCatClient, data: IFinalizationData): () => void {
+    // Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.
+    if (typeof FinalizationRegistry !== "undefined") {
+        const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient["finalize"](data));
 
-// Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.
-if (typeof FinalizationRegistry !== "undefined") {
-    const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient["finalize"](data));
-
-    registerForFinalization = (client, data) => {
-        const unregisterToken = {};
-        finalizationRegistry.register(client, data, unregisterToken);
-        return () => finalizationRegistry.unregister(unregisterToken);
-    };
-}
-// If not but WeakRef is available or polyfilled, we can implement something which resembles finalization callbacks using a timer + weak references.
-else if (isWeakRefAvailable()) {
-    const registrations: [WeakRef<ConfigCatClient>, IFinalizationData, object][] = [];
-    let timerId: ReturnType<typeof setInterval>;
-
-    const updateRegistrations = () => {
-        for (let i = registrations.length - 1; i >= 0; i--) {
-            const [weakRef, data] = registrations[i];
-            if (!weakRef.deref()) {
-                registrations.splice(i, 1);
-                ConfigCatClient["finalize"](data);
-            }
-        }
-        if (!registrations.length) {
-            clearInterval(timerId);
-        }
+        registerForFinalization = (client, data) => {
+            const unregisterToken = {};
+            finalizationRegistry.register(client, data, unregisterToken);
+            return () => finalizationRegistry.unregister(unregisterToken);
+        };
+    }
+    // If FinalizationRegistry is unavailable, we can't really track finalization.
+    // (Although we could implement something which resembles finalization callbacks using a weak map + a timer,
+    // since ConfigCatClientCache also needs to keep (weak) references to the created client instances,
+    // this hypothetical approach wouldn't work without a complete WeakRef polyfill,
+    // which is kind of impossible (for more details, see Polyfills.ts).
+    else {
+        registerForFinalization = () => () => { /* Intentional no-op */ };
     }
 
-    registerForFinalization = (client, data) => {
-        const unregisterToken = {};
-        const startTimer = !registrations.length;
-        registrations.push([new WeakRef(client), data, unregisterToken]);
-        if (startTimer) {
-            timerId = setInterval(updateRegistrations, 60000);
-        }
-
-        return () => {
-            for (let i = registrations.length - 1; i >= 0; i--) {
-                const [, , token] = registrations[i];
-                if (token === unregisterToken) {
-                    registrations.splice(i, 1);
-                    break;
-                }
-            }
-            if (!registrations.length) {
-                clearInterval(timerId);
-            }
-        }
-    };
-}
-// If not even WeakRef is available, we're out of options, that is, can't track finalization.
-else {
-    registerForFinalization = () => () => { /* Intentional no-op */ };
+    return registerForFinalization(client, data);
 }

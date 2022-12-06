@@ -6,13 +6,10 @@
     "lib": [
       "ES2015", // APIs used: Promise (.race)
       "DOM", // APIs used: setTimeout, clearTimeout
-      "ES2017.Object", // APIs used: Object.values, Object.entries
+      "ES2017.Object", // APIs used: Object.values (polyfilled), Object.entries (polyfilled)
       "ES2019.Object", // APIs used: Object.fromEntries (polyfilled)
-      "ES2021.WeakRef", // APIs used: WeakRef (polyfilled)
-      "ES2021.Promise" // APIs used: AggregateError
+      "ES2021.WeakRef", // APIs used: WeakRef (polyfilled only API but not behavior!)
+      "ES2021.Promise" // APIs used: AggregateError (only used if available)
     ]
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+  }
 }
