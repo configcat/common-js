@@ -9,8 +9,8 @@
     "coverage": "nyc npm run test",
     "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && tsc -p tsconfig.legacy.json",
     "prepare": "npm run build",
-    "test": "node --expose-gc node_modules/mocha/bin/_mocha --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
-    "test-debug": "node --expose-gc node_modules/mocha/bin/_mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register 'test/**/*.ts' --exit --timeout 30000"
+    "test": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
+    "test-debug": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register 'test/**/*.ts' --exit --timeout 30000"
   },
   "keywords": [
     "configcat",
@@ -28,11 +28,15 @@
   "author": "ConfigCat",
   "license": "MIT",
   "homepage": "https://configcat.com",
+  "dependencies": {
+    "tslib": "^2.4.1"
+  },
   "devDependencies": {
     "@types/chai": "4.3.3",
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.45",
     "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
     "mocha": "^10.0.0",
     "moq.ts": "^7.4.1",
     "nyc": "^15.1.0",
