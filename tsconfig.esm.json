@@ -6,7 +6,8 @@
     "outDir": "./lib/esm",
     "sourceMap": false,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "declarationDir": "./lib"
   },
   "include": [
     "src/**/*.ts",

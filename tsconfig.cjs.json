@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ES5",
     "module": "CommonJS",
-    "outDir": "./lib/cjs",
+    "outDir": "./lib",
     "sourceMap": false,
     "declaration": true,
     "declarationMap": true
