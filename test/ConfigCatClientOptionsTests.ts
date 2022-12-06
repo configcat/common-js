@@ -108,9 +108,9 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With NaN 'pollIntervalSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('pollIntervalSeconds', undefined);
+    myConfig.set('pollIntervalSeconds', NaN);
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: +(myConfig.get('pollIntervalSeconds')) }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
@@ -169,9 +169,9 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With NaN 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('maxInitWaitTimeSeconds', undefined);
+    myConfig.set('maxInitWaitTimeSeconds', NaN);
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: +(myConfig.get('maxInitWaitTimeSeconds')) }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
