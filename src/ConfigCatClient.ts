@@ -13,10 +13,10 @@ import { isWeakRefAvailable } from "./Polyfills";
 export interface IConfigCatClient {
 
     /** Returns the value of a feature flag or setting based on it's key */
-    getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
+    getValue<T = any>(key: string, defaultValue: T, callback: (value: T) => void, user?: User): void;
 
     /** Returns the value of a feature flag or setting based on it's key */
-    getValueAsync(key: string, defaultValue: any, user?: User): Promise<any>;
+    getValueAsync<T = any>(key: string, defaultValue: T, user?: User): Promise<T>;
 
     /** Downloads the latest feature flag and configuration values */
     forceRefresh(callback: () => void): void;
@@ -43,19 +43,19 @@ export interface IConfigCatClient {
     getAllVariationIdsAsync(user?: User): Promise<string[]>;
 
     /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
-    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void;
+    getKeyAndValue<T = any>(variationId: string, callback: (settingkeyAndValue: SettingKeyValue<T> | null) => void): void;
 
     /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
-    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
+    getKeyAndValueAsync<T = any>(variationId: string): Promise<SettingKeyValue<T> | null>;
 
     /** Releases all resources used by IConfigCatClient */
     dispose(): void;
 
     /** Returns the values of all feature flags or settings */
-    getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void;
+    getAllValues<T = any>(callback: (result: SettingKeyValue<T>[]) => void, user?: User): void;
 
     /** Returns the values of all feature flags or settings */
-    getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
+    getAllValuesAsync<T = any>(user?: User): Promise<SettingKeyValue<T>[]>;
 
     /** Sets the default user for feature flag evaluations. 
      * In case the getValue function isn't called with a UserObject, this default user will be used instead. */
@@ -232,14 +232,14 @@ export class ConfigCatClient implements IConfigCatClient {
         }
     }
     
-    getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
+    getValue<T = any>(key: string, defaultValue: T, callback: (value: T) => void, user?: User): void {
         this.options.logger.debug("getValue() called.");
         this.getValueAsync(key, defaultValue, user).then(value => {
             callback(value);
         });
     }
 
-    getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
+    getValueAsync<T = any>(key: string, defaultValue: T, user?: User): Promise<T> {
         this.options.logger.debug("getValueAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
@@ -335,14 +335,14 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
+    getKeyAndValue<T = any>(variationId: string, callback: (settingkeyAndValue: SettingKeyValue<T> | null) => void): void {
         this.options.logger.debug("getKeyAndValue() called.");
         this.getKeyAndValueAsync(variationId).then(settingKeyAndValue => {
             callback(settingKeyAndValue);
         })
     }
 
-    getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
+    getKeyAndValueAsync<T = any>(variationId: string): Promise<SettingKeyValue<T> | null> {
         this.options.logger.debug("getKeyAndValueAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
@@ -386,14 +386,14 @@ export class ConfigCatClient implements IConfigCatClient {
         });
     }
 
-    getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {
+    getAllValues<T = any>(callback: (result: SettingKeyValue<T>[]) => void, user?: User): void {
         this.options.logger.debug("getAllValues() called.");
         this.getAllValuesAsync(user).then(value => {
             callback(value);
         });
     }
 
-    getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
+    getAllValuesAsync<T = any>(user?: User): Promise<SettingKeyValue<T>[]> {
         this.options.logger.debug("getAllValuesAsync() called.");
         return new Promise(async (resolve) => {
             const settings = await this.getSettingsAsync();
@@ -458,9 +458,9 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 }
 
-export class SettingKeyValue {
+export class SettingKeyValue<T = any> {
     settingKey!: string;
-    settingValue!: any;
+    settingValue!: T;
 }
 
 /* GC finalization support */
