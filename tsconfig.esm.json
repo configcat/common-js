@@ -1,15 +1,8 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "target": "ES5",
     "module": "ES2015",
     "outDir": "./lib/esm",
-    "sourceMap": false,
-    "declaration": true,
-    "declarationMap": true,
-    "declarationDir": "./lib"
-  },
-  "include": [
-    "src/**/*.ts",
-  ]
+  }
 }
