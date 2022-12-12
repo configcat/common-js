@@ -1,7 +1,6 @@
 import "mocha";
-import { OptionsBase, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
+import { OptionsBase, AutoPollOptions, LazyLoadOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { FetchResult, ICache, IConfigFetcher, ProjectConfig } from "../src";
-import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { Mock, It, Times, EqualMatchingInjectorConfig, ResolvedPromiseFactory, RejectedPromiseFactory } from 'moq.ts';
 import { ReturnsAsyncPresetFactory, ThrowsAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, MimicsRejectedAsyncPresetFactory, RootMockProvider, Presets } from "moq.ts/internal";
@@ -10,6 +9,7 @@ import { assert } from "chai";
 import { InMemoryCache } from "../src/Cache";
 import { delay } from "../src/Utils";
 import { FakeCache } from "./helpers/fakes";
+import { ManualPollService } from "../src/ManualPollService";
 
 describe("ConfigServiceBaseTests", () => {
 
@@ -604,6 +604,68 @@ describe("ConfigServiceBaseTests", () => {
         assert.isTrue(ProjectConfig.equals(new ProjectConfig(0, fr.responseBody, fr.eTag), actualPc));
 
         fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()), Times.Once());
+    });
+
+    it("refreshConfigAsync() should return null config when cache is empty and fetch fails.", async () => {
+
+        // Arrange
+
+        const fr: FetchResult = FetchResult.error();
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+
+
+        const cache = new InMemoryCache();
+
+        const options = new ManualPollOptions(
+            "APIKEY", "common", "1.0.0",
+            {},
+            cache);
+
+        const service = new ManualPollService(fetcherMock.object(), options);
+
+        // Act
+
+        const projectConfig =  await service.refreshConfigAsync();
+
+        // Assert
+
+        assert.isNull(projectConfig);
+        assert.isNull(cache.get(options.getCacheKey()));
+    });
+
+    it("refreshConfigAsync() should return latest config when cache is empty and fetch fails.", async () => {
+
+        // Arrange
+
+        const cachedPc: ProjectConfig = createConfigFromFetchResult(createFetchResult());
+        const fr: FetchResult = FetchResult.error();
+
+        const fetcherMock = new Mock<IConfigFetcher>()
+            .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>(), It.IsAny<any>()))
+            .callback(({ args: [a1, a2, cb] }) => cb(fr));
+
+        const cache = new InMemoryCache();
+
+        const options = new ManualPollOptions(
+            "APIKEY", "common", "1.0.0",
+            {},
+            cache);
+
+        cache.set(options.getCacheKey(), cachedPc);
+
+        const service = new ManualPollService(fetcherMock.object(), options);
+
+        // Act
+
+        const projectConfig =  await service.refreshConfigAsync();
+
+        // Assert
+
+        assert.strictEqual(projectConfig, cachedPc);
+        assert.strictEqual(cache.get(options.getCacheKey()), cachedPc);
     });
 });
 

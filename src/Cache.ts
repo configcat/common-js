@@ -8,7 +8,7 @@ export class InMemoryCache implements ICache {
         this.cache[key] = config;
     }
 
-    get(key: string): ProjectConfig {
-        return this.cache[key];
+    get(key: string): ProjectConfig | null {
+        return this.cache[key] ?? null;
     }
 }
