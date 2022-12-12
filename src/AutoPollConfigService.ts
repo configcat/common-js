@@ -1,132 +1,135 @@
 import { AutoPollOptions } from "./ConfigCatClientOptions";
 import { IConfigService, ConfigServiceBase } from "./ConfigServiceBase";
-import { IConfigFetcher } from "./index";
+import { IConfigCatLogger, IConfigFetcher } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
+import { delay } from "./Utils";
 
-export class AutoPollConfigService extends ConfigServiceBase implements IConfigService {
+export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
 
-    private maxInitWaitTimeStamp: number;
-    private configChanged: () => void;
-    private timerId: any;
-    private autoPollConfig: AutoPollOptions;
+    private initialized: boolean;
+    private initialization: Promise<void>;
+    private signalInitialization: () => void = undefined!; // the initial value is for keeping the TS compiler happy
+    private timerId?: ReturnType<typeof setTimeout>;
     private disposed = false;
 
-    constructor(configFetcher: IConfigFetcher, autoPollConfig: AutoPollOptions) {
+    constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
 
-        super(configFetcher, autoPollConfig);
+        super(configFetcher, options);
 
-        this.configChanged = autoPollConfig.configChanged;
-        this.autoPollConfig = autoPollConfig;
-        this.startRefreshWorker(autoPollConfig.pollIntervalSeconds * 1000);
-        this.maxInitWaitTimeStamp = new Date().getTime() + (autoPollConfig.maxInitWaitTimeSeconds * 1000);
+        if (options.maxInitWaitTimeSeconds > 0) {
+            this.initialized = false;
+
+            // This promise will be resolved when
+            // 1. the cache contains a valid config at startup (see startRefreshWorker) or
+            // 2. config.json is downloaded the first time (see onConfigUpdated) or
+            // 3. maxInitWaitTimeSeconds has passed (see the setTimeout call below).
+            this.initialization = new Promise(resolve => this.signalInitialization = () => {
+                this.initialized = true;
+                resolve();
+            });
+
+            setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
+        }
+        else {
+            this.initialized = true;
+            this.initialization = Promise.resolve();
+        }
+
+        this.startRefreshWorker(options.pollIntervalSeconds * 1000);
+    }
+
+    private async waitForInitializationAsync(): Promise<boolean> {
+        let cancelDelay: () => void;
+        // Simply awaiting the initialization promise would also work but we limit waiting to maxInitWaitTimeSeconds for maximum safety.
+        const result = await Promise.race([
+            (async () => { await this.initialization; return true; })(),
+            delay(this.options.maxInitWaitTimeSeconds * 1000, cancel => cancelDelay = cancel)
+        ]);
+        cancelDelay!();
+        return !!result;
     }
 
     async getConfig(): Promise<ProjectConfig | null> {
-        this.autoPollConfig.logger.debug("AutoPollConfigService.getConfig() called.");
-        var p = await this.tryReadFromCache(0);
-        if (!p) {
-            this.autoPollConfig.logger.debug("AutoPollConfigService.getConfig() - cache is empty, refreshing the cache.");
-            return this.refreshLogic(true);
-        } else {
-            this.autoPollConfig.logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
-            return new Promise(resolve => resolve(p))
+        this.options.logger.debug("AutoPollConfigService.getConfig() called.");
+
+        function logSuccess(logger: IConfigCatLogger) {
+            logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
         }
+
+        let cacheConfig: ProjectConfig | null = null;
+        if (!this.initialized) {
+            cacheConfig = await this.options.cache.get(this.options.getCacheKey());
+            if (!ProjectConfig.isExpired(cacheConfig, this.options.pollIntervalSeconds * 1000)) {
+                logSuccess(this.options.logger);
+                return cacheConfig;
+            }
+
+            this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired, waiting for initialization.");
+            await this.waitForInitializationAsync();
+        }
+
+        cacheConfig = await this.options.cache.get(this.options.getCacheKey());
+        if (!ProjectConfig.isExpired(cacheConfig, this.options.pollIntervalSeconds * 1000)) {
+            logSuccess(this.options.logger);
+        }
+        else {
+            this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired.");
+        }
+      
+        return cacheConfig;
     }
 
     refreshConfigAsync(): Promise<ProjectConfig | null> {
-        this.autoPollConfig.logger.debug("AutoPollConfigService.refreshConfigAsync() called.");
-        return this.refreshLogic(true);
+        this.options.logger.debug("AutoPollConfigService.refreshConfigAsync() called.");
+        return super.refreshConfigAsync();
     }
 
     dispose(): void {
-        this.autoPollConfig.logger.debug("AutoPollConfigService.dispose() called.");
+        this.options.logger.debug("AutoPollConfigService.dispose() called.");
         this.disposed = true;
         if (this.timerId) {
-            this.autoPollConfig.logger.debug("AutoPollConfigService.dispose() - clearing setTimeout.");
+            this.options.logger.debug("AutoPollConfigService.dispose() - clearing setTimeout.");
             clearTimeout(this.timerId);
         }
     }
 
-    private refreshLogic(forceUpdateCache: boolean): Promise<ProjectConfig | null> {
-
-        this.autoPollConfig.logger.debug("AutoPollConfigService.refreshLogic() - called.");
-        return new Promise(async resolve => {
-
-            let cachedConfig = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
-
-            const newConfig = await this.refreshLogicBaseAsync(cachedConfig, forceUpdateCache)
-
-            let weDontHaveCachedYetButHaveNew = !cachedConfig && newConfig;
-            let weHaveBothButTheyDiffers = cachedConfig && newConfig && !ProjectConfig.equals(cachedConfig, newConfig);
-
-            this.autoPollConfig.logger.debug("AutoPollConfigService.refreshLogic() - weDontHaveCachedYetButHaveNew: ." + weDontHaveCachedYetButHaveNew + ". weHaveBothButTheyDiffers: " + weHaveBothButTheyDiffers + ".");
-            if (weDontHaveCachedYetButHaveNew || weHaveBothButTheyDiffers) {
-                this.configChanged();
-            }
-            
-            resolve(newConfig);
-        });
+    protected onConfigUpdated(newConfig: ProjectConfig): void {
+        super.onConfigUpdated(newConfig);
+        this.signalInitialization();
     }
 
-    private startRefreshWorker(delay: number) {
-        this.autoPollConfig.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
-        this.refreshLogic(true).then((_) => {
-            this.autoPollConfig.logger.debug("AutoPollConfigService.startRefreshWorker() - calling refreshWorkerLogic()'s setTimeout.");
-            setTimeout(() => this.refreshWorkerLogic(delay), delay);
-        });
+    protected onConfigChanged(newConfig: ProjectConfig): void {
+        super.onConfigChanged(newConfig);
+        this.options.configChanged();
     }
 
-    private refreshWorkerLogic(delay: number) {
+    private async startRefreshWorker(delayMs: number) {
+        this.options.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
 
+        const latestConfig = await this.options.cache.get(this.options.getCacheKey());
+        if (ProjectConfig.isExpired(latestConfig, this.options.pollIntervalSeconds * 1000)) {
+            await this.refreshConfigCoreAsync(latestConfig);
+        }
+        else {
+            this.signalInitialization();
+        }
+
+        this.options.logger.debug("AutoPollConfigService.startRefreshWorker() - calling refreshWorkerLogic()'s setTimeout.");
+        this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
+    }
+
+    private async refreshWorkerLogic(delayMs: number) {
         if (this.disposed) {
-            this.autoPollConfig.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called on a disposed client.");
+            this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called on a disposed client.");
             return;
         }
 
-        this.autoPollConfig.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
-        this.refreshLogic(false).then((_) => {
-            this.autoPollConfig.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
-            this.timerId = setTimeout(
-                () => {
-                    this.refreshWorkerLogic(delay);
-                },
-                delay);
-        });
-    }
+        this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
-    private async tryReadFromCache(tries: number): Promise<ProjectConfig | null> {
+        const latestConfig = await this.options.cache.get(this.options.getCacheKey());
+        await this.refreshConfigCoreAsync(latestConfig);
 
-        this.autoPollConfig.logger.debug("AutoPollConfigService.tryReadFromCache() - called. Tries: " + tries + ".");
-        let p = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
-
-        if (this.maxInitWaitTimeStamp > new Date().getTime()
-            && (
-                // Wait for maxInitWaitTimeStamp in case the cache is empty
-                !p
-                // Wait for maxInitWaitTimeStamp in case of an expired cache (if its timestamp is older than the pollIntervalSeconds)
-                || p.Timestamp < new Date().getTime() - this.autoPollConfig.pollIntervalSeconds * 1000
-            )
-        ) {
-            if (!p) {
-                this.autoPollConfig.logger.debug("AutoPollConfigService.tryReadFromCache() - waiting for maxInitWaitTimeStamp because cache is empty.");
-            } else {
-                this.autoPollConfig.logger.debug("AutoPollConfigService.tryReadFromCache() - waiting for maxInitWaitTimeStamp because cache is expired.");
-            }
-            var diff: number = this.maxInitWaitTimeStamp - new Date().getTime();
-            var delay = 30 + (tries * tries * 20);
-
-            await this.sleep(Math.min(diff, delay));
-
-            tries++;
-
-            return this.tryReadFromCache(tries);
-        }
-
-        this.autoPollConfig.logger.debug("AutoPollConfigService.tryReadFromCache() - returning value from cache.");
-        return new Promise(resolve => resolve(p))
-    }
-
-    private sleep(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
+        this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
     }
 }

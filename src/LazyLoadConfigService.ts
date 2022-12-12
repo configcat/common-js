@@ -3,33 +3,34 @@ import { LazyLoadOptions} from "./ConfigCatClientOptions";
 import { IConfigFetcher } from "./index";
 import { ProjectConfig } from "./ProjectConfig";
 
-export class LazyLoadConfigService extends ConfigServiceBase implements IConfigService {
+export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
 
     private cacheTimeToLiveSeconds: number;
 
-    constructor(configFetcher: IConfigFetcher, config: LazyLoadOptions) {
+    constructor(configFetcher: IConfigFetcher, options: LazyLoadOptions) {
 
-        super(configFetcher, config);
+        super(configFetcher, options);
 
-        this.cacheTimeToLiveSeconds = config.cacheTimeToLiveSeconds;
+        this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
     }
 
     async getConfig(): Promise<ProjectConfig | null> {
-        this.baseConfig.logger.debug("LazyLoadConfigService.getConfig() called.");
-        let p = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
+        this.options.logger.debug("LazyLoadConfigService.getConfig() called.");
 
-        if (p && p.Timestamp + (this.cacheTimeToLiveSeconds * 1000) > new Date().getTime()) {
-            this.baseConfig.logger.debug("LazyLoadConfigService.getConfig(): cache is valid, returning from cache.");
-            return p;
-        } else {
-            this.baseConfig.logger.debug("LazyLoadConfigService.getConfig(): cache is empty or expired, calling refreshLogicBaseAsync().");
-            return this.refreshLogicBaseAsync(p);
+        const config = await this.options.cache.get(this.options.getCacheKey());
+
+        if (ProjectConfig.isExpired(config, this.cacheTimeToLiveSeconds * 1000)) {
+            this.options.logger.debug("LazyLoadConfigService.getConfig(): cache is empty or expired, calling refreshLogicBaseAsync().");
+
+            return await this.refreshConfigCoreAsync(config);
         }
+
+        this.options.logger.debug("LazyLoadConfigService.getConfig(): cache is valid, returning from cache.");
+        return config;
     }
 
     async refreshConfigAsync(): Promise<ProjectConfig | null> {
-        this.baseConfig.logger.debug("LazyLoadConfigService.refreshConfigAsync() called.");
-        let p = await this.baseConfig.cache.get(this.baseConfig.getCacheKey());
-        return this.refreshLogicBaseAsync(p)
+        this.options.logger.debug("LazyLoadConfigService.refreshConfigAsync() called.");
+        return super.refreshConfigAsync();
     }
 }

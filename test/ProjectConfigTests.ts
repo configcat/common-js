@@ -59,6 +59,13 @@ describe("ProjectConfig", () => {
     assert.isFalse(ProjectConfig.equals(actual, expected));
   });
 
+  it("Equals - Both actual and expected are null - Should equal", () => {
+    const actual: ProjectConfig | null = null;
+    const expected: ProjectConfig | null = null;
+
+    assert.isTrue(ProjectConfig.equals(actual, expected));
+  });
+
   it("Equals - Case-sensitive equals - Should not equal", () => {
     const actual: ProjectConfig = new ProjectConfig(1, "{}", 'etag');
     const expected: ProjectConfig = new ProjectConfig(1, "{}", 'ETAG');

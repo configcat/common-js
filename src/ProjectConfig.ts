@@ -3,12 +3,12 @@ export class ProjectConfig {
     HttpETag?: string;
     /** ConfigCat config */
     ConfigJSON: any;
-    /** Timestamp in milliseconds */
+    /** Timestamp of last successful download (regardless of whether the config has changed or not) in milliseconds */
     Timestamp: number;
 
-    constructor(timeStamp: number, jsonConfig: string, httpETag?: string) {
+    constructor(timeStamp: number, jsonConfig: string | object, httpETag?: string) {
         this.Timestamp = timeStamp;
-        this.ConfigJSON = JSON.parse(jsonConfig);
+        this.ConfigJSON = typeof jsonConfig === "string" ? JSON.parse(jsonConfig) : jsonConfig;
         this.HttpETag = httpETag;
     }
 
@@ -16,9 +16,8 @@ export class ProjectConfig {
      * Determines whether the specified ProjectConfig instances are considered equal.
      */
     public static equals(projectConfig1: ProjectConfig | null, projectConfig2: ProjectConfig | null): boolean {
-        if (!projectConfig1 || !projectConfig2) return false;
-
-        return this.compareEtags(projectConfig1.HttpETag, projectConfig2.HttpETag);
+        // If both configs are null, we consider them equal.
+        return projectConfig1 ? !!projectConfig2 && this.compareEtags(projectConfig1.HttpETag, projectConfig2.HttpETag) : !projectConfig2;
     }
 
     public static compareEtags(etag1?: string, etag2?: string): boolean {
@@ -35,6 +34,10 @@ export class ProjectConfig {
         }
 
         return etag;
+    }
+
+    public static isExpired(projectConfig: ProjectConfig | null, expirationMs: number): boolean {
+        return !projectConfig || projectConfig.Timestamp + expirationMs < new Date().getTime();
     }
 }
 

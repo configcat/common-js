@@ -1,13 +1,14 @@
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
-import { IConfigFetcher, IConfigCatKernel, ICache, FetchResult, PollingMode, IManualPollOptions, LogLevel } from "../src/.";
+import { PollingMode, IManualPollOptions, LogLevel } from "../src/.";
 import { ProjectConfig } from "../src/ProjectConfig";
-import { ManualPollOptions, AutoPollOptions, LazyLoadOptions, OptionsBase } from "../src/ConfigCatClientOptions";
+import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
 import { User } from "../src/RolloutEvaluator";
 import { allowEventLoop } from "./helpers/utils";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
+import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
 
 describe("ConfigCatClient", () => {
@@ -262,18 +263,11 @@ describe("ConfigCatClient", () => {
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithAlwaysVariableEtag(), sdkType: 'common', sdkVersion: '1.0.0' };
     let counter: number = 0;
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null, pollIntervalSeconds: 1, configChanged: () => { counter++; } }, null);
+    const pollIntervalSeconds = 1;
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null, pollIntervalSeconds, configChanged: () => { counter++; } }, null);
     new ConfigCatClient(options, configCatKernel);
 
-    function act(): Promise<boolean> {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve(true);
-        }, 3000);
-      });
-    }
-
-    await act();
+    await delay(2.5 * pollIntervalSeconds * 1000);
 
     assert.equal(counter, 3);
   });
@@ -668,94 +662,3 @@ describe("ConfigCatClient", () => {
   });
   
 });
-
-export class FakeConfigFetcherBase implements IConfigFetcher {
-  calledTimes = 0;
-
-  constructor(private config: string | null, private callbackDelay: number = 0) {
-  }
-
-  fetchLogic(options: OptionsBase, lastEtag: string, callback: (result: FetchResult) => void): void {
-    if (callback) {
-      setTimeout(() => {
-        this.calledTimes++;
-        callback(this.config === null ? FetchResult.error() : FetchResult.success(this.config, this.getEtag()));
-      }, this.callbackDelay);
-    }
-  }
-
-  protected getEtag(): string {
-    return "etag";
-  }
-}
-
-export class FakeConfigFetcher extends FakeConfigFetcherBase {
-  constructor(private callbackDelayInMilliseconds: number = 0) {
-    super("{\"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", callbackDelayInMilliseconds);
-  }
-}
-
-export class FakeConfigFetcherWithTwoKeys extends FakeConfigFetcherBase {
-  constructor() {
-    super("{\"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] }, \"debug2\": { \"v\": true, \"i\": \"12345678\", \"t\": 0, \"p\": [], \"r\": [] } } }");
-  }
-}
-
-export class FakeConfigFetcherWithTwoCaseSensitiveKeys extends FakeConfigFetcherBase {
-  constructor() {
-    super("{\"f\": { \"debug\": { \"v\": \"debug\", \"i\": \"abcdefgh\", \"t\": 1, \"p\": [], \"r\": [{ \"o\":0, \"a\":\"CUSTOM\", \"t\":0, \"c\":\"c\", \"v\":\"UPPER-VALUE\", \"i\":\"6ada5ff2\"}, { \"o\":1, \"a\":\"custom\", \"t\":0, \"c\":\"c\", \"v\":\"lower-value\", \"i\":\"6ada5ff2\"}] }, \"DEBUG\": { \"v\": \"DEBUG\", \"i\": \"12345678\", \"t\": 1, \"p\": [], \"r\": [] } } }");
-  }
-}
-
-export class FakeConfigFetcherWithTwoKeysAndRules extends FakeConfigFetcherBase {
-  constructor() {
-    super("{\"f\": { \"debug\": { \"v\": \"def\", \"i\": \"abcdefgh\", \"t\": 1, \"p\": [], \"r\": [{ \"o\":0, \"a\":\"a\", \"t\":1, \"c\":\"abcd\", \"v\":\"value\", \"i\":\"6ada5ff2\"}] }, \"debug2\": { \"v\": \"def\", \"i\": \"12345678\", \"t\": 1, \"p\": [{\"o\":0, \"v\":\"value1\", \"p\":50, \"i\":\"d227b334\" }, { \"o\":1, \"v\":\"value2\", \"p\":50, \"i\":\"622f5d07\" }], \"r\": [] } } }");
-  }
-}
-
-export class FakeConfigFetcherWithRules extends FakeConfigFetcherBase {
-  constructor() {
-    super("{\"f\": { \"debug\": { \"v\": \"defaultValue\", \"i\": \"defaultVariationId\", \"t\": 0, \"p\": [], \"r\": [{ \"o\":0, \"a\":\"eyeColor\", \"t\":0, \"c\":\"red\", \"v\":\"redValue\", \"i\":\"redVariationId\"}, { \"o\":1, \"a\":\"eyeColor\", \"t\":0, \"c\":\"blue\", \"v\":\"blueValue\", \"i\":\"blueVariationId\"}] } } }");
-  }
-}
-export class FakeConfigFetcherWithNullNewConfig extends FakeConfigFetcherBase {
-  constructor() {
-    super(null);
-  }
-}
-
-export class FakeConfigFetcherWithAlwaysVariableEtag extends FakeConfigFetcherBase {
-  constructor() {
-    super("{ \"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } }}");
-  }
-
-  getEtag(): string {
-    return Math.random().toString();
-  }
-}
-
-export class FakeConfigFetcherWithPercantageRules extends FakeConfigFetcherBase {
-  constructor() {
-    super("{\"f\":{\"string25Cat25Dog25Falcon25Horse\":{\"v\":\"Chicken\",\"t\":1,\"p\":[{\"o\":0,\"v\":\"Cat\",\"p\":25},{\"o\":1,\"v\":\"Dog\",\"p\":25},{\"o\":2,\"v\":\"Falcon\",\"p\":25},{\"o\":3,\"v\":\"Horse\",\"p\":25}],\"r\":[]}}}");
-  }
-}
-
-export class FakeConfigCatKernel implements IConfigCatKernel {
-  cache?: ICache;
-  configFetcher!: IConfigFetcher;
-  sdkType = "common";
-  sdkVersion = "1.0.0";
-}
-
-export class FakeCache implements ICache {
-  cached: ProjectConfig;
-  constructor(cached: ProjectConfig) {
-    this.cached = cached;
-  }
-  set(key: string, config: ProjectConfig): void | Promise<void> {
-    this.cached = config;
-  }
-  get(key: string): ProjectConfig | Promise<ProjectConfig> {
-    return this.cached;
-  }
-}
