@@ -1,6 +1,6 @@
-import { IConfigService, ConfigServiceBase } from "./ConfigServiceBase";
 import { ManualPollOptions } from "./ConfigCatClientOptions";
-import { IConfigFetcher } from "./index";
+import type { IConfigFetcher } from "./ConfigFetcher";
+import { ConfigServiceBase, IConfigService } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
@@ -8,6 +8,8 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
     constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
 
         super(configFetcher, options);
+
+        options.hooks.emit("clientReady");
     }
 
     async getConfig(): Promise<ProjectConfig | null> {

@@ -1,6 +1,7 @@
-import { IConfigService, ConfigServiceBase} from "./ConfigServiceBase";
-import { LazyLoadOptions} from "./ConfigCatClientOptions";
-import { IConfigCatLogger, IConfigFetcher } from "./index";
+import { LazyLoadOptions } from "./ConfigCatClientOptions";
+import { LoggerWrapper } from "./ConfigCatLogger";
+import type { IConfigFetcher } from "./ConfigFetcher";
+import { ConfigServiceBase, IConfigService } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
@@ -12,12 +13,14 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
         super(configFetcher, options);
 
         this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
+
+        options.hooks.emit("clientReady");
     }
 
     async getConfig(): Promise<ProjectConfig | null> {
         this.options.logger.debug("LazyLoadConfigService.getConfig() called.");
 
-        function logExpired(logger: IConfigCatLogger, appendix: string = "") {
+        function logExpired(logger: LoggerWrapper, appendix: string = "") {
             logger.debug(`LazyLoadConfigService.getConfig(): cache is empty or expired${appendix}.`);
         }
 

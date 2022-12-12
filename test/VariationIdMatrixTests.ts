@@ -1,10 +1,10 @@
 import { assert } from "chai";
-import "mocha";
-import { User } from "../src/RolloutEvaluator";
 import * as fs from "fs";
-import { FakeConfigFetcherBase, FakeConfigCatKernel } from "./helpers/fakes";
+import "mocha";
+import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { IConfigCatClient, ConfigCatClient } from "../src/ConfigCatClient";
+import { User } from "../src/RolloutEvaluator";
+import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("MatrixTests", () => {
 

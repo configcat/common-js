@@ -1,7 +1,6 @@
-import { ConfigCatClient, IConfigCatClient } from "./ConfigCatClient";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, IOptions, OptionsBase } from "./ConfigCatClientOptions";
-import { ProjectConfig } from "./ProjectConfig";
-import { ConfigCatConsoleLogger } from "./ConfigCatLogger";
+import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "./ConfigCatClient";
+import { AutoPollOptions, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsForPollingMode, PollingMode } from "./ConfigCatClientOptions";
+import { ConfigCatConsoleLogger, IConfigCatLogger, LogLevel } from "./ConfigCatLogger";
 import { setupPolyfills } from "./Polyfills";
 
 setupPolyfills();
@@ -27,7 +26,7 @@ export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode
  * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with auto polling for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.AutoPoll, options, ...)' format.
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new AutoPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
+    return new ConfigCatClient(new AutoPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
 }
 
 /**
@@ -40,7 +39,7 @@ export function createClientWithManualPoll(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: IManualPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new ManualPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
+    return new ConfigCatClient(new ManualPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
 }
 
 /**
@@ -53,117 +52,32 @@ export function createClientWithLazyLoad(
     apiKey: string,
     configCatKernel: IConfigCatKernel,
     options?: ILazyLoadingOptions): IConfigCatClient {
-    return new ConfigCatClient(new LazyLoadOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache), configCatKernel);
+    return new ConfigCatClient(new LazyLoadOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
 }
 
 /**
  * Create an instance of ConfigCatConsoleLogger
- * @param {LogLevel} logLevel - Specifies message's filtering to output for the CofigCatConsoleLogger.
+ * @param {LogLevel} logLevel - Specifies message's filtering to output for the ConfigCatConsoleLogger.
  */
 export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
     return new ConfigCatConsoleLogger(logLevel);
 }
 
-export enum PollingMode {
-    AutoPoll,
-    ManualPoll,
-    LazyLoad,
-}
+export { PollingMode }
 
-export interface IAutoPollOptions extends IOptions {
-    pollIntervalSeconds?: number;
+export type { IAutoPollOptions, IManualPollOptions, ILazyLoadingOptions, OptionsForPollingMode }
 
-    maxInitWaitTimeSeconds?: number;
+export type { IConfigCatLogger }
 
-    configChanged?: () => void;
-}
+export { LogLevel }
 
-export interface IManualPollOptions extends IOptions {
-}
+export type { IConfigCatKernel }
 
-export interface ILazyLoadingOptions extends IOptions {
-    cacheTimeToLiveSeconds?: number;
-}
+export { FetchStatus, FetchResult } from './ConfigFetcher';
 
-export type OptionsForPollingMode<TMode extends PollingMode> =
-    TMode extends PollingMode.AutoPoll ? IAutoPollOptions :
-    TMode extends PollingMode.ManualPoll ? IManualPollOptions :
-    TMode extends PollingMode.LazyLoad ? ILazyLoadingOptions :
-    never;
+export type { IConfigFetcher } from './ConfigFetcher';
 
-export interface IConfigCatLogger {
-    debug(message: string): void;
-
-    /**
-     * @deprecated Use `debug(message: string)` method instead of this
-     */
-    log(message: string): void;
-
-    info(message: string): void;
-
-    warn(message: string): void;
-
-    error(message: string): void;
-}
-
-export enum LogLevel {
-    Debug = 4,
-    Info = 3,
-    Warn = 2,
-    Error = 1,
-    Off = -1
-}
-
-export interface IConfigCatKernel {
-    configFetcher: IConfigFetcher;
-    /**
-     * Default ICache implementation.
-     */
-    cache?: ICache;
-    sdkType: string;
-    sdkVersion: string;
-}
-
-export enum FetchStatus {
-    Fetched = 0,
-    NotModified = 1,
-    Errored = 2,
-}
-
-export class FetchResult {
-    public status: FetchStatus;
-    public responseBody: string;
-    public eTag?: string;
-
-    constructor(status: FetchStatus, responseBody: string, eTag?: string) {
-        this.status = status;
-        this.responseBody = responseBody;
-        this.eTag = eTag
-    }
-
-    static success(responseBody: string, eTag: string): FetchResult {
-        return new FetchResult(FetchStatus.Fetched, responseBody, eTag);
-    }
-
-    static notModified(): FetchResult {
-        return new FetchResult(FetchStatus.NotModified, "");
-    }
-
-    static error() {
-        return new FetchResult(FetchStatus.Errored, "");
-    }
-
-}
-
-export interface IConfigFetcher {
-    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void;
-}
-
-export interface ICache {
-    set(key: string, config: ProjectConfig): Promise<void> | void;
-
-    get(key: string): Promise<ProjectConfig | null> | ProjectConfig | null;
-}
+export type { ICache } from './Cache';
 
 export { ProjectConfig } from "./ProjectConfig";
 

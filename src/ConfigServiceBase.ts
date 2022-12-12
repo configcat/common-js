@@ -1,5 +1,5 @@
-import { FetchResult, FetchStatus, IConfigFetcher } from "./index";
 import { OptionsBase } from "./ConfigCatClientOptions";
+import { FetchResult, FetchStatus, IConfigFetcher } from "./ConfigFetcher";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
 export interface IConfigService {
@@ -81,6 +81,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
     protected onConfigChanged(newConfig: ProjectConfig): void {
         this.options.logger.debug("config changed");
+        this.options.hooks.emit("configChanged", newConfig);
     }
 
     private fetchLogic(lastProjectConfig: ProjectConfig | null, retries: number, callback: (newProjectConfig: ProjectConfig | null) => void): void {

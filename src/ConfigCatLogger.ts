@@ -1,54 +1,108 @@
-import { IConfigCatLogger, LogLevel } from "./index";
+import { Hooks } from "./Hooks";
+import { errorToString } from "./Utils";
 
-export class ConfigCatConsoleLogger implements IConfigCatLogger {  
+export enum LogLevel {
+    Debug = 4,
+    Info = 3,
+    Warn = 2,
+    Error = 1,
+    Off = -1
+}
 
-    SOURCE: string = "ConfigCat";
+export interface IConfigCatLogger {
+    readonly level?: LogLevel;
 
-    public level: LogLevel = LogLevel.Warn;  
-
-    /**
-     * Create an instance of ConfigCatConsoleLogger
-     */
-    constructor(logLevel: LogLevel) {
-        
-        if (logLevel){
-            this.level = logLevel;              
-        }       
-    }
+    debug(message: string): void;
 
     /**
      * @deprecated Use `debug(message: string)` method instead of this
      */
-    log(message: string): void {       
-        this.info(message);        
+    log(message: string): void;
+
+    info(message: string): void;
+
+    warn(message: string): void;
+
+    error(message: string): void;
+}
+
+export class LoggerWrapper implements IConfigCatLogger {
+    get level() { return this.logger.level ?? LogLevel.Warn; }
+
+    constructor(private logger: IConfigCatLogger, private hooks?: Hooks) {
+    }
+
+    log(message: string): void {
+        this.info(message);
     }
 
     debug(message: string): void {
         if (this.isLogLevelEnabled(LogLevel.Debug)) {
-            console.info(this.SOURCE + " - DEBUG - " + message);
+            this.logger.debug(message);
         }
     }
 
     info(message: string): void {
         if (this.isLogLevelEnabled(LogLevel.Info)) {
-            console.info(this.SOURCE + " - INFO - " + message);
+            this.logger.info(message);
         }
     }
 
     warn(message: string): void {
         if (this.isLogLevelEnabled(LogLevel.Warn)) {
-            console.warn(this.SOURCE + " - WARN - " + message);
+            this.logger.warn(message);
         }
     }
 
-    error(message: string): void {
-
+    error(message: string, err?: any): void {
         if (this.isLogLevelEnabled(LogLevel.Error)) {
-            console.error(this.SOURCE + " - ERROR - " + message);
+            const logMessage = err
+                ? message + '\n' + errorToString(err, true)
+                : message;
+
+            this.logger.error(logMessage);
         }
+
+        this.hooks?.emit("clientError", message, err);
     }
 
-    isLogLevelEnabled(logLevel: LogLevel): boolean {
+    private isLogLevelEnabled(logLevel: LogLevel): boolean {
         return this.level >= logLevel;
-    }    
+    }
+}
+
+export class ConfigCatConsoleLogger implements IConfigCatLogger {
+
+    SOURCE: string = "ConfigCat";
+
+    /**
+     * Create an instance of ConfigCatConsoleLogger
+     */
+    constructor(public level = LogLevel.Warn) {
+    }
+
+    /** @inheritdoc */
+    log(message: string): void {
+        this.info(message);
+    }
+
+    /** @inheritdoc */
+    debug(message: string): void {
+        console.info(this.SOURCE + " - DEBUG - " + message);
+    }
+
+    /** @inheritdoc */
+    info(message: string): void {
+        console.info(this.SOURCE + " - INFO - " + message);
+    }
+
+    /** @inheritdoc */
+    warn(message: string): void {
+        console.warn(this.SOURCE + " - WARN - " + message);
+    }
+
+    /** @inheritdoc */
+    error(message: string): void {
+        console.error(this.SOURCE + " - ERROR - " + message);
+    }
 }

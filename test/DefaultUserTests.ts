@@ -1,10 +1,8 @@
-import { expect } from "chai";
+import { assert, expect } from "chai";
 import "mocha";
-import { IConfigCatClient, User } from "../src";
-import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./helpers/fakes";
+import { IConfigCatClient } from "../src/ConfigCatClient";
 import * as configcatClient from "../src/index";
-import { assert } from "chai";
-
+import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./helpers/fakes";
 
 describe("DefaultUser", () => {
 

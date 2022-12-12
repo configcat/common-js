@@ -1,16 +1,20 @@
-import { IConfigCatKernel, IConfigCatLogger, OptionsForPollingMode, PollingMode } from "./index";
-import { AutoPollOptions, ManualPollOptions, LazyLoadOptions, OptionsBase, ConfigCatClientOptions } from "./ConfigCatClientOptions";
-import { IConfigService } from "./ConfigServiceBase";
 import { AutoPollConfigService } from "./AutoPollConfigService";
+import type { ICache } from "./Cache";
+import { AutoPollOptions, ConfigCatClientOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, OptionsForPollingMode, PollingMode } from "./ConfigCatClientOptions";
+import { IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
+import type { IConfigFetcher } from "./ConfigFetcher";
+import type { IConfigService } from "./ConfigServiceBase";
+import type { IEventEmitter } from "./EventEmitter";
+import { OverrideBehaviour } from "./FlagOverrides";
+import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
-import { User, IRolloutEvaluator, RolloutEvaluator, evaluate, IEvaluationDetails, evaluationDetailsFromDefaultValue, checkSettingsAvailable, evaluateAll, evaluateVariationId, evaluateAllVariationIds } from "./RolloutEvaluator";
-import { Setting, ConfigFile, ProjectConfig, RolloutRule, RolloutPercentageItem } from "./ProjectConfig";
-import { OverrideBehaviour } from "./FlagOverrides";
-import { errorToString, getSettingsFromConfig } from "./Utils";
 import { isWeakRefAvailable } from "./Polyfills";
+import { ConfigFile, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
+import { checkSettingsAvailable, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, IEvaluationDetails, IRolloutEvaluator, RolloutEvaluator, User } from "./RolloutEvaluator";
+import { errorToString, getSettingsFromConfig } from "./Utils";
 
-export interface IConfigCatClient {
+export interface IConfigCatClient extends IProvidesHooks {
 
     /** Returns the value of a feature flag or setting based on it's key */
     getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
@@ -80,6 +84,17 @@ export interface IConfigCatClient {
     setOffline(): void;
 }
 
+export interface IConfigCatKernel {
+    configFetcher: IConfigFetcher;
+    /**
+     * Default ICache implementation.
+     */
+    cache?: ICache;
+    sdkType: string;
+    sdkVersion: string;
+    eventEmitterFactory?: () => IEventEmitter;
+}
+
 export class ConfigCatClientCache {
     private instances: Record<string, [WeakRef<ConfigCatClient>, object]> = {};
 
@@ -138,7 +153,7 @@ export class ConfigCatClient implements IConfigCatClient {
     private evaluator: IRolloutEvaluator;
     private options: OptionsBase;
     private defaultUser?: User;
-    private suppressFinalization: () => void;
+    private suppressFinalize: () => void;
 
     private static get instanceCache() { return clientInstanceCache; };
 
@@ -153,7 +168,7 @@ export class ConfigCatClient implements IConfigCatClient {
             pollingMode === PollingMode.LazyLoad ? LazyLoadOptions :
             (() => { throw new Error("Invalid 'pollingMode' value"); })();
 
-        const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache);
+        const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory);
 
         const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
 
@@ -185,7 +200,7 @@ export class ConfigCatClient implements IConfigCatClient {
             throw new Error("Invalid 'configCatKernel.configFetcher' value");
         }
 
-        if (options?.defaultUser) {
+        if (options.defaultUser) {
             this.setDefaultUser(options.defaultUser);
         }
 
@@ -200,30 +215,47 @@ export class ConfigCatClient implements IConfigCatClient {
 
             this.configService = new configServiceClass(configCatKernel.configFetcher, options);
         }
+        else {
+            this.options.hooks.emit("clientReady");
+        }
 
-        this.suppressFinalization = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
+        this.suppressFinalize = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
     }
 
     private static finalize(data: IFinalizationData) {
         // Safeguard against situations where user forgets to dispose of the client instance.
         
         data.logger?.debug("finalize() called");
-        ConfigCatClient.close(data.sdkKey, data.cacheToken, data.configService);
-    }
 
-    private static close(sdkKey: string, cacheToken?: object, configService?: IConfigService) {
-        if (cacheToken) {
-            clientInstanceCache.remove(sdkKey, cacheToken);
+        if (data.cacheToken) {
+            clientInstanceCache.remove(data.sdkKey, data.cacheToken);
         }
 
-        configService?.dispose();
+        ConfigCatClient.close(data.configService, data.logger);
+    }
+
+    private static close(configService?: IConfigService, logger?: IConfigCatLogger, hooks?: Hooks) {
+        logger?.debug("close() called");
+
+        const emitBeforeClientDispose = hooks?.tryDisconnect();
+        try {
+            emitBeforeClientDispose?.();
+        }
+        finally {
+            configService?.dispose();
+        }
     }
 
     dispose(): void {
         const options = this.options;
         options.logger.debug("dispose() called");
-        ConfigCatClient.close(options.apiKey, this.cacheToken, this.configService);
-        this.suppressFinalization();
+
+        if (this.cacheToken) {
+            clientInstanceCache.remove(options.apiKey, this.cacheToken);
+        }
+
+        ConfigCatClient.close(this.configService, options.logger, options.hooks);
+        this.suppressFinalize();
     }
 
     static disposeAll(): void {
@@ -232,8 +264,8 @@ export class ConfigCatClient implements IConfigCatClient {
         let errors: any[] | undefined;
         for (let instance of removedInstances) {
             try {
-                instance.dispose();
-                instance.suppressFinalization();
+                ConfigCatClient.close(instance.configService, instance.options.logger, instance.options.hooks);
+                instance.suppressFinalize();
             }
             catch (err) {
                 errors ??= [];
@@ -254,19 +286,22 @@ export class ConfigCatClient implements IConfigCatClient {
     async getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
         this.options.logger.debug("getValueAsync() called.");
 
-        let value: any;
+        let value: any, evaluationDetails: IEvaluationDetails;
         let remoteConfig: ProjectConfig | null = null;
         user ??= this.defaultUser;
         try {
             let settings: { [name: string]: Setting } | null;
             [settings, remoteConfig] = await this.getSettingsAsync();
-            value = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger).value;
+            evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
+            value = evaluationDetails.value;
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getValueAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getValueAsync().", err);
+            evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
             value = defaultValue;
         }
 
+        this.options.hooks.emit("flagEvaluated", evaluationDetails);
         return value;
     }
 
@@ -287,10 +322,11 @@ export class ConfigCatClient implements IConfigCatClient {
             evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getValueDetailsAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getValueDetailsAsync().", err);
             evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
         }
 
+        this.options.hooks.emit("flagEvaluated", evaluationDetails);
         return evaluationDetails;
     }
 
@@ -306,7 +342,7 @@ export class ConfigCatClient implements IConfigCatClient {
             await this.configService?.refreshConfigAsync();
         }
         catch (err) {
-            this.options.logger.error("Error occurred in forceRefreshAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in forceRefreshAsync().", err);
         }
     }
 
@@ -326,7 +362,7 @@ export class ConfigCatClient implements IConfigCatClient {
             return Object.keys(settings);
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getAllKeysAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getAllKeysAsync().", err);
             return [];
         }
     }
@@ -339,19 +375,22 @@ export class ConfigCatClient implements IConfigCatClient {
     async getVariationIdAsync(key: string, defaultVariationId: any, user?: User): Promise<string> {
         this.options.logger.debug("getVariationIdAsync() called.");
 
-        let variationId: any;
+        let variationId: any, evaluationDetails: IEvaluationDetails;
         let remoteConfig: ProjectConfig | null = null;
         user ??= this.defaultUser;
         try {
             let settings: { [name: string]: Setting } | null;
             [settings, remoteConfig] = await this.getSettingsAsync();
-            variationId = evaluateVariationId(this.evaluator, settings, key, defaultVariationId, user, remoteConfig, this.options.logger).variationId;
+            evaluationDetails = evaluateVariationId(this.evaluator, settings, key, defaultVariationId, user, remoteConfig, this.options.logger);
+            variationId = evaluationDetails.variationId;
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getVariationIdAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getVariationIdAsync().", err);
+            evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
             variationId = defaultVariationId;
         }
 
+        this.options.hooks.emit("flagEvaluated", evaluationDetails);
         return variationId;
     }
 
@@ -363,19 +402,25 @@ export class ConfigCatClient implements IConfigCatClient {
     async getAllVariationIdsAsync(user?: User): Promise<string[]> {
         this.options.logger.debug("getAllVariationIdsAsync() called.");
 
-        let result: string[];
+        let result: string[], evaluationDetailsArray: IEvaluationDetails[];
         user ??= this.defaultUser;
         try {
             const [settings, remoteConfig] = await this.getSettingsAsync();
-            const [evaluationDetailsArray, errors] = evaluateAllVariationIds(this.evaluator, settings, user, remoteConfig, this.options.logger);
+            let errors: any[] | undefined;
+            [evaluationDetailsArray, errors] = evaluateAllVariationIds(this.evaluator, settings, user, remoteConfig, this.options.logger);
             if (errors?.length) {
                 throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
             }
             result = evaluationDetailsArray.map(details => details.variationId);
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getAllVariationIdsAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getAllVariationIdsAsync().", err);
+            evaluationDetailsArray ??= [];
             result = [];
+        }
+
+        for (let evaluationDetail of evaluationDetailsArray) {
+            this.options.hooks.emit("flagEvaluated", evaluationDetail);
         }
 
         return result;
@@ -424,7 +469,7 @@ export class ConfigCatClient implements IConfigCatClient {
             this.options.logger.error("Could not find the setting for the given variation ID: " + variationId);
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getKeyAndValueAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getKeyAndValueAsync().", err);
         }
 
         return null;
@@ -438,19 +483,25 @@ export class ConfigCatClient implements IConfigCatClient {
     async getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
         this.options.logger.debug("getAllValuesAsync() called.");
 
-        let result: SettingKeyValue[];
+        let result: SettingKeyValue[], evaluationDetailsArray: IEvaluationDetails[];
         user ??= this.defaultUser;
         try {
             const [settings, remoteConfig] = await this.getSettingsAsync();
-            const [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger);
+            let errors: any[] | undefined;
+            [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger);
             if (errors?.length) {
                 throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
             }
             result = evaluationDetailsArray.map(details => new SettingKeyValue(details.key, details.value));
         }
         catch (err) {
-            this.options.logger.error("Error occurred in getAllValuesAsync().\n" + errorToString(err, true));
+            this.options.logger.error("Error occurred in getAllValuesAsync().", err);
+            evaluationDetailsArray ??= [];
             result = [];
+        }
+
+        for (let evaluationDetail of evaluationDetailsArray) {
+            this.options.hooks.emit("flagEvaluated", evaluationDetail);
         }
 
         return result;
@@ -510,6 +561,51 @@ export class ConfigCatClient implements IConfigCatClient {
 
         return await getRemoteConfigAsync();
     }
+
+    /** @inheritdoc */
+    addListener: <TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void) => this = this.on;
+
+    /** @inheritdoc */
+    on<TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void): this {
+        this.options.hooks.on(eventName, listener as (...args: any[]) => void);
+        return this;
+    }
+
+    /** @inheritdoc */
+    once<TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void): this {
+        this.options.hooks.once(eventName, listener as (...args: any[]) => void);
+        return this;
+    }
+
+    /** @inheritdoc */
+    removeListener<TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void): this {
+        this.options.hooks.removeListener(eventName, listener as (...args: any[]) => void);
+        return this;
+    }
+
+    /** @inheritdoc */
+    off: <TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void) => this = this.removeListener;
+
+    /** @inheritdoc */
+    removeAllListeners(eventName?: keyof HookEvents): this {
+        this.options.hooks.removeAllListeners(eventName);
+        return this;
+    }
+
+    /** @inheritdoc */
+    listeners(eventName: keyof HookEvents): Function[] {
+        return this.options.hooks.listeners(eventName);
+    }
+
+    /** @inheritdoc */
+    listenerCount(eventName: keyof HookEvents): number {
+        return this.options.hooks.listenerCount(eventName);
+    }
+
+    /** @inheritdoc */
+    eventNames(): Array<keyof HookEvents> {
+        return this.options.hooks.eventNames();
+    }
 }
 
 export class SettingKeyValue {
@@ -525,7 +621,7 @@ export class SettingKeyValue {
 // Since a strong reference is stored to the held value (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry),
 // objects implementing this interface MUST NOT contain a strong reference (either directly or transitively) to the ConfigCatClient object because
 // that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
-interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: IConfigCatLogger };
+interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: LoggerWrapper };
 
 let registerForFinalization: (client: ConfigCatClient, data: IFinalizationData) => (() => void);
 

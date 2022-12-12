@@ -1,12 +1,11 @@
-import "mocha";
 import { assert } from "chai";
-import { ConfigCatClient } from "../src/ConfigCatClient";
-import { ConfigCatClientCache } from "../src/ConfigCatClient";
+import "mocha";
+import { ConfigCatClient, ConfigCatClientCache } from "../src/ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { allowEventLoop } from "./helpers/utils";
-import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";
 import "./helpers/ConfigCatClientCacheExtensions";
+import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";
+import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClientCache", () => {
   it("getOrCreate() should return shared instance when cached instance is alive", (done) => {

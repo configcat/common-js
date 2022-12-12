@@ -1,6 +1,7 @@
 import { AutoPollOptions } from "./ConfigCatClientOptions";
-import { IConfigService, ConfigServiceBase } from "./ConfigServiceBase";
-import { IConfigCatLogger, IConfigFetcher } from "./index";
+import { LoggerWrapper } from "./ConfigCatLogger";
+import type { IConfigFetcher } from "./ConfigFetcher";
+import { ConfigServiceBase, IConfigService } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
@@ -27,11 +28,14 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
                 resolve();
             });
 
+            this.initialization.then(() => !this.disposed && options.hooks.emit("clientReady"));
+
             setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
         }
         else {
             this.initialized = true;
             this.initialization = Promise.resolve();
+            options.hooks.emit("clientReady");
         }
 
         if (!options.offline) {
@@ -53,7 +57,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     async getConfig(): Promise<ProjectConfig | null> {
         this.options.logger.debug("AutoPollConfigService.getConfig() called.");
 
-        function logSuccess(logger: IConfigCatLogger) {
+        function logSuccess(logger: LoggerWrapper) {
             logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
         }
 

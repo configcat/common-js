@@ -1,8 +1,9 @@
-import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
+import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { FakeConfigCatKernel, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeConfigFetcherWithNullNewConfig } from "./helpers/fakes";
+import { IEvaluationDetails } from "../src/RolloutEvaluator";
+import { FakeConfigCatKernel, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules } from "./helpers/fakes";
 
 describe("ConfigCatClient", () => {
     it("getVariationId() works", (done) => {
@@ -45,10 +46,19 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
         assert.isDefined(client);
 
+        const flagEvaluatedEvents: IEvaluationDetails[] = [];
+        client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
         assert.equal(await client.getVariationIdAsync('debug', 'N/A'), 'abcdefgh');
         assert.equal(await client.getVariationIdAsync('debug2', 'N/A'), '12345678');
         assert.equal(await client.getVariationIdAsync('notexists', 'N/A'), 'N/A');
         assert.equal(await client.getVariationIdAsync('notexists2', 'N/A'), 'N/A');
+
+        assert.equal(4, flagEvaluatedEvents.length);
+        assert.strictEqual('abcdefgh', flagEvaluatedEvents[0].variationId);
+        assert.strictEqual('12345678', flagEvaluatedEvents[1].variationId);
+        assert.strictEqual('N/A', flagEvaluatedEvents[2].variationId);
+        assert.strictEqual('N/A', flagEvaluatedEvents[3].variationId);
     });
 
     it("getAllVariationIds() works", (done) => {
@@ -80,10 +90,15 @@ describe("ConfigCatClient", () => {
         let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
         assert.isDefined(client);
 
+        const flagEvaluatedEvents: IEvaluationDetails[] = [];
+        client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
+
         const variationIds = await client.getAllVariationIdsAsync();
         assert.equal(variationIds.length, 2);
         assert.equal(variationIds[0], 'abcdefgh');
         assert.equal(variationIds[1], '12345678');
+
+        assert.deepEqual(flagEvaluatedEvents.map(evt => evt.variationId), variationIds);
     });
 
     it("getKeyAndValue() works with default", (done) => {

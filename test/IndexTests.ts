@@ -1,9 +1,8 @@
 import { assert } from "chai";
 import "mocha";
-import * as configcatClient from "../src/index";
 import { IConfigCatClient } from "../src/ConfigCatClient";
+import * as configcatClient from "../src/index";
 import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";
-import { InMemoryCache } from "../src/Cache";
 
 describe("ConfigCatClient index (main)", () => {
 
