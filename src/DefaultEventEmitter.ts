@@ -17,8 +17,9 @@ export class DefaultEventEmitter implements IEventEmitter {
     private eventCount = 0;
 
     private addListenerCore(eventName: string | symbol, fn: (...args: any[]) => void, once: boolean) {
-        if (typeof fn !== 'function')
+        if (typeof fn !== 'function') {
             throw new TypeError("Listener must be a function");
+        }
 
         const listeners = this.events[eventName];
         const listener: Listener = { fn, once };
@@ -27,11 +28,12 @@ export class DefaultEventEmitter implements IEventEmitter {
             this.events[eventName] = listener;
             this.eventCount++;
         }
-        else if (isSingle(listeners))
+        else if (isSingle(listeners)) {
             this.events[eventName] = [listeners, listener];
-
-        else
+        }
+        else {
             listeners.push(listener);
+        }
 
         return this;
     }
@@ -39,33 +41,38 @@ export class DefaultEventEmitter implements IEventEmitter {
     private removeListenerCore<TState>(eventName: string | symbol, state: TState, isMatch: (listener: Listener, state: TState) => boolean) {
         const listeners = this.events[eventName];
 
-        if (!listeners)
+        if (!listeners) {
             return this;
+        }
 
         if (!isSingle(listeners)) {
             for (let i = listeners.length - 1; i >= 0; i--) {
                 if (isMatch(listeners[i], state)) {
                     listeners.splice(i, 1);
-                    if (!listeners.length)
+                    if (!listeners.length) {
                         this.removeEvent(eventName);
-                    else if (listeners.length === 1)
+                    }
+                    else if (listeners.length === 1) {
                         this.events[eventName] = listeners[0];
+                    }
                     break;
                 }
             }
         }
-        else if (isMatch(listeners, state))
+        else if (isMatch(listeners, state)) {
             this.removeEvent(eventName);
+        }
 
         return this;
     }
 
     private removeEvent(eventName: string | symbol) {
-        if (--this.eventCount === 0)
+        if (--this.eventCount === 0) {
             this.events = {};
-
-        else
+        }
+        else {
             delete this.events[eventName];
+        }
     }
 
     addListener: (eventName: string | symbol, listener: (...args: any[]) => void) => this = this.on;
@@ -79,8 +86,9 @@ export class DefaultEventEmitter implements IEventEmitter {
     }
 
     removeListener(eventName: string | symbol, listener: (...args: any[]) => void): this {
-        if (typeof listener !== 'function')
+        if (typeof listener !== 'function') {
             throw new TypeError("Listener must be a function");
+        }
 
         return this.removeListenerCore(eventName, listener, (listener, fn) => listener.fn === fn);
     }
@@ -92,8 +100,9 @@ export class DefaultEventEmitter implements IEventEmitter {
             this.events = {};
             this.eventCount = 0;
         }
-        else if (this.events[eventName])
+        else if (this.events[eventName]) {
             this.removeEvent(eventName);
+        }
 
         return this;
     }
@@ -101,11 +110,13 @@ export class DefaultEventEmitter implements IEventEmitter {
     listeners(eventName: string | symbol): Function[] {
         const listeners = this.events[eventName];
 
-        if (!listeners)
+        if (!listeners) {
             return [];
+        }
 
-        if (isSingle(listeners))
+        if (isSingle(listeners)) {
             return [listeners.fn];
+        }
 
         const length = listeners.length, fns = new Array<Function>(length);
         for (let i = 0; i < length; i++) {
@@ -117,11 +128,13 @@ export class DefaultEventEmitter implements IEventEmitter {
     listenerCount(eventName: string | symbol): number {
         const listeners = this.events[eventName];
 
-        if (!listeners)
+        if (!listeners) {
             return 0;
+        }
 
-        if (isSingle(listeners))
+        if (isSingle(listeners)) {
             return 1;
+        }
 
         return listeners.length;
     }
@@ -130,13 +143,15 @@ export class DefaultEventEmitter implements IEventEmitter {
         const names: (string | symbol)[] = [];
         let events: Record<string | symbol, Listeners>;
 
-        if (this.eventCount === 0)
+        if (this.eventCount === 0) {
             return names;
+        }
 
         events = this.events;
         for (let name in events) {
-            if (events.hasOwnProperty(name))
+            if (events.hasOwnProperty(name)) {
                 names.push(name);
+            }
         }
 
         if (Object.getOwnPropertySymbols) {
@@ -149,8 +164,9 @@ export class DefaultEventEmitter implements IEventEmitter {
     emit(eventName: string | symbol, arg0?: any, arg1?: any, arg2?: any, arg3?: any, ...moreArgs: any[]): boolean {
         let listeners = this.events[eventName];
 
-        if (!listeners)
+        if (!listeners) {
             return false;
+        }
 
         let listener: Listener, length: number;
 
@@ -167,8 +183,9 @@ export class DefaultEventEmitter implements IEventEmitter {
         const argCount = arguments.length - 1;
 
         for (let i = 0; ;) {
-            if (listener.once)
+            if (listener.once) {
                 this.removeListenerCore(eventName, listener, (listener, toRemove) => listener === toRemove);
+            }
 
             switch (argCount) {
                 case 0: listener.fn.call(this); break;
@@ -185,8 +202,9 @@ export class DefaultEventEmitter implements IEventEmitter {
                     break;
             }
 
-            if (++i >= length)
+            if (++i >= length) {
                 break;
+            }
 
             listener = (listeners as Listener[])[i];
         }

@@ -11,7 +11,7 @@ export class FetchResult {
     public responseBody: string;
     public eTag?: string;
 
-    constructor(status: FetchStatus, responseBody: string, eTag?: string) {
+    private constructor(status: FetchStatus, responseBody: string, eTag?: string) {
         this.status = status;
         this.responseBody = responseBody;
         this.eTag = eTag
