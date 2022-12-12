@@ -1,6 +1,6 @@
 import { ManualPollOptions } from "./ConfigCatClientOptions";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { ConfigServiceBase, IConfigService } from "./ConfigServiceBase";
+import { ConfigServiceBase, IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
@@ -18,7 +18,7 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
         return await this.options.cache.get(this.options.getCacheKey());
     }
 
-    async refreshConfigAsync(): Promise<ProjectConfig | null> {
+    async refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
         this.options.logger.debug("ManualPollService.refreshConfigAsync() called.");
         return super.refreshConfigAsync();
     }

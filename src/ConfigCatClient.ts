@@ -3,7 +3,7 @@ import type { ICache } from "./Cache";
 import { AutoPollOptions, ConfigCatClientOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, OptionsForPollingMode, PollingMode } from "./ConfigCatClientOptions";
 import { IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import type { IConfigService } from "./ConfigServiceBase";
+import { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
 import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
@@ -29,10 +29,10 @@ export interface IConfigCatClient extends IProvidesHooks {
     getValueDetailsAsync(key: string, defaultValue: any, user?: User): Promise<IEvaluationDetails>;
 
     /** Downloads the latest feature flag and configuration values */
-    forceRefresh(callback: () => void): void;
+    forceRefresh(callback: (result: RefreshResult) => void): void;
 
     /** Downloads the latest feature flag and configuration values */
-    forceRefreshAsync(): Promise<any>;
+    forceRefreshAsync(): Promise<RefreshResult>;
 
     /** Gets a list of keys for all your feature flags and settings */
     getAllKeys(callback: (value: string[]) => void): void;
@@ -330,19 +330,26 @@ export class ConfigCatClient implements IConfigCatClient {
         return evaluationDetails;
     }
 
-    forceRefresh(callback: () => void): void {
+    forceRefresh(callback: (result: RefreshResult) => void): void {
         this.options.logger.debug("forceRefresh() called.");
         this.forceRefreshAsync().then(callback);
     }
 
-    async forceRefreshAsync(): Promise<void> {
+    async forceRefreshAsync(): Promise<RefreshResult> {
         this.options.logger.debug("forceRefreshAsync() called.");
 
-        try {
-            await this.configService?.refreshConfigAsync();
+        if (this.configService) {
+            try {
+                const [result] = await this.configService.refreshConfigAsync();
+                return result;
+            }
+            catch (err) {
+                this.options.logger.error("Error occurred in forceRefreshAsync().", err);
+                return RefreshResult.failure(errorToString(err), err);
+            }
         }
-        catch (err) {
-            this.options.logger.error("Error occurred in forceRefreshAsync().", err);
+        else {
+            return RefreshResult.failure("Client is configured to use the LocalOnly override behavior, which prevents making HTTP requests.");
         }
     }
 
@@ -524,7 +531,7 @@ export class ConfigCatClient implements IConfigCatClient {
             this.configService.setOnline();
         }
         else {
-            this.options.logger.warn("Client is configured to use Local/Offline mode, thus setOnline() has no effect.");
+            this.options.logger.warn("Client is configured to use the LocalOnly override behavior, thus SetOnline() has no effect.");
         }
     }
 
