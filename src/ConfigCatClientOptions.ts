@@ -31,6 +31,10 @@ export interface IOptions {
      * ConfigCatClient.getValue, ConfigCatClient.getValueAsync, getVariationId, getVariationIdAsync, getAllValues, getAllValuesAsync, etc. methods.
      */
     defaultUser?: User | null;
+    /**
+     * Indicates whether the client should be initialized to offline mode or not. Defaults to false.
+     */
+    offline?: boolean | null;
 }
 
 export abstract class OptionsBase implements IOptions {
@@ -57,7 +61,9 @@ export abstract class OptionsBase implements IOptions {
 
     public flagOverrides?: FlagOverrides;
 
-    public defaultUser?: User | null;
+    public defaultUser?: User;
+
+    public offline: boolean = false;
 
     constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null) {
         if (!apiKey) {
@@ -114,6 +120,10 @@ export abstract class OptionsBase implements IOptions {
 
             if (options.defaultUser) {
                 this.defaultUser = options.defaultUser;
+            }
+
+            if (options.offline) {
+                this.offline = options.offline;
             }
         }
     }

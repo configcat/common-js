@@ -6,11 +6,26 @@ export interface IConfigService {
     getConfig(): Promise<ProjectConfig | null>;
 
     refreshConfigAsync(): Promise<ProjectConfig | null>;
+
+    get isOffline(): boolean;
+
+    setOnline(): void;
+
+    setOffline(): void;
+
+    dispose(): void;
+}
+
+enum ConfigServiceStatus {
+    Online,
+    Offline,
+    Disposed,
 }
 
 export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     protected configFetcher: IConfigFetcher;
     protected options: TOptions;
+    private status: ConfigServiceStatus;
 
     private fetchLogicCallbacks: ((result: FetchResult) => void)[] = [];
 
@@ -18,16 +33,31 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
         this.configFetcher = configFetcher;
         this.options = options;
+        this.status = options.offline ? ConfigServiceStatus.Offline : ConfigServiceStatus.Online;
     }
+
+    dispose(): void {
+        this.status = ConfigServiceStatus.Disposed;
+    }
+
+    protected get disposed() { return this.status === ConfigServiceStatus.Disposed; }
+
+    abstract getConfig(): Promise<ProjectConfig | null>;
 
     async refreshConfigAsync(): Promise<ProjectConfig | null> {
         const latestConfig = await this.options.cache.get(this.options.getCacheKey());
-        return await this.refreshConfigCoreAsync(latestConfig);
+        if (!this.isOffline) {
+            return await this.refreshConfigCoreAsync(latestConfig);
+        }
+        else {
+            this.logOfflineModeWarning();
+            return latestConfig;
+        }
     }
 
     protected async refreshConfigCoreAsync(latestConfig: ProjectConfig | null): Promise<ProjectConfig | null> {
         const newConfig = await new Promise<ProjectConfig | null>(resolve => this.fetchLogic(latestConfig, 0, resolve));
-        
+
         const configContentHasChanged = !ProjectConfig.equals(latestConfig, newConfig);
         // NOTE: Reason why the usage of the non-null assertion operator (!) below is safe:
         // when newConfig isn't null and the latest and new configs equal (i.e. configContentHasChanged === false),
@@ -168,5 +198,54 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
             this.options.logger.debug("ConfigServiceBase.fetchLogicInternal(): calling fetchLogic(), recursive call. retries = " + retries);
             this.configFetcher.fetchLogic(this.options, lastEtag, callback);
         }
+    }
+
+    protected get isOfflineExactly(): boolean {
+        return this.status === ConfigServiceStatus.Offline;
+    }
+
+    get isOffline(): boolean {
+        return this.status !== ConfigServiceStatus.Online;
+    }
+
+    protected setOnlineCore() { }
+
+    setOnline(): void {
+        if (this.status === ConfigServiceStatus.Offline) {
+            this.setOnlineCore();
+            this.status = ConfigServiceStatus.Online;
+            this.logStatusChange(this.status);
+        }
+        else if (this.disposed) {
+            this.logDisposedWarning("setOnline")
+        }
+    }
+
+    protected setOfflineCore() { }
+
+    setOffline(): void {
+        if (this.status == ConfigServiceStatus.Online) {
+            this.setOfflineCore();
+            this.status = ConfigServiceStatus.Offline;
+            this.logStatusChange(this.status);
+        }
+        else if (this.disposed) {
+            this.logDisposedWarning("setOnline")
+        }
+    }
+
+    logStatusChange(status: ConfigServiceStatus)
+    {
+        this.options.logger.debug(`Switched to ${ConfigServiceStatus[status]?.toUpperCase()} mode.`);
+    }
+
+    logOfflineModeWarning()
+    {
+        this.options.logger.warn("Client is in offline mode, it can't initiate HTTP calls.");
+    }
+
+    logDisposedWarning(methodName: string)
+    {
+        this.options.logger.warn(`Client has already been disposed, thus ${methodName}() has no effect.`);
     }
 }

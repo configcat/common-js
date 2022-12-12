@@ -9,7 +9,7 @@ import { assert } from "chai";
 import { InMemoryCache } from "../src/Cache";
 import { delay } from "../src/Utils";
 import { FakeCache } from "./helpers/fakes";
-import { ManualPollService } from "../src/ManualPollService";
+import { ManualPollConfigService } from "../src/ManualPollConfigService";
 
 describe("ConfigServiceBaseTests", () => {
 
@@ -624,7 +624,7 @@ describe("ConfigServiceBaseTests", () => {
             {},
             cache);
 
-        const service = new ManualPollService(fetcherMock.object(), options);
+        const service = new ManualPollConfigService(fetcherMock.object(), options);
 
         // Act
 
@@ -656,7 +656,7 @@ describe("ConfigServiceBaseTests", () => {
 
         cache.set(options.getCacheKey(), cachedPc);
 
-        const service = new ManualPollService(fetcherMock.object(), options);
+        const service = new ManualPollConfigService(fetcherMock.object(), options);
 
         // Act
 

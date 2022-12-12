@@ -1,14 +1,17 @@
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { assert } from "chai";
 import "mocha";
-import { PollingMode, IManualPollOptions, LogLevel } from "../src/.";
+import { PollingMode, IManualPollOptions, LogLevel, FetchResult, OptionsBase, IConfigCatKernel, ICache } from "../src/.";
 import { ProjectConfig } from "../src/ProjectConfig";
 import { ManualPollOptions, AutoPollOptions, LazyLoadOptions } from "../src/ConfigCatClientOptions";
 import { User } from "../src/RolloutEvaluator";
 import { allowEventLoop } from "./helpers/utils";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
 import { delay } from "../src/Utils";
+import { ConfigServiceBase } from "../src/ConfigServiceBase";
+import { AutoPollConfigService } from "../src/AutoPollConfigService";
+import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import "./helpers/ConfigCatClientCacheExtensions";
 
 describe("ConfigCatClient", () => {
@@ -660,5 +663,128 @@ describe("ConfigCatClient", () => {
       assert.equal(2, logger.messages.filter(([, msg]) => msg.indexOf("finalize() called") >= 0).length)
     }
   });
+
+  // For these tests we need to choose a ridiculously large poll interval/ cache TTL to make sure that config is fetched only once.
+  const optionsFactoriesForOfflineModeTests: [PollingMode, (sdkKey: string, kernel: IConfigCatKernel, cache: ICache, offline: boolean) => OptionsBase][] = [
+    [PollingMode.AutoPoll, (sdkKey, kernel, cache, offline) => new AutoPollOptions(sdkKey, kernel.sdkType, kernel.sdkType, { offline, pollIntervalSeconds: 100_000, maxInitWaitTimeSeconds: 1 }, cache)],
+    [PollingMode.LazyLoad, (sdkKey, kernel, cache, offline) => new LazyLoadOptions(sdkKey, kernel.sdkType, kernel.sdkType, { offline, cacheTimeToLiveSeconds: 100_000 }, cache)],
+    [PollingMode.ManualPoll, (sdkKey, kernel, cache, offline) => new ManualPollOptions(sdkKey, kernel.sdkType, kernel.sdkType, { offline }, cache)],
+  ];
+
+  for (const [pollingMode, optionsFactory] of optionsFactoriesForOfflineModeTests) {
+    it(`setOnline() should make a(n) ${PollingMode[pollingMode]} client created in offline mode transition to online mode.`, async () => {
+
+      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => FetchResult.success(lastConfig!, (lastETag as any | 0) + 1 + ""));
+      const configCache = new FakeCache();
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = optionsFactory("APIKEY", configCatKernel, configCache, true);
+      const client = new ConfigCatClient(options, configCatKernel);
+      const configService = client["configService"] as ConfigServiceBase<OptionsBase>;
+
+      let expectedFetchTimes = 0;
+
+      // 1. Checks that client is initialized to offline mode
+      assert.isTrue(client.isOffline);
+      assert.isNull(await configService.getConfig());
   
+      // 2. Checks that repeated calls to setOffline() have no effect
+      client.setOffline();
+  
+      assert.isTrue(client.isOffline);
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
+  
+      // 3. Checks that setOnline() does enable HTTP calls
+      client.setOnline();
+      
+      if (configService instanceof AutoPollConfigService) {
+        assert.isTrue(await configService["waitForInitializationAsync"]());
+        expectedFetchTimes++;
+      }
+
+      assert.isFalse(client.isOffline);
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
+
+      const etag1 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;
+      if (configService instanceof LazyLoadConfigService) {
+        expectedFetchTimes++;
+      }
+
+      (expectedFetchTimes > 0 ? assert.notEqual : assert.equal)(0, etag1);
+
+      // 4. Checks that forceRefreshAsync() initiates a HTTP call in online mode
+      await client.forceRefreshAsync();
+      expectedFetchTimes++;
+  
+      assert.isFalse(client.isOffline);
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
+  
+      const etag2 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;
+      assert.isTrue(etag2 > etag1);
+  
+      // 5. Checks that setOnline() has no effect after client gets disposed
+      client.dispose();
+  
+      client.setOnline();
+      assert.isTrue(client.isOffline);
+    });
+  }
+
+  for (const [pollingMode, optionsFactory] of optionsFactoriesForOfflineModeTests) {
+    it(`setOffline() should make a(n) ${PollingMode[pollingMode]} client created in online mode transition to offline mode.`, async () => {
+
+      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => FetchResult.success(lastConfig!, (lastETag as any | 0) + 1 + ""));
+      const configCache = new FakeCache();
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: 'common', sdkVersion: '1.0.0' };
+      const options = new AutoPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, { offline: false, pollIntervalSeconds: 100_000, maxInitWaitTimeSeconds: 1 }, configCache);
+      const client = new ConfigCatClient(options, configCatKernel);
+      const configService = client["configService"] as ConfigServiceBase<OptionsBase>;
+  
+      let expectedFetchTimes = 0;
+
+      // 1. Checks that client is initialized to online mode
+      assert.isFalse(client.isOffline);
+      
+      if (configService instanceof AutoPollConfigService) {
+        assert.isTrue(await configService["waitForInitializationAsync"]());
+        expectedFetchTimes++;
+      }
+
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
+  
+      const etag1 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;;
+      if (configService instanceof LazyLoadConfigService) {
+        expectedFetchTimes++;
+      }
+
+      (expectedFetchTimes > 0 ? assert.notEqual : assert.equal)(0, etag1);
+  
+      // 2. Checks that repeated calls to setOnline() have no effect 
+      client.setOnline();
+  
+      assert.isFalse(client.isOffline);
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
+  
+      // 3. Checks that setOffline() does disable HTTP calls
+      client.setOffline();
+  
+      assert.isTrue(client.isOffline);
+      assert.equal(expectedFetchTimes, configFetcher.calledTimes);
+  
+      assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
+  
+      // 4. Checks that forceRefreshAsync() does not initiate a HTTP call in offline mode
+      await client.forceRefreshAsync();
+  
+      assert.isTrue(client.isOffline);
+      assert.equal(1, configFetcher.calledTimes);
+  
+      assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
+  
+      // 5. Checks that setOnline() has no effect after client gets disposed
+      client.dispose();
+  
+      client.setOnline();
+      assert.isTrue(client.isOffline);
+    });
+  }
 });
