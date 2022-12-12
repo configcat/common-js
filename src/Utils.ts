@@ -10,11 +10,13 @@ export function delay(delayMs: number, obtainCancel?: (cancel: () => void) => vo
 };
 
 export function getSettingsFromConfig(json: any): { [name: string]: Setting } {
-    if (!json) {
-        return {};
-    }
-
     return Object.fromEntries(Object.entries(json[ConfigFile.FeatureFlags]).map(([key, value]) => {
         return [key, Setting.fromJson(value)];
     }));
+}
+
+export function errorToString(err: any, includeStackTrace = false): string {
+    return err instanceof Error 
+        ? includeStackTrace && err.stack ? err.stack : err.toString()
+        : err + "";
 }
