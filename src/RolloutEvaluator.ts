@@ -14,11 +14,19 @@ export type SettingTypeOf<T> =
      T extends undefined ? boolean | number | string | undefined :
      any;
 
+export type VariationIdValue = string | null | undefined;
+
+export type VariationIdTypeOf<T> =
+     T extends string ? string :
+     T extends null ? string | null :
+     T extends undefined ? string | undefined :
+     any;
+
 export interface IRolloutEvaluator {
-    Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails;
+    Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: VariationIdValue): IEvaluationDetails;
 }
 
-export interface IEvaluationDetails<TValue = any> {
+export interface IEvaluationDetails<TValue = SettingValue> {
     /** Key of the feature or setting flag. */
     key: string;
 
@@ -26,7 +34,7 @@ export interface IEvaluationDetails<TValue = any> {
     value: TValue;
 
     /** Variation ID of the feature or setting flag (if available). */
-    variationId?: any;
+    variationId?: VariationIdValue;
 
     /** Time of last successful download of config.json (if there has been a successful download already). */
     fetchTime?: Date;
@@ -82,7 +90,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+    Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
         this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
         let eLog: EvaluateLogger = new EvaluateLogger();
@@ -521,7 +529,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 }
 
 interface IEvaluateResult<TRule> {
-    value: any;
+    value: SettingValue;
     variationId: string;
     matchedRule?: TRule;
 }
@@ -562,7 +570,7 @@ function evaluationDetailsFromEvaluateResult(key: string, evaluateResult: IEvalu
     };
 }
 
-export function evaluationDetailsFromDefaultValue<T extends SettingValue = any>(key: string, defaultValue: T, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails<SettingTypeOf<T>> {
+export function evaluationDetailsFromDefaultValue<T extends SettingValue>(key: string, defaultValue: T, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails<SettingTypeOf<T>> {
     return {
         key,
         value: defaultValue as SettingTypeOf<T>,
@@ -574,7 +582,7 @@ export function evaluationDetailsFromDefaultValue<T extends SettingValue = any>(
     };
 }
 
-export function evaluationDetailsFromDefaultVariationId(key: string, defaultVariationId: any, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
+export function evaluationDetailsFromDefaultVariationId(key: string, defaultVariationId: VariationIdValue, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
     return {
         key,
         value: null,
@@ -587,7 +595,7 @@ export function evaluationDetailsFromDefaultVariationId(key: string, defaultVari
     };
 }
 
-export function evaluate<T extends SettingValue = any>(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: T,
+export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: T,
     user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails<SettingTypeOf<T>> {
 
     let errorMessage: string;
@@ -612,10 +620,10 @@ export function evaluate<T extends SettingValue = any>(evaluator: IRolloutEvalua
         throw new Error(`The type of a setting must match the type of the setting's default value.\nSetting's type was ${typeof defaultValue} but the default value's type was ${typeof evaluationDetails.value}.\nPlease use a default value which corresponds to the setting type.`);
     }
 
-    return evaluationDetails;
+    return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
 }
 
-export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: any,
+export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: VariationIdValue,
     user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
 
     let errorMessage: string;
