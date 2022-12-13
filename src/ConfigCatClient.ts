@@ -10,7 +10,7 @@ import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { ConfigFile, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
-import { checkSettingsAvailable, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, IEvaluationDetails, IRolloutEvaluator, RolloutEvaluator, User } from "./RolloutEvaluator";
+import { checkSettingsAvailable, evaluate, evaluateAll, evaluateAllVariationIds, SettingTypeOf, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, IEvaluationDetails, IRolloutEvaluator, RolloutEvaluator, SettingValue, User, ensureAllowedDefaultValue } from "./RolloutEvaluator";
 import { errorToString, getSettingsFromConfig, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {
@@ -18,18 +18,18 @@ export interface IConfigCatClient extends IProvidesHooks {
     /** Returns the value of a feature flag or setting based on it's key
      * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueAsync() method instead.
      */
-    getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void;
+    getValue<T extends SettingValue = any>(key: string, defaultValue: T, callback: (value: SettingTypeOf<T>) => void, user?: User): void;
 
     /** Returns the value of a feature flag or setting based on it's key */
-    getValueAsync(key: string, defaultValue: any, user?: User): Promise<any>;
+    getValueAsync<T extends SettingValue = any>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>>;
 
     /** Returns the value along with evaluation details of a feature flag or setting based on it's key
      * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetailsAsync() method instead.
      */
-    getValueDetails(key: string, defaultValue: any, callback: (evaluationDetails: IEvaluationDetails) => void, user?: User): void;
+    getValueDetails<T extends SettingValue = any>(key: string, defaultValue: T, callback: (evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>) => void, user?: User): void;
 
     /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
-    getValueDetailsAsync(key: string, defaultValue: any, user?: User): Promise<IEvaluationDetails>;
+    getValueDetailsAsync<T extends SettingValue = any>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>>;
 
     /** Downloads the latest feature flag and configuration values
      * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the forceRefreshAsync() method instead.
@@ -300,18 +300,19 @@ export class ConfigCatClient implements IConfigCatClient {
         }
     }
     
-    getValue(key: string, defaultValue: any, callback: (value: any) => void, user?: User): void {
+    getValue<T extends SettingValue = any>(key: string, defaultValue: T, callback: (value: SettingTypeOf<T>) => void, user?: User): void {
         this.options.logger.debug("getValue() called.");
         this.getValueAsync(key, defaultValue, user).then(callback);
     }
 
-    async getValueAsync(key: string, defaultValue: any, user?: User): Promise<any> {
+    async getValueAsync<T extends SettingValue = any>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>> {
         this.options.logger.debug("getValueAsync() called.");
 
-        let value: any, evaluationDetails: IEvaluationDetails;
+        let value: any, evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
         let remoteConfig: ProjectConfig | null = null;
         user ??= this.defaultUser;
         try {
+            ensureAllowedDefaultValue(defaultValue);
             let settings: { [name: string]: Setting } | null;
             [settings, remoteConfig] = await this.getSettingsAsync();
             evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
@@ -327,18 +328,19 @@ export class ConfigCatClient implements IConfigCatClient {
         return value;
     }
 
-    getValueDetails(key: string, defaultValue: any, callback: (evaluationDetails: IEvaluationDetails) => void, user?: User): void {
+    getValueDetails<T extends SettingValue = any>(key: string, defaultValue: T, callback: (evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>) => void, user?: User): void {
         this.options.logger.debug("getValueDetails() called.");
         this.getValueDetailsAsync(key, defaultValue, user).then(callback);
     }
 
-    async getValueDetailsAsync(key: string, defaultValue: any, user?: User): Promise<IEvaluationDetails> {
+    async getValueDetailsAsync<T extends SettingValue = any>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>> {
         this.options.logger.debug("getValueDetailsAsync() called.");
 
         let evaluationDetails: IEvaluationDetails;
         let remoteConfig: ProjectConfig | null = null;
         user ??= this.defaultUser;
         try {
+            ensureAllowedDefaultValue(defaultValue);
             let settings: { [name: string]: Setting } | null;
             [settings, remoteConfig] = await this.getSettingsAsync();
             evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
@@ -667,10 +669,10 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 }
 
-export class SettingKeyValue {
+export class SettingKeyValue<TValue = any> {
     constructor(
         public settingKey: string,
-        public settingValue: any)
+        public settingValue: TValue)
     { }
 }
 

@@ -4,16 +4,26 @@ import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
 import { errorToString, getTimestampAsDate, isUndefined } from "./Utils";
 
+export type SettingValue = boolean | number | string | null | undefined;
+
+export type SettingTypeOf<T> =
+     T extends boolean ? boolean :
+     T extends number ? number :
+     T extends string ? string :
+     T extends null ? boolean | number | string | null :
+     T extends undefined ? boolean | number | string | undefined :
+     any;
+
 export interface IRolloutEvaluator {
     Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails;
 }
 
-export interface IEvaluationDetails {
+export interface IEvaluationDetails<TValue = any> {
     /** Key of the feature or setting flag. */
     key: string;
 
     /** Evaluated value of the feature or setting flag. */
-    value: any;
+    value: TValue;
 
     /** Variation ID of the feature or setting flag (if available). */
     variationId?: any;
@@ -552,10 +562,10 @@ function evaluationDetailsFromEvaluateResult(key: string, evaluateResult: IEvalu
     };
 }
 
-export function evaluationDetailsFromDefaultValue(key: string, defaultValue: any, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
+export function evaluationDetailsFromDefaultValue<T extends SettingValue = any>(key: string, defaultValue: T, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails<SettingTypeOf<T>> {
     return {
         key,
-        value: defaultValue,
+        value: defaultValue as SettingTypeOf<T>,
         fetchTime,
         user,
         isDefaultValue: true,
@@ -577,8 +587,8 @@ export function evaluationDetailsFromDefaultVariationId(key: string, defaultVari
     };
 }
 
-export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: any,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
+export function evaluate<T extends SettingValue = any>(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: T,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails<SettingTypeOf<T>> {
 
     let errorMessage: string;
     if (!settings) {
@@ -594,7 +604,15 @@ export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string
         return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
     }
 
-    return evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
+    ensureAllowedDefaultValue(defaultValue);
+
+    const evaluationDetails = evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
+
+    if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
+        throw new Error(`The type of a setting must match the type of the setting's default value.\nSetting's type was ${typeof defaultValue} but the default value's type was ${typeof evaluationDetails.value}.\nPlease use a default value which corresponds to the setting type.`);
+    }
+
+    return evaluationDetails;
 }
 
 export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: any,
@@ -668,6 +686,19 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
     }
 
     return true;
+}
+
+export function ensureAllowedDefaultValue(value: SettingValue) {
+    if (value === null || value === void 0) {
+        return;
+    }
+
+    const type = typeof value;
+    if (type === "boolean" || type === "number" || type === "string") {
+        return;
+    }
+
+    throw new Error("Default value is only allowed to be a boolean, number, string, null or undefined value.");
 }
 
 function keysToString(settings: { [name: string]: Setting }) {
