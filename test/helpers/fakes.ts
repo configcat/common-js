@@ -2,8 +2,9 @@ import { IConfigCatKernel } from "../../src";
 import { ICache } from "../../src/Cache";
 import { OptionsBase } from "../../src/ConfigCatClientOptions";
 import { IConfigCatLogger, LogLevel } from "../../src/ConfigCatLogger";
-import { FetchResult, IConfigFetcher } from "../../src/ConfigFetcher";
+import { FetchResult, IConfigFetcher, IFetchResponse } from "../../src/ConfigFetcher";
 import { ProjectConfig } from "../../src/ProjectConfig";
+import { delay } from "../../src/Utils";
 
 export class FakeLogger implements IConfigCatLogger {
     public messages: [LogLevel, string][] = [];
@@ -59,28 +60,28 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
     constructor(
         private config: string | null,
         private callbackDelay: number = 0,
-        private getFetchResult?: (lastConfig: string | null, lastEtag: string | null) => FetchResult) {
+        private getFetchResponse?: (lastConfig: string | null, lastEtag: string | null) => IFetchResponse) {
 
             this.config ??= this.defaultConfigJson;
     }
 
     protected get defaultConfigJson(): string | null { return null; }
 
-    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void {
-        const nextFetchResult = this.getFetchResult
-            ? (lastConfig: string | null, lastEtag: string | null) => { 
-                const fr = this.getFetchResult!(lastConfig, lastEtag);
-                this.config = fr.responseBody;
-                return fr; 
+    async fetchLogic(options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse> {
+        const nextFetchResponse = this.getFetchResponse
+            ? (lastConfig: string | null, lastEtag: string | null) => {
+                const fr = this.getFetchResponse!(lastConfig, lastEtag);
+                this.config = fr.body ?? null;
+                return fr;
             }
-            : () => this.config === null ? FetchResult.error() : FetchResult.success(this.config, this.getEtag());
+            : () => this.config !== null
+                ? { statusCode: 200, reasonPhrase: "OK", eTag: this.getEtag(), body: this.config } as IFetchResponse
+                : { statusCode: 404, reasonPhrase: "Not Found" } as IFetchResponse;
 
-        if (callback) {
-            setTimeout(() => {
-                this.calledTimes++;
-                callback(nextFetchResult(this.config, lastEtag));
-            }, this.callbackDelay);
-        }
+        await delay(this.callbackDelay);
+
+        this.calledTimes++;
+        return nextFetchResponse(this.config, lastEtag);
     }
 
     protected getEtag(): string {

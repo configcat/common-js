@@ -31,9 +31,30 @@ describe("ProjectConfig", () => {
     assert.isTrue(ProjectConfig.equals(actual, expected));
   });
 
-  it("Equals - Actual etag is 'undefined' - Should not equal", () => {
+  it("Equals - One of the tags is 'undefined' and json strings are equal - Should equal", () => {
     const actual: ProjectConfig = new ProjectConfig(1, "{}", undefined);
     const expected: ProjectConfig = new ProjectConfig(1, "{}", "W/\"etag\"");
+
+    assert.isTrue(ProjectConfig.equals(actual, expected));
+  });
+
+  it("Equals - Both tags are 'undefined' and json strings are equal - Should equal", () => {
+    const actual: ProjectConfig = new ProjectConfig(1, "{}", undefined);
+    const expected: ProjectConfig = new ProjectConfig(1, "{}", undefined);
+
+    assert.isTrue(ProjectConfig.equals(actual, expected));
+  });
+
+  it("Equals - One of the tags is 'undefined' and json strings are not equal - Should not equal", () => {
+    const actual: ProjectConfig = new ProjectConfig(1, "{\"f\": {}}", "W/\"etag\"");
+    const expected: ProjectConfig = new ProjectConfig(1, "{}", undefined);
+
+    assert.isFalse(ProjectConfig.equals(actual, expected));
+  });
+
+  it("Equals - Both tags are 'undefined' and json strings are not equal - Should not equal", () => {
+    const actual: ProjectConfig = new ProjectConfig(1, "{\"f\": {}}", undefined);
+    const expected: ProjectConfig = new ProjectConfig(1, "{}", undefined);
 
     assert.isFalse(ProjectConfig.equals(actual, expected));
   });

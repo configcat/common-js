@@ -1,4 +1,5 @@
 import { OptionsBase } from "./ConfigCatClientOptions";
+import { errorToString } from "./Utils";
 
 export enum FetchStatus {
     Fetched = 0,
@@ -28,7 +29,53 @@ export class FetchResult {
     }
 }
 
+export interface IFetchResponse {
+    statusCode: number;
+    reasonPhrase: string;
+    eTag?: string;
+    body?: string;
+}
+
+export type FetchErrorCauses = {
+    abort: [];
+    timeout: [timeoutMs: number];
+    failure: [err?: any];
+};
+
+export class FetchError<TCause extends keyof FetchErrorCauses> extends Error {
+    public args: FetchErrorCauses[TCause];
+
+    constructor(public cause: TCause, ...args: FetchErrorCauses[TCause]) {
+        let message: string | undefined;
+        switch (cause) {
+            case "abort":
+                message = "Request was aborted.";
+                break;
+            case "timeout":
+                const [timeoutMs] = args as [number];
+                message = `Request timed out. Timeout value: ${timeoutMs}ms`;
+                break;
+            case "failure":
+                const [err] = args as [any?];
+                message = "Request failed due to a network or protocol error.";
+                if (err) {
+                    message += " " + (err instanceof Error ? err.message : err + "");
+                }
+                break;
+        }
+        super(message);
+
+        // NOTE: due to a known issue in the TS compiler, instanceof is broken when subclassing Error and targeting ES5 or earlier
+        // (see https://github.com/microsoft/TypeScript/issues/13965).
+        // Thus, we need to manually fix the prototype chain as recommended in the TS docs
+        // (see https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work)
+        if (!(this instanceof FetchError)) {
+            (Object.setPrototypeOf || ((o, proto) => o["__proto__"] = proto))(this, FetchError.prototype);
+        }
+        this.args = args;
+    }
+}
+
 export interface IConfigFetcher {
-    /** @remarks Implementers must ensure that callback is called under all circumstances, i.e. in case of successful or failed requests and potential exceptions as well! */
-    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void;
+    fetchLogic(options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse>;
 }

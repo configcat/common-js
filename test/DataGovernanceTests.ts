@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
-import { FetchResult, IConfigFetcher } from "../src/ConfigFetcher";
+import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { ProjectConfig } from "../src/ProjectConfig";
 
@@ -247,13 +247,13 @@ export class FakeConfigFetcher implements IConfigFetcher {
         this.responses[url] = fetchResult;
     }
 
-    fetchLogic(options: OptionsBase, lastEtag: string | null, callback: (result: FetchResult) => void): void {
+    fetchLogic(options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse> {
         const projectConfig = this.responses[options.getUrl()];
         if (!projectConfig) {
             assert.fail("ConfigFetcher not prepared for " + options.baseUrl);
         }
         this.calls.push(options.getUrl());
-        callback(projectConfig);
+        return Promise.resolve<IFetchResponse>({ statusCode: 200, reasonPhrase: "OK", eTag: projectConfig.eTag, body: projectConfig.responseBody });
     }
 }
 
