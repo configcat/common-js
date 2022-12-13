@@ -547,7 +547,7 @@ export class ConfigCatClient implements IConfigCatClient {
         this.getAllValueDetailsAsync(user).then(callback);
     }
 
-    async getAllValueDetailsAsync(user?: User | undefined): Promise<IEvaluationDetails[]> {
+    async getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]> {
         this.options.logger.debug("getAllValueDetailsAsync() called.");
 
         let evaluationDetailsArray: IEvaluationDetails[];
