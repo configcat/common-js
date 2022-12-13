@@ -624,8 +624,13 @@ describe("ConfigCatClient", () => {
       assert.equal(1, errorEvents.length);
       const [actualErrorMessage, actualErrorException] = errorEvents[0];
       expect(actualErrorMessage).to.include("Error occurred in getAllValueDetailsAsync().");
-      assert.instanceOf(actualErrorException, AggregateError);
-      assert.deepEqual(Array(actual.length).fill(err), (actualErrorException as AggregateError).errors);
+      if (typeof AggregateError !== "undefined") {
+        assert.instanceOf(actualErrorException, AggregateError);
+        assert.deepEqual(Array(actual.length).fill(err), (actualErrorException as AggregateError).errors);
+      }
+      else {
+        assert.strictEqual(err, actualErrorException);
+      }
     });
   }
 
