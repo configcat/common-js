@@ -9,10 +9,9 @@ import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
-import { isWeakRefAvailable } from "./Polyfills";
 import { ConfigFile, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
 import { checkSettingsAvailable, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, IEvaluationDetails, IRolloutEvaluator, RolloutEvaluator, User } from "./RolloutEvaluator";
-import { errorToString, getSettingsFromConfig } from "./Utils";
+import { errorToString, getSettingsFromConfig, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {
 
@@ -325,7 +324,7 @@ export class ConfigCatClient implements IConfigCatClient {
         }
         catch (err) {
             this.options.logger.error("Error occurred in getValueAsync().", err);
-            evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
+            evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
             value = defaultValue;
         }
 
@@ -351,7 +350,7 @@ export class ConfigCatClient implements IConfigCatClient {
         }
         catch (err) {
             this.options.logger.error("Error occurred in getValueDetailsAsync().", err);
-            evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
+            evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
         }
 
         this.options.hooks.emit("flagEvaluated", evaluationDetails);
@@ -421,7 +420,7 @@ export class ConfigCatClient implements IConfigCatClient {
         }
         catch (err) {
             this.options.logger.error("Error occurred in getVariationIdAsync().", err);
-            evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, remoteConfig?.getTimestampAsDate(), user, errorToString(err), err);
+            evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
             variationId = defaultVariationId;
         }
 

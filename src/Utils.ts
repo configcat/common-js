@@ -1,4 +1,4 @@
-import { ConfigFile, Setting } from "./ProjectConfig";
+import { ConfigFile, ProjectConfig, Setting } from "./ProjectConfig";
 
 export const isUndefined = (comp: any) => comp === void 0;
 
@@ -13,6 +13,10 @@ export function getSettingsFromConfig(json: any): { [name: string]: Setting } {
     return Object.fromEntries(Object.entries(json[ConfigFile.FeatureFlags]).map(([key, value]) => {
         return [key, Setting.fromJson(value)];
     }));
+}
+
+export function getTimestampAsDate(projectConfig: ProjectConfig | null): Date | undefined { 
+    return projectConfig ? new Date(projectConfig.Timestamp) : void 0;
 }
 
 export function errorToString(err: any, includeStackTrace = false): string {
