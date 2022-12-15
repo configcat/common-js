@@ -264,13 +264,8 @@ export class ConfigCatClient implements IConfigCatClient {
     private static close(configService?: IConfigService, logger?: IConfigCatLogger, hooks?: Hooks) {
         logger?.debug("close() called");
 
-        const emitBeforeClientDispose = hooks?.tryDisconnect();
-        try {
-            emitBeforeClientDispose?.();
-        }
-        finally {
-            configService?.dispose();
-        }
+        hooks?.tryDisconnect();
+        configService?.dispose();
     }
 
     dispose(): void {

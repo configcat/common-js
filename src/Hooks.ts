@@ -7,7 +7,6 @@ export type HookEvents = {
     flagEvaluated: [evaluationDetails: IEvaluationDetails];
     configChanged: [newConfig: ProjectConfig];
     clientError: [message: string, exception?: any];
-    beforeClientDispose: [];
 };
 
 /** Defines hooks (events) for providing notifications of `ConfigCatClient`'s actions. */
@@ -23,7 +22,7 @@ export class Hooks implements IProvidesHooks, IEventEmitter<HookEvents>
         this.eventEmitter = eventEmitter;
     }
 
-    tryDisconnect(): (() => void) | null {
+    tryDisconnect(): boolean {
         // Replacing the current IEventEmitter object (eventEmitter) with a special instance of IEventEmitter (disconnectedEventEmitter) achieves multiple things:
         // 1. determines whether the hooks instance has already been disconnected or not,
         // 2. removes implicit references to subscriber objects (so this instance won't keep them alive under any circumstances),
@@ -31,9 +30,7 @@ export class Hooks implements IProvidesHooks, IEventEmitter<HookEvents>
         const originalEventEmitter = this.eventEmitter as IEventEmitter<HookEvents>;
         this.eventEmitter = disconnectedEventEmitter;
 
-        return originalEventEmitter !== disconnectedEventEmitter
-            ? () => originalEventEmitter.emit("beforeClientDispose")
-            : null;
+        return originalEventEmitter !== disconnectedEventEmitter;
     }
 
     /** @inheritdoc */
