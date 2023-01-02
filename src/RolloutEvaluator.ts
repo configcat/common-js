@@ -617,7 +617,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     const evaluationDetails = evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
 
     if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
-        throw new Error(`The type of a setting must match the type of the setting's default value.\nSetting's type was ${typeof defaultValue} but the default value's type was ${typeof evaluationDetails.value}.\nPlease use a default value which corresponds to the setting type.`);
+        throw new Error(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
     }
 
     return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
@@ -706,7 +706,7 @@ export function ensureAllowedDefaultValue(value: SettingValue) {
         return;
     }
 
-    throw new Error("Default value is only allowed to be a boolean, number, string, null or undefined value.");
+    throw new Error("The default value must be boolean, number, string, null or undefined.");
 }
 
 function keysToString(settings: { [name: string]: Setting }) {
