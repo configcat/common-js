@@ -1,6 +1,6 @@
 import { assert, expect } from "chai";
 import "mocha";
-import { getWeakRefFallback, ObjectEntriesPolyfill, ObjectFromEntriesPolyfill, ObjectValuesPolyfill } from "../src/Polyfills";
+import { getWeakRefStub, ObjectEntriesPolyfill, ObjectFromEntriesPolyfill, ObjectValuesPolyfill } from "../src/Polyfills";
 
 describe("Polyfills", () => {
     it("Object.values polyfill should work", () => {
@@ -36,7 +36,7 @@ describe("Polyfills", () => {
     });
 
     it("WeakRef API polyfill should work", () => {
-        const weakRefCtor = getWeakRefFallback();
+        const weakRefCtor = getWeakRefStub();
 
         let obj: {} | null = {};
         const objWeakRef = new weakRefCtor(obj);
