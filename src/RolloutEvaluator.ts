@@ -4,19 +4,37 @@ import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
 import { errorToString, getTimestampAsDate, isUndefined } from "./Utils";
 
+export type SettingValue = boolean | number | string | null | undefined;
+
+export type SettingTypeOf<T> =
+     T extends boolean ? boolean :
+     T extends number ? number :
+     T extends string ? string :
+     T extends null ? boolean | number | string | null :
+     T extends undefined ? boolean | number | string | undefined :
+     any;
+
+export type VariationIdValue = string | null | undefined;
+
+export type VariationIdTypeOf<T> =
+     T extends string ? string :
+     T extends null ? string | null :
+     T extends undefined ? string | undefined :
+     any;
+
 export interface IRolloutEvaluator {
-    Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails;
+    Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: VariationIdValue): IEvaluationDetails;
 }
 
-export interface IEvaluationDetails {
+export interface IEvaluationDetails<TValue = SettingValue> {
     /** Key of the feature or setting flag. */
     key: string;
 
     /** Evaluated value of the feature or setting flag. */
-    value: any;
+    value: TValue;
 
     /** Variation ID of the feature or setting flag (if available). */
-    variationId?: any;
+    variationId?: VariationIdValue;
 
     /** Time of last successful download of config.json (if there has been a successful download already). */
     fetchTime?: Date;
@@ -72,7 +90,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         this.logger = logger;
     }
 
-    Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+    Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
         this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
         let eLog: EvaluateLogger = new EvaluateLogger();
@@ -511,7 +529,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 }
 
 interface IEvaluateResult<TRule> {
-    value: any;
+    value: SettingValue;
     variationId: string;
     matchedRule?: TRule;
 }
@@ -552,10 +570,10 @@ function evaluationDetailsFromEvaluateResult(key: string, evaluateResult: IEvalu
     };
 }
 
-export function evaluationDetailsFromDefaultValue(key: string, defaultValue: any, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
+export function evaluationDetailsFromDefaultValue<T extends SettingValue>(key: string, defaultValue: T, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails<SettingTypeOf<T>> {
     return {
         key,
-        value: defaultValue,
+        value: defaultValue as SettingTypeOf<T>,
         fetchTime,
         user,
         isDefaultValue: true,
@@ -564,7 +582,7 @@ export function evaluationDetailsFromDefaultValue(key: string, defaultValue: any
     };
 }
 
-export function evaluationDetailsFromDefaultVariationId(key: string, defaultVariationId: any, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
+export function evaluationDetailsFromDefaultVariationId(key: string, defaultVariationId: VariationIdValue, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
     return {
         key,
         value: null,
@@ -577,8 +595,8 @@ export function evaluationDetailsFromDefaultVariationId(key: string, defaultVari
     };
 }
 
-export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: any,
-    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
+export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: T,
+    user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails<SettingTypeOf<T>> {
 
     let errorMessage: string;
     if (!settings) {
@@ -594,10 +612,18 @@ export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string
         return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
     }
 
-    return evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
+    ensureAllowedDefaultValue(defaultValue);
+
+    const evaluationDetails = evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
+
+    if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
+        throw new Error(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
+    }
+
+    return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
 }
 
-export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: any,
+export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: VariationIdValue,
     user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
 
     let errorMessage: string;
@@ -668,6 +694,19 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
     }
 
     return true;
+}
+
+export function ensureAllowedDefaultValue(value: SettingValue) {
+    if (value === null || value === void 0) {
+        return;
+    }
+
+    const type = typeof value;
+    if (type === "boolean" || type === "number" || type === "string") {
+        return;
+    }
+
+    throw new Error("The default value must be boolean, number, string, null or undefined.");
 }
 
 function keysToString(settings: { [name: string]: Setting }) {

@@ -105,7 +105,7 @@ export type { IConfigCatClient }
 
 export { SettingKeyValue } from "./ConfigCatClient";
 
-export type { IEvaluationDetails } from "./RolloutEvaluator";
+export type { IEvaluationDetails, SettingTypeOf, SettingValue, VariationIdTypeOf, VariationIdValue } from "./RolloutEvaluator";
 
 export { User } from "./RolloutEvaluator";
 
