@@ -2,7 +2,7 @@ import { LoggerWrapper } from "./ConfigCatLogger";
 import { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
 import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
-import { errorToString, isUndefined } from "./Utils";
+import { errorToString, getTimestampAsDate, isUndefined } from "./Utils";
 
 export interface IRolloutEvaluator {
     Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails;
@@ -91,7 +91,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                 if (result !== null) {
                     eLog.ReturnValue = result.value;
 
-                    return evaluationDetailsFromEvaluateResult(key, result, remoteConfig?.getTimestampAsDate(), user);
+                    return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
                 }
 
                 // evaluate percentage-based rules
@@ -105,7 +105,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
                 if (result !== null) {
                     eLog.ReturnValue = result.value;
 
-                    return evaluationDetailsFromEvaluateResult(key, result, remoteConfig?.getTimestampAsDate(), user);
+                    return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
                 }
             }
             else {
@@ -126,7 +126,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             };
             eLog.ReturnValue = result.value;
 
-            return evaluationDetailsFromEvaluateResult(key, result, remoteConfig?.getTimestampAsDate(), user);
+            return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
         }
         finally {
             this.logger.info(eLog.GetLog());
@@ -584,14 +584,14 @@ export function evaluate(evaluator: IRolloutEvaluator, settings: { [name: string
     if (!settings) {
         errorMessage = `config.json is not present. Returning default value: '${defaultValue}'.`;
         logger.error(errorMessage);
-        return evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+        return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
     }
 
     const setting = settings[key];
     if (!setting) {
         errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default value: '${defaultValue}'. These are the available keys: ${keysToString(settings)}.`;
         logger.error(errorMessage);
-        return evaluationDetailsFromDefaultValue(key, defaultValue, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+        return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
     }
 
     return evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
@@ -604,14 +604,14 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
     if (!settings) {
         errorMessage = `config.json is not present. Returning default variationId: '${defaultVariationId}'.`;
         logger.error(errorMessage);
-        return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+        return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
     }
 
     const setting = settings[key];
     if (!setting) {
         errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default variationId: '${defaultVariationId}'. These are the available keys: ${keysToString(settings)}.`;
         logger.error(errorMessage);
-        return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, remoteConfig?.getTimestampAsDate(), user, errorMessage);
+        return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
     }
 
     return evaluator.Evaluate(setting, key, null, user, remoteConfig, defaultVariationId);
@@ -638,7 +638,7 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
         catch (err) {
             errors ??= [];
             errors.push(err);
-            evaluationDetails = getDetailsForError(key, remoteConfig?.getTimestampAsDate(), user, err);
+            evaluationDetails = getDetailsForError(key, getTimestampAsDate(remoteConfig), user, err);
         }
 
         evaluationDetailsArray[index++] = evaluationDetails;

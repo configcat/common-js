@@ -20,6 +20,13 @@ export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode
 }
 
 /**
+ * Disposes all existing ConfigCatClient instances.
+ */
+export function disposeAllClients() {
+    ConfigCatClient.disposeAll();
+}
+
+/**
  * Create an instance of ConfigCatClient and setup AutoPoll mode
  * @param {string} apiKey - ApiKey to access your configuration.
  * @param config - Configuration for autoPoll mode

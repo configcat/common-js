@@ -1202,20 +1202,17 @@ describe("ConfigCatClient", () => {
       const configChangedEvents: ProjectConfig[] = [];
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       const errorEvents: [string, any][] = [];
-      let beforeClientDisposeEventCount = 0;
 
       const handleClientReady = () => clientReadyEventCount++;
       const handleConfigChanged = (pc: ProjectConfig) => configChangedEvents.push(pc);
       const handleFlagEvaluated = (ed: IEvaluationDetails) => flagEvaluatedEvents.push(ed);
       const handleClientError = (msg: string, err: any) => errorEvents.push([msg, err]);
-      const handleBeforeClientDispose = () => beforeClientDisposeEventCount++;
 
       function setupHooks(hooks: IProvidesHooks) {
         hooks.on("clientReady", handleClientReady);
         hooks.on("configChanged", handleConfigChanged);
         hooks.on("flagEvaluated", handleFlagEvaluated);
         hooks.on("clientError", handleClientError);
-        hooks.on("beforeClientDispose", handleBeforeClientDispose);
       }
 
       const configFetcher = new FakeConfigFetcherWithTwoKeys();
@@ -1239,7 +1236,6 @@ describe("ConfigCatClient", () => {
       assert.equal(0, configChangedEvents.length);
       assert.equal(0, flagEvaluatedEvents.length);
       assert.equal(0, errorEvents.length);
-      assert.equal(0, beforeClientDisposeEventCount);
 
       // 2. Fetch fails
       const originalConfigService = client["configService"] as ConfigServiceBase<OptionsBase>;
@@ -1280,8 +1276,6 @@ describe("ConfigCatClient", () => {
       assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);
       assert.deepEqual(evaluationDetails, flagEvaluatedEvents);
 
-      assert.equal(0, beforeClientDisposeEventCount);
-
       // 5. Client gets disposed
       client.dispose();
 
@@ -1289,7 +1283,6 @@ describe("ConfigCatClient", () => {
       assert.equal(1, configChangedEvents.length);
       assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);
       assert.equal(1, errorEvents.length);
-      assert.equal(1, beforeClientDisposeEventCount);
     });
   }
 

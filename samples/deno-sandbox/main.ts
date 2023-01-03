@@ -19,7 +19,6 @@ const client = getClient(
         logger: createConsoleLogger(LogLevel.Info),
         setupHooks: hooks => hooks
             .on("clientReady", () => console.log("Client is ready!"))
-            .on("beforeClientDispose", () => console.log("Client is disposing..."))
     },
     {
         configFetcher,

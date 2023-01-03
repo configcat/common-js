@@ -1,3 +1,8 @@
+// NOTE: No instance methods should be added to this class!
+// Flawed ICache implementations may erase the prototype information (when serialization is involved),
+// which would lead to "... is not a function" errors in the case of instance methods.
+// (As a matter of fact, this type should have been defined as an interface to prevent such complications but
+// we can't really change this any more because this would be a too dangerous breaking change at this point.)
 export class ProjectConfig {
     /** Entity identifier */
     HttpETag?: string;
@@ -5,9 +10,6 @@ export class ProjectConfig {
     ConfigJSON: any;
     /** Timestamp of last successful download (regardless of whether the config has changed or not) in milliseconds */
     Timestamp: number;
-
-    /** Returns Timestamp as a JavaScript Date object. */
-    getTimestampAsDate(): Date { return new Date(this.Timestamp); }
 
     constructor(timeStamp: number, jsonConfig: string | object, httpETag?: string) {
         this.Timestamp = timeStamp;

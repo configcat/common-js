@@ -7,9 +7,9 @@ import { Hooks, IProvidesHooks } from "./Hooks";
 import { User } from "./RolloutEvaluator";
 
 export enum PollingMode {
-    AutoPoll,
-    ManualPoll,
-    LazyLoad,
+    AutoPoll = 0,
+    LazyLoad = 1,
+    ManualPoll = 2
 }
 
 /** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
