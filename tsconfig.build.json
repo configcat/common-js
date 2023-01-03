@@ -1,11 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "ES5",
-    "module": "CommonJS",
-    "outDir": "./lib/cjs",
     "sourceMap": false,
     "declaration": true,
-    "declarationMap": true
-  }
+    "declarationMap": true,
+    "declarationDir": "./lib"
+  },
+  "include": [
+    "src/**/*.ts",
+  ]
 }
