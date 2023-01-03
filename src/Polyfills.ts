@@ -1,3 +1,24 @@
+const getGlobalObject = (() => {
+    let value: typeof globalThis | undefined;
+
+    return () => {
+        if (!value) {
+            value =
+                typeof globalThis === "object" && globalThis ? globalThis :
+                typeof self === "object" && self ? self :
+                typeof window === "object" && window ? window :
+                typeof global === "object" && global ? global :
+                typeof Function === "function" ? (Function('return this')()) :
+                null;
+
+            if (!value) {
+                throw new Error("Global object could not be determined.");
+            }
+        }
+        return value;
+    };
+})();
+
 export function setupPolyfills() {
     // Object.values
     if (typeof Object.values === "undefined") {
@@ -18,7 +39,7 @@ export function setupPolyfills() {
     if (typeof WeakRef === "undefined") {
         // There's no way to correctly polyfill WeakRef (https://stackoverflow.com/a/69971312/8656352),
         // so we just polyfill its API (which means falling back on strong references in this case).
-        WeakRef = getWeakRefFallback();
+        getGlobalObject().WeakRef = getWeakRefStub();
     }
 }
 
@@ -59,7 +80,7 @@ export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [Propert
     return result;
 }
 
-export function getWeakRefFallback<T extends object>(): WeakRefConstructor {
+export function getWeakRefStub<T extends object>(): WeakRefConstructor {
     type WeakRefImpl = WeakRef<T> & { target: T };
 
     const WeakRef = function (this: WeakRefImpl, target: T) {
