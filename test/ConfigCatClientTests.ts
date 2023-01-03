@@ -365,7 +365,7 @@ describe("ConfigCatClient", () => {
       // Arrange
   
       const key = "debug";
-      const defaultValue = false;
+      const defaultValue = "N/A";
       const timestamp = new Date().getTime();
   
       const configFetcherClass = FakeConfigFetcherWithRules;
@@ -412,7 +412,7 @@ describe("ConfigCatClient", () => {
       // Arrange
   
       const key = "string25Cat25Dog25Falcon25Horse";
-      const defaultValue = false;
+      const defaultValue = "N/A";
       const timestamp = new Date().getTime();
   
       const configFetcherClass = FakeConfigFetcherWithPercantageRules;
@@ -1270,7 +1270,7 @@ describe("ConfigCatClient", () => {
       var evaluationDetails: IEvaluationDetails[] = [];
       for (let key of keys)
       {
-          evaluationDetails.push(await client.getValueDetailsAsync(key, ""));
+          evaluationDetails.push(await client.getValueDetailsAsync(key, false));
       }
 
       assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);
