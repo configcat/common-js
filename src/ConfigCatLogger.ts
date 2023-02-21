@@ -2,107 +2,107 @@ import { Hooks } from "./Hooks";
 import { errorToString } from "./Utils";
 
 export enum LogLevel {
-    Debug = 4,
-    Info = 3,
-    Warn = 2,
-    Error = 1,
-    Off = -1
+  Debug = 4,
+  Info = 3,
+  Warn = 2,
+  Error = 1,
+  Off = -1
 }
 
 export interface IConfigCatLogger {
-    readonly level?: LogLevel;
+  readonly level?: LogLevel;
 
-    debug(message: string): void;
+  debug(message: string): void;
 
-    /**
-     * @deprecated Use `debug(message: string)` method instead of this
-     */
-    log(message: string): void;
+  /**
+   * @deprecated Use `debug(message: string)` method instead of this
+   */
+  log(message: string): void;
 
-    info(message: string): void;
+  info(message: string): void;
 
-    warn(message: string): void;
+  warn(message: string): void;
 
-    error(message: string): void;
+  error(message: string): void;
 }
 
 export class LoggerWrapper implements IConfigCatLogger {
-    get level() { return this.logger.level ?? LogLevel.Warn; }
+  get level() { return this.logger.level ?? LogLevel.Warn; }
 
-    constructor(private logger: IConfigCatLogger, private hooks?: Hooks) {
+  constructor(private logger: IConfigCatLogger, private hooks?: Hooks) {
+  }
+
+  log(message: string): void {
+    this.info(message);
+  }
+
+  debug(message: string): void {
+    if (this.isLogLevelEnabled(LogLevel.Debug)) {
+      this.logger.debug(message);
+    }
+  }
+
+  info(message: string): void {
+    if (this.isLogLevelEnabled(LogLevel.Info)) {
+      this.logger.info(message);
+    }
+  }
+
+  warn(message: string): void {
+    if (this.isLogLevelEnabled(LogLevel.Warn)) {
+      this.logger.warn(message);
+    }
+  }
+
+  error(message: string, err?: any): void {
+    if (this.isLogLevelEnabled(LogLevel.Error)) {
+      const logMessage = err
+        ? message + '\n' + errorToString(err, true)
+        : message;
+
+      this.logger.error(logMessage);
     }
 
-    log(message: string): void {
-        this.info(message);
-    }
+    this.hooks?.emit("clientError", message, err);
+  }
 
-    debug(message: string): void {
-        if (this.isLogLevelEnabled(LogLevel.Debug)) {
-            this.logger.debug(message);
-        }
-    }
-
-    info(message: string): void {
-        if (this.isLogLevelEnabled(LogLevel.Info)) {
-            this.logger.info(message);
-        }
-    }
-
-    warn(message: string): void {
-        if (this.isLogLevelEnabled(LogLevel.Warn)) {
-            this.logger.warn(message);
-        }
-    }
-
-    error(message: string, err?: any): void {
-        if (this.isLogLevelEnabled(LogLevel.Error)) {
-            const logMessage = err
-                ? message + '\n' + errorToString(err, true)
-                : message;
-
-            this.logger.error(logMessage);
-        }
-
-        this.hooks?.emit("clientError", message, err);
-    }
-
-    private isLogLevelEnabled(logLevel: LogLevel): boolean {
-        return this.level >= logLevel;
-    }
+  private isLogLevelEnabled(logLevel: LogLevel): boolean {
+    return this.level >= logLevel;
+  }
 }
 
 export class ConfigCatConsoleLogger implements IConfigCatLogger {
 
-    SOURCE: string = "ConfigCat";
+  SOURCE: string = "ConfigCat";
 
-    /**
-     * Create an instance of ConfigCatConsoleLogger
-     */
-    constructor(public level = LogLevel.Warn) {
-    }
+  /**
+   * Create an instance of ConfigCatConsoleLogger
+   */
+  constructor(public level = LogLevel.Warn) {
+  }
 
-    /** @inheritdoc */
-    log(message: string): void {
-        this.info(message);
-    }
+  /** @inheritdoc */
+  log(message: string): void {
+    this.info(message);
+  }
 
-    /** @inheritdoc */
-    debug(message: string): void {
-        console.info(this.SOURCE + " - DEBUG - " + message);
-    }
+  /** @inheritdoc */
+  debug(message: string): void {
+    console.info(this.SOURCE + " - DEBUG - " + message);
+  }
 
-    /** @inheritdoc */
-    info(message: string): void {
-        console.info(this.SOURCE + " - INFO - " + message);
-    }
+  /** @inheritdoc */
+  info(message: string): void {
+    console.info(this.SOURCE + " - INFO - " + message);
+  }
 
-    /** @inheritdoc */
-    warn(message: string): void {
-        console.warn(this.SOURCE + " - WARN - " + message);
-    }
+  /** @inheritdoc */
+  warn(message: string): void {
+    console.warn(this.SOURCE + " - WARN - " + message);
+  }
 
-    /** @inheritdoc */
-    error(message: string): void {
-        console.error(this.SOURCE + " - ERROR - " + message);
-    }
+  /** @inheritdoc */
+  error(message: string): void {
+    console.error(this.SOURCE + " - ERROR - " + message);
+  }
 }

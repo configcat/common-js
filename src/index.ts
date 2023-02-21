@@ -16,14 +16,14 @@ setupPolyfills();
  * @param options Options for the specified polling mode
  */
 export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
-    return ConfigCatClient.get(sdkKey, pollingMode, options, configCatKernel);
+  return ConfigCatClient.get(sdkKey, pollingMode, options, configCatKernel);
 }
 
 /**
  * Disposes all existing ConfigCatClient instances.
  */
 export function disposeAllClients() {
-    ConfigCatClient.disposeAll();
+  ConfigCatClient.disposeAll();
 }
 
 /**
@@ -33,7 +33,7 @@ export function disposeAllClients() {
  * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with auto polling for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.AutoPoll, options, ...)' format.
  */
 export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IAutoPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new AutoPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
+  return new ConfigCatClient(new AutoPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
 }
 
 /**
@@ -43,7 +43,7 @@ export function createClientWithAutoPoll(apiKey: string, configCatKernel: IConfi
  * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with manual polling for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.ManualPoll, options, ...)' format.
  */
 export function createClientWithManualPoll(apiKey: string, configCatKernel: IConfigCatKernel, options?: IManualPollOptions): IConfigCatClient {
-    return new ConfigCatClient(new ManualPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
+  return new ConfigCatClient(new ManualPollOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
 }
 
 /**
@@ -53,7 +53,7 @@ export function createClientWithManualPoll(apiKey: string, configCatKernel: ICon
  * @deprecated This function is obsolete and will be removed from the public API in a future major version. To obtain a ConfigCatClient instance with lazy loading for a specific SDK Key, please use the 'getClient(sdkKey, PollingMode.LazyLoad, options, ...)' format.
  */
 export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfigCatKernel, options?: ILazyLoadingOptions): IConfigCatClient {
-    return new ConfigCatClient(new LazyLoadOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
+  return new ConfigCatClient(new LazyLoadOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory), configCatKernel);
 }
 
 /**
@@ -61,7 +61,7 @@ export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfi
  * @param {LogLevel} logLevel - Specifies message's filtering to output for the ConfigCatConsoleLogger.
  */
 export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
-    return new ConfigCatConsoleLogger(logLevel);
+  return new ConfigCatConsoleLogger(logLevel);
 }
 
 /* Public types for platform-specific SDKs */

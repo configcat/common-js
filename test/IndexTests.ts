@@ -6,27 +6,27 @@ import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";
 
 describe("ConfigCatClient index (main)", () => {
 
-    it("createClientWithAutoPoll ShouldCreateInstance", () => {
+  it("createClientWithAutoPoll ShouldCreateInstance", () => {
 
-        let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
-        var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel);
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+    var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel);
 
-        assert.isDefined(client);
-    });
+    assert.isDefined(client);
+  });
 
-    it("createClientWithLazyLoad ShouldCreateInstance", () => {
+  it("createClientWithLazyLoad ShouldCreateInstance", () => {
 
-        let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
-        var client: IConfigCatClient = configcatClient.createClientWithLazyLoad("APIKEY", configCatKernel);
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+    var client: IConfigCatClient = configcatClient.createClientWithLazyLoad("APIKEY", configCatKernel);
 
-        assert.isDefined(client);
-    });
+    assert.isDefined(client);
+  });
 
-    it("createClientWithManualPoll ShouldCreateInstance", () => {
+  it("createClientWithManualPoll ShouldCreateInstance", () => {
 
-        let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0"  };
-        var client: IConfigCatClient = configcatClient.createClientWithManualPoll("APIKEY", configCatKernel);
+    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0"  };
+    var client: IConfigCatClient = configcatClient.createClientWithManualPoll("APIKEY", configCatKernel);
 
-        assert.isDefined(client);
-    });
+    assert.isDefined(client);
+  });
 });

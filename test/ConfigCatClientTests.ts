@@ -1022,10 +1022,10 @@ describe("ConfigCatClient", () => {
 
     function createClients()
     {
-        ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { logger, maxInitWaitTimeSeconds: 0 }, configCatKernel);
-        ConfigCatClient.get(sdkKey2, PollingMode.ManualPoll, { logger }, configCatKernel);
+      ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { logger, maxInitWaitTimeSeconds: 0 }, configCatKernel);
+      ConfigCatClient.get(sdkKey2, PollingMode.ManualPoll, { logger }, configCatKernel);
 
-        return ConfigCatClient["instanceCache"].getAliveCount();
+      return ConfigCatClient["instanceCache"].getAliveCount();
     }
 
     // Act
@@ -1270,7 +1270,7 @@ describe("ConfigCatClient", () => {
       var evaluationDetails: IEvaluationDetails[] = [];
       for (let key of keys)
       {
-          evaluationDetails.push(await client.getValueDetailsAsync(key, false));
+        evaluationDetails.push(await client.getValueDetailsAsync(key, false));
       }
 
       assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);

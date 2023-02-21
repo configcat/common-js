@@ -2,20 +2,20 @@ import { IConfigFetcher, OptionsBase } from "src/index.ts";
 import type { IFetchResponse } from "../../src/ConfigFetcher.ts";
 
 export class FakeConfigFetcher implements IConfigFetcher {
-    private currentFetchResponse: IFetchResponse = { statusCode: 404, reasonPhrase: "Not Found" };
-    private currentETag = 0;
+  private currentFetchResponse: IFetchResponse = { statusCode: 404, reasonPhrase: "Not Found" };
+  private currentETag = 0;
 
-    fetchLogic(_options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse> {
-        return Promise.resolve(this.currentFetchResponse.statusCode == 200 && (this.currentETag + "") === lastEtag
-            ? <IFetchResponse>{ statusCode: 304, reasonPhrase: "Not Modified" }
-            : this.currentFetchResponse);
-    }
+  fetchLogic(_options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse> {
+    return Promise.resolve(this.currentFetchResponse.statusCode == 200 && (this.currentETag + "") === lastEtag
+      ? <IFetchResponse>{ statusCode: 304, reasonPhrase: "Not Modified" }
+      : this.currentFetchResponse);
+  }
 
-    setSuccess(configJson: string) {
-        this.currentFetchResponse = { statusCode: 200, reasonPhrase: "OK", eTag: (++this.currentETag) + "", body: configJson };
-    }
+  setSuccess(configJson: string) {
+    this.currentFetchResponse = { statusCode: 200, reasonPhrase: "OK", eTag: (++this.currentETag) + "", body: configJson };
+  }
 
-    setError(statusCode: number, reasonPhrase: string) {
-        this.currentFetchResponse = { statusCode, reasonPhrase };
-    }
+  setError(statusCode: number, reasonPhrase: string) {
+    this.currentFetchResponse = { statusCode, reasonPhrase };
+  }
 }

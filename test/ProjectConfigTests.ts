@@ -4,10 +4,10 @@ import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("ProjectConfig", () => {
   it("Equals - Same etag values - Should equal", () => {
-      const actual: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-      const expected: ProjectConfig = new ProjectConfig(1, "{}", "etag");
+    const actual: ProjectConfig = new ProjectConfig(1, "{}", "etag");
+    const expected: ProjectConfig = new ProjectConfig(1, "{}", "etag");
 
-      assert.isTrue(ProjectConfig.equals(actual, expected));
+    assert.isTrue(ProjectConfig.equals(actual, expected));
   });
 
   it("Equals - Different etag values - Should not equal", () => {
