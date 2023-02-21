@@ -129,7 +129,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       else {
         if ((setting.rolloutRules && setting.rolloutRules.length > 0) ||
                     (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
-          let s: string = "Evaluating getValue('" + key + "'). "
+          let s: string = "Evaluating getValue('" + key + "'). ";
           s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
           s += "Read more: https://configcat.com/docs/advanced/user-object";
 
@@ -435,7 +435,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           }
 
           return semver.eq(v1, e);
-        })
+        });
 
       case 6:
 
@@ -487,25 +487,25 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   private RuleToString(rule: number): string {
     switch (rule) {
       case 0:
-        return "IS ONE OF"
+        return "IS ONE OF";
       case 1:
         return "IS NOT ONE OF";
       case 2:
         return "CONTAINS";
       case 3:
-        return "DOES NOT CONTAIN"
+        return "DOES NOT CONTAIN";
       case 4:
         return "IS ONE OF (SemVer)";
       case 5:
         return "IS NOT ONE OF (SemVer)";
       case 6:
-        return "< (SemVer)"
+        return "< (SemVer)";
       case 7:
-        return "<= (SemVer)"
+        return "<= (SemVer)";
       case 8:
-        return "> (SemVer)"
+        return "> (SemVer)";
       case 9:
-        return ">= (SemVer)"
+        return ">= (SemVer)";
       case 10:
         return "= (Number)";
       case 11:

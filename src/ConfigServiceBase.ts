@@ -262,7 +262,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       this.logStatusChange(this.status);
     }
     else if (this.disposed) {
-      this.logDisposedWarning("setOnline")
+      this.logDisposedWarning("setOnline");
     }
   }
 
@@ -275,7 +275,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       this.logStatusChange(this.status);
     }
     else if (this.disposed) {
-      this.logDisposedWarning("setOnline")
+      this.logDisposedWarning("setOnline");
     }
   }
 

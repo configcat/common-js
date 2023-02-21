@@ -17,7 +17,7 @@ describe("MatrixTests", () => {
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null }, null)
+    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null }, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     let header: string[] | null = null;

@@ -37,7 +37,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -72,7 +72,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -109,7 +109,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -144,7 +144,7 @@ describe("DefaultEventEmitter", () => {
     assert.strictEqual(1, ee.listenerCount("evt2"));
     assert.deepEqual([handler2], ee.listeners("evt2"));
 
-    assert.deepEqual(ee.eventNames(), ["evt2"])
+    assert.deepEqual(ee.eventNames(), ["evt2"]);
 
     done();
   });
@@ -186,7 +186,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -229,7 +229,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -269,7 +269,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -310,7 +310,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt2"]);
 
       done();
     });
@@ -348,7 +348,7 @@ describe("DefaultEventEmitter", () => {
       assert.strictEqual(1, ee.listenerCount("evt2"));
       assert.deepEqual([handler2], ee.listeners("evt2"));
 
-      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"])
+      assert.deepEqual(ee.eventNames(), ["evt1", "evt2"]);
 
       done();
     });
@@ -386,7 +386,7 @@ describe("DefaultEventEmitter", () => {
     assert.strictEqual(0, ee.listenerCount("evt2"));
     assert.deepEqual([], ee.listeners("evt2"));
 
-    assert.deepEqual(ee.eventNames(), ["evt1"])
+    assert.deepEqual(ee.eventNames(), ["evt1"]);
 
     done();
   });
@@ -424,7 +424,7 @@ it(`emit() should not call listeners removed by removeAllListeners() when listen
   assert.strictEqual(0, ee.listenerCount("evt2"));
   assert.deepEqual([], ee.listeners("evt2"));
 
-  assert.deepEqual(ee.eventNames(), [])
+  assert.deepEqual(ee.eventNames(), []);
 
   done();
 });
@@ -459,7 +459,7 @@ it(`Adding/removing listeners during an emit() call should not affect the list o
   assert.strictEqual(1, ee.listenerCount("evt1"));
   assert.deepEqual([handler1b], ee.listeners("evt1"));
 
-  assert.deepEqual(ee.eventNames(), ["evt1"])
+  assert.deepEqual(ee.eventNames(), ["evt1"]);
 
   done();
 });
@@ -495,7 +495,7 @@ it(`Adding/removing listeners during an emit() call should not affect the list o
   assert.strictEqual(2, ee.listenerCount("evt1"));
   assert.deepEqual([handler1b, handler1b], ee.listeners("evt1"));
 
-  assert.deepEqual(ee.eventNames(), ["evt1"])
+  assert.deepEqual(ee.eventNames(), ["evt1"]);
 
   done();
 });

@@ -17,7 +17,7 @@ describe("Options", () => {
     let options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
 
     assert.isNotNull(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache)
+    assert.instanceOf(options.cache, InMemoryCache);
   });
 
   it("ManualPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {

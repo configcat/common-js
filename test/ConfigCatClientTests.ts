@@ -164,7 +164,7 @@ describe("ConfigCatClient", () => {
         assert.equal(true, value);
         done();
       });
-    })
+    });
   });
 
   it("Initialization With AutoPollOptions should create an instance", (done) => {
@@ -480,7 +480,7 @@ describe("ConfigCatClient", () => {
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       const errorEvents: [string, any][] = [];
       client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
-      client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]))
+      client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]));
 
       // Act
 
@@ -591,7 +591,7 @@ describe("ConfigCatClient", () => {
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       const errorEvents: [string, any][] = [];
       client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
-      client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]))
+      client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]));
 
       // Act
 
@@ -738,17 +738,17 @@ describe("ConfigCatClient", () => {
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
-    let user: User = new User('', undefined, undefined, { "CUSTOM": "c" })
+    let user: User = new User('', undefined, undefined, { "CUSTOM": "c" });
     let actual = await client.getValueAsync("debug", "N/A", user);
 
     assert.equal(actual, "UPPER-VALUE");
 
-    user = new User('', undefined, undefined, { "custom": "c" })
+    user = new User('', undefined, undefined, { "custom": "c" });
     actual = await client.getValueAsync("debug", "N/A", user);
 
     assert.equal(actual, "lower-value");
 
-    user = new User('', undefined, undefined, { "custom": "c", "CUSTOM": "c" })
+    user = new User('', undefined, undefined, { "custom": "c", "CUSTOM": "c" });
     actual = await client.getValueAsync("debug", "N/A", user);
 
     assert.equal(actual, "UPPER-VALUE");
@@ -836,7 +836,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions with expired cache - getValue should take care of maxInitWaitTimeSeconds", done => {
 
     let configFetcher = new FakeConfigFetcher(500);
-    let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"))
+    let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"));
     let configCatKernel: FakeConfigCatKernel = { configFetcher, cache: configCache, sdkType: 'common', sdkVersion: '1.0.0' };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { cache: configCache, maxInitWaitTimeSeconds: 10 });
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -849,7 +849,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions with expired cache - getValueAsync should take care of maxInitWaitTimeSeconds", async () => {
 
     let configFetcher = new FakeConfigFetcher(500);
-    let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"))
+    let configCache = new FakeCache(new ProjectConfig(new Date().getTime() - 10000000, "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }", "etag2"));
     let configCatKernel: FakeConfigCatKernel = { configFetcher, cache: configCache, sdkType: 'common', sdkVersion: '1.0.0' };
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { cache: configCache, maxInitWaitTimeSeconds: 10 });
     let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -1049,7 +1049,7 @@ describe("ConfigCatClient", () => {
     assert.equal(0, instanceCount2);
 
     if (isFinalizationRegistryAvailable) {
-      assert.equal(2, logger.messages.filter(([, msg]) => msg.indexOf("finalize() called") >= 0).length)
+      assert.equal(2, logger.messages.filter(([, msg]) => msg.indexOf("finalize() called") >= 0).length);
     }
   });
 

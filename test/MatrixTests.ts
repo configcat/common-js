@@ -12,23 +12,23 @@ describe("MatrixTests", () => {
 
   it("GetValue basic operators", async () => {
     await Helper.RunMatrixTest("test/data/sample_v5.json", "test/data/testmatrix.csv");
-  })
+  });
 
   it("GetValue numeric operators", async () => {
     await Helper.RunMatrixTest("test/data/sample_number_v5.json", "test/data/testmatrix_number.csv");
-  })
+  });
 
   it("GetValue semver operators", async () => {
     await Helper.RunMatrixTest("test/data/sample_semantic_v5.json", "test/data/testmatrix_semantic.csv");
-  })
+  });
 
   it("GetValue semver operators", async () => {
     await Helper.RunMatrixTest("test/data/sample_semantic_2_v5.json", "test/data/testmatrix_semantic_2.csv");
-  })
+  });
 
   it("GetValue sensitive operators", async () => {
     await Helper.RunMatrixTest("test/data/sample_sensitive_v5.json", "test/data/testmatrix_sensitive.csv");
-  })
+  });
 
   class Helper {
 

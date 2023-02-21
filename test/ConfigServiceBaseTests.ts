@@ -44,7 +44,7 @@ describe("ConfigServiceBaseTests", () => {
 
     const cacheMock = new Mock<ICache>()
       .setup(m => m.get(It.IsAny<string>()))
-      .callback(() => { return callNo++ === 1 ? null : pc })
+      .callback(() => { return callNo++ === 1 ? null : pc; })
       .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
       .returns();
 
@@ -84,7 +84,7 @@ describe("ConfigServiceBaseTests", () => {
 
     const cacheMock = new Mock<ICache>()
       .setup(m => m.get(It.IsAny<string>()))
-      .callback((_) => { return callNo++ === 1 ? null : pc })
+      .callback((_) => { return callNo++ === 1 ? null : pc; })
       .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
       .returns();
 
@@ -407,7 +407,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Act
 
-    const [, actualConfig] = await service.refreshConfigAsync()
+    const [, actualConfig] = await service.refreshConfigAsync();
 
     // Assert
 
@@ -445,7 +445,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Act
 
-    const [, actualConfig] = await service.refreshConfigAsync()
+    const [, actualConfig] = await service.refreshConfigAsync();
 
     // Assert
 
@@ -646,7 +646,7 @@ describe("ConfigServiceBaseTests", () => {
     assert.isTrue(ProjectConfig.equals(config1, pc));
 
     fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Once());
-  })
+  });
 
   it("fetchAsync() should initiate a request when there is not a pending one", async () => {
     // Arrange
@@ -683,7 +683,7 @@ describe("ConfigServiceBaseTests", () => {
     assert.isTrue(ProjectConfig.equals(config2, pc));
 
     fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.Exactly(2));
-  })
+  });
 
   it("refreshConfigAsync() should return null config when cache is empty and fetch fails.", async () => {
 

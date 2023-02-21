@@ -30,7 +30,7 @@ describe("Polyfills", () => {
     assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>([["a", 1], [2, "b"]]));
 
     assert.deepEqual({}, ObjectFromEntriesPolyfill<any>((function* () { })()));
-    assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>((function* () { yield* [["a", 1], [2, "b"]] })()));
+    assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>((function* () { yield* [["a", 1], [2, "b"]]; })()));
 
     assert.throws(() => ObjectFromEntriesPolyfill<any>(1 as any));
   });

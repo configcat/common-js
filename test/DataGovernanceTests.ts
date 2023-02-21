@@ -283,7 +283,7 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
         r: jsonRedirect
       },
       f: jsonFeatureFlags
-    }
+    };
 
     configFetcher.prepareResponse(this.getUrl(baseUrl),
       FetchResult.success(JSON.stringify(configJson), "etag"));

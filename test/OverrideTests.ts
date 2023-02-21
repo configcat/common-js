@@ -98,7 +98,7 @@ describe("Local Overrides", () => {
   });
 
   it("Values from map - another map style", async () => {
-    let dataSource: { [name: string]: any } = {}
+    let dataSource: { [name: string]: any } = {};
     dataSource["enabled-feature"] = true;
     dataSource["disabled_feature"] = false;
     dataSource["int-setting"] = 5;

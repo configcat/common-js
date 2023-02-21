@@ -68,7 +68,7 @@ export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
 
 // List types here which are required to implement the platform-specific SDKs but shouldn't be exposed to end users.
 
-export type { IConfigCatKernel }
+export type { IConfigCatKernel };
 
 export type { IConfigFetcher, IFetchResponse, FetchErrorCauses } from './ConfigFetcher';
 
@@ -85,23 +85,23 @@ export type { IEventProvider, IEventEmitter } from "./EventEmitter";
 // List types here which are part of the public API of platform-specific SDKs, thus, should be exposed to end users.
 // These exports should be re-exported in the entry module of each platform-specific SDK!
 
-export { PollingMode }
+export { PollingMode };
 
 export type { IOptions } from "./ConfigCatClientOptions";
 
-export type { IAutoPollOptions, IManualPollOptions, ILazyLoadingOptions }
+export type { IAutoPollOptions, IManualPollOptions, ILazyLoadingOptions };
 
 export { DataGovernance } from "./ConfigCatClientOptions";
 
-export type { IConfigCatLogger }
+export type { IConfigCatLogger };
 
-export { LogLevel }
+export { LogLevel };
 
 export type { ICache } from './Cache';
 
 export { ProjectConfig, RolloutRule, RolloutPercentageItem, Setting } from "./ProjectConfig";
 
-export type { IConfigCatClient }
+export type { IConfigCatClient };
 
 export { SettingKeyValue } from "./ConfigCatClient";
 
@@ -113,6 +113,6 @@ export type { IOverrideDataSource } from "./FlagOverrides";
 
 export { FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";
 
-export { RefreshResult } from "./ConfigServiceBase"
+export { RefreshResult } from "./ConfigServiceBase";
 
-export type { IProvidesHooks, HookEvents } from "./Hooks"
+export type { IProvidesHooks, HookEvents } from "./Hooks";

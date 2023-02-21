@@ -602,7 +602,7 @@ export class ConfigCatClient implements IConfigCatClient {
       const json = config?.ConfigJSON;
       const settings = json?.[ConfigFile.FeatureFlags] ? getSettingsFromConfig(json) : null;
       return [settings, config ?? null];
-    }
+    };
 
     const flagOverrides = this.options?.flagOverrides;
     if (flagOverrides) {
@@ -706,4 +706,4 @@ let registerForFinalization = function (client: ConfigCatClient, data: IFinaliza
   }
 
   return registerForFinalization(client, data);
-}
+};
