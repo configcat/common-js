@@ -115,7 +115,7 @@ describe("DefaultEventEmitter", () => {
     });
   }
 
-  it(`emit() should call listener added by once() only a single time`, (done) => {
+  it("emit() should call listener added by once() only a single time", (done) => {
     // Arrange
 
     const ee = new DefaultEventEmitter();
@@ -354,7 +354,7 @@ describe("DefaultEventEmitter", () => {
     });
   }
 
-  it(`emit() should not call listeners removed by removeAllListeners() when listeners of a specific event are removed`, (done) => {
+  it("emit() should not call listeners removed by removeAllListeners() when listeners of a specific event are removed", (done) => {
     // Arrange
 
     const ee = new DefaultEventEmitter();
@@ -392,7 +392,7 @@ describe("DefaultEventEmitter", () => {
   });
 });
 
-it(`emit() should not call listeners removed by removeAllListeners() when listeners of all events are removed`, (done) => {
+it("emit() should not call listeners removed by removeAllListeners() when listeners of all events are removed", (done) => {
   // Arrange
 
   const ee = new DefaultEventEmitter();
@@ -429,7 +429,7 @@ it(`emit() should not call listeners removed by removeAllListeners() when listen
   done();
 });
 
-it(`Adding/removing listeners during an emit() call should not affect the list of notified listeners when a single listener is added initially`, (done) => {
+it("Adding/removing listeners during an emit() call should not affect the list of notified listeners when a single listener is added initially", (done) => {
   // Arrange
 
   const ee = new DefaultEventEmitter();
@@ -464,7 +464,7 @@ it(`Adding/removing listeners during an emit() call should not affect the list o
   done();
 });
 
-it(`Adding/removing listeners during an emit() call should not affect the list of notified listeners when multiple listeners are added initially`, (done) => {
+it("Adding/removing listeners during an emit() call should not affect the list of notified listeners when multiple listeners are added initially", (done) => {
   // Arrange
 
   const ee = new DefaultEventEmitter();

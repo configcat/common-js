@@ -36,7 +36,7 @@ describe("MatrixTests", () => {
         }
 
         let user = Helper.CreateUser(line, header);
-        let splittedLine = line.split(';');
+        let splittedLine = line.split(";");
         for (let i: number = 4; i < header.length; i++) {
 
           const key: string = header[i];

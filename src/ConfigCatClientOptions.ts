@@ -210,11 +210,11 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
       }
     }
 
-    if (!(this.pollIntervalSeconds >= 1 && (typeof this.pollIntervalSeconds === 'number'))) {
+    if (!(this.pollIntervalSeconds >= 1 && (typeof this.pollIntervalSeconds === "number"))) {
       throw new Error("Invalid 'pollIntervalSeconds' value");
     }
 
-    if (!(this.maxInitWaitTimeSeconds >= 0 && (typeof this.maxInitWaitTimeSeconds === 'number'))) {
+    if (!(this.maxInitWaitTimeSeconds >= 0 && (typeof this.maxInitWaitTimeSeconds === "number"))) {
       throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
     }
   }

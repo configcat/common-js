@@ -7,8 +7,8 @@ import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./helpers/fakes
 describe("DefaultUser", () => {
 
   it("Default user set works", async () => {
-    const redEyeColorUser = { identifier: 'redIdentifier', custom: { 'eyeColor': 'red' } };
-    const blueEyeColorUser = { identifier: 'blueIdentifier', custom: { 'eyeColor': 'blue' } };
+    const redEyeColorUser = { identifier: "redIdentifier", custom: { "eyeColor": "red" } };
+    const blueEyeColorUser = { identifier: "blueIdentifier", custom: { "eyeColor": "blue" } };
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
     var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug) });
@@ -86,8 +86,8 @@ describe("DefaultUser", () => {
   });
 
   it("Default user set works with options", async () => {
-    const redEyeColorUser = { identifier: 'redIdentifier', custom: { 'eyeColor': 'red' } };
-    const blueEyeColorUser = { identifier: 'blueIdentifier', custom: { 'eyeColor': 'blue' } };
+    const redEyeColorUser = { identifier: "redIdentifier", custom: { "eyeColor": "red" } };
+    const blueEyeColorUser = { identifier: "blueIdentifier", custom: { "eyeColor": "blue" } };
 
     let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
     var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug), defaultUser: redEyeColorUser });

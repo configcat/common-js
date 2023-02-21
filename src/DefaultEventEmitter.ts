@@ -17,7 +17,7 @@ export class DefaultEventEmitter implements IEventEmitter {
   private eventCount = 0;
 
   private addListenerCore(eventName: string | symbol, fn: (...args: any[]) => void, once: boolean) {
-    if (typeof fn !== 'function') {
+    if (typeof fn !== "function") {
       throw new TypeError("Listener must be a function");
     }
 
@@ -86,7 +86,7 @@ export class DefaultEventEmitter implements IEventEmitter {
   }
 
   removeListener(eventName: string | symbol, listener: (...args: any[]) => void): this {
-    if (typeof listener !== 'function') {
+    if (typeof listener !== "function") {
       throw new TypeError("Listener must be a function");
     }
 

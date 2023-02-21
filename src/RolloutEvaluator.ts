@@ -329,7 +329,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
-      let hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? '' : user.identifier);
+      let hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
       let hashValue: any = sha1(hashCandidate).substring(0, 7);
       let hashScale: number = parseInt(hashValue, 16) % 100;
       let bucket: number = 0;
@@ -356,15 +356,15 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     let n1: number, n2: number;
 
-    if (v1 && !Number.isNaN(Number.parseFloat(v1.replace(',', '.')))) {
-      n1 = Number.parseFloat(v1.replace(',', '.'));
+    if (v1 && !Number.isNaN(Number.parseFloat(v1.replace(",", ".")))) {
+      n1 = Number.parseFloat(v1.replace(",", "."));
     }
     else {
       return false;
     }
 
-    if (v2 && !Number.isNaN(Number.parseFloat(v2.replace(',', '.')))) {
-      n2 = Number.parseFloat(v2.replace(',', '.'));
+    if (v2 && !Number.isNaN(Number.parseFloat(v2.replace(",", ".")))) {
+      n2 = Number.parseFloat(v2.replace(",", "."));
     }
     else {
       return false;

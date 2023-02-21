@@ -57,7 +57,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   error(message: string, err?: any): void {
     if (this.isLogLevelEnabled(LogLevel.Error)) {
       const logMessage = err
-        ? message + '\n' + errorToString(err, true)
+        ? message + "\n" + errorToString(err, true)
         : message;
 
       this.logger.error(logMessage);

@@ -218,7 +218,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     this.options = options;
 
-    this.options.logger.debug('Initializing ConfigCatClient. Options: ' + JSON.stringify(this.options));
+    this.options.logger.debug("Initializing ConfigCatClient. Options: " + JSON.stringify(this.options));
 
     if (!configCatKernel) {
       throw new Error("Invalid 'configCatKernel' value");

@@ -8,7 +8,7 @@ const getGlobalObject = (() => {
         typeof self === "object" && self ? self :
         typeof window === "object" && window ? window :
         typeof global === "object" && global ? global :
-        typeof Function === "function" ? (Function('return this')()) :
+        typeof Function === "function" ? (Function("return this")()) :
         null;
 
       if (!value) {
@@ -75,7 +75,7 @@ export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [Propert
     }
   }
   else {
-    throw new Error('Object.fromEntries() requires a single iterable argument');
+    throw new Error("Object.fromEntries() requires a single iterable argument");
   }
   return result;
 }

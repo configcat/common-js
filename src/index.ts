@@ -70,9 +70,9 @@ export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
 
 export type { IConfigCatKernel };
 
-export type { IConfigFetcher, IFetchResponse, FetchErrorCauses } from './ConfigFetcher';
+export type { IConfigFetcher, IFetchResponse, FetchErrorCauses } from "./ConfigFetcher";
 
-export { FetchStatus, FetchResult, FetchError } from './ConfigFetcher';
+export { FetchStatus, FetchResult, FetchError } from "./ConfigFetcher";
 
 export { OptionsBase } from "./ConfigCatClientOptions";
 
@@ -97,7 +97,7 @@ export type { IConfigCatLogger };
 
 export { LogLevel };
 
-export type { ICache } from './Cache';
+export type { ICache } from "./Cache";
 
 export { ProjectConfig, RolloutRule, RolloutPercentageItem, Setting } from "./ProjectConfig";
 

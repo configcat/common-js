@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import "mocha";
-import { EqualMatchingInjectorConfig, It, Mock, RejectedPromiseFactory, ResolvedPromiseFactory, Times } from 'moq.ts';
+import { EqualMatchingInjectorConfig, It, Mock, RejectedPromiseFactory, ResolvedPromiseFactory, Times } from "moq.ts";
 import { MimicsRejectedAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, Presets, ReturnsAsyncPresetFactory, RootMockProvider, ThrowsAsyncPresetFactory } from "moq.ts/internal";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { ICache, InMemoryCache } from "../src/Cache";

@@ -43,7 +43,7 @@ export class ProjectConfig {
 
   private static ensureStrictEtag(etag?: string): string {
     if (!etag) {
-      return '';
+      return "";
     }
 
     if (etag.length > 2 && etag.substr(0, 2).toLocaleUpperCase() === "W/") {
