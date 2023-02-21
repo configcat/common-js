@@ -3,3 +3,5 @@ coverage/
 dist/
 lib/
 node_modules/
+src/Semver.ts
+src/Sha1.ts

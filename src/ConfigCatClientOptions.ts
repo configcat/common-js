@@ -104,7 +104,7 @@ export abstract class OptionsBase implements IOptions {
       throw new Error("Invalid 'apiKey' value");
     }
 
-    if (!defaultCache){
+    if (!defaultCache) {
       defaultCache = new InMemoryCache();
     }
 

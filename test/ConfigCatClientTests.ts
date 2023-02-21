@@ -602,7 +602,7 @@ describe("ConfigCatClient", () => {
 
       // Assert
 
-      for (const key of [ "debug", "debug2" ]) {
+      for (const key of ["debug", "debug2"]) {
         const actualDetails = actual.find(details => details.key === key)!;
 
         assert.isNull(actualDetails.value);
@@ -1006,7 +1006,7 @@ describe("ConfigCatClient", () => {
     done();
   });
 
-  it("GC should be able to collect cached instances when no strong references are left", async function() {
+  it("GC should be able to collect cached instances when no strong references are left", async function () {
     // Arrange
 
     setupPolyfills();
@@ -1155,7 +1155,7 @@ describe("ConfigCatClient", () => {
 
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
 
-      const etag1 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;;
+      const etag1 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;
       if (configService instanceof LazyLoadConfigService) {
         expectedFetchTimes++;
       }

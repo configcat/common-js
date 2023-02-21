@@ -46,7 +46,7 @@ export class ProjectConfig {
       return '';
     }
 
-    if (etag.length > 2 && etag.substr(0,2).toLocaleUpperCase() === "W/") {
+    if (etag.length > 2 && etag.substr(0, 2).toLocaleUpperCase() === "W/") {
       return etag.substring(2);
     }
 

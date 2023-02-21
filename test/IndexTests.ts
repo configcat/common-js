@@ -8,7 +8,7 @@ describe("ConfigCatClient index (main)", () => {
 
   it("createClientWithAutoPoll ShouldCreateInstance", () => {
 
-    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
     var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel);
 
     assert.isDefined(client);
@@ -16,7 +16,7 @@ describe("ConfigCatClient index (main)", () => {
 
   it("createClientWithLazyLoad ShouldCreateInstance", () => {
 
-    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
     var client: IConfigCatClient = configcatClient.createClientWithLazyLoad("APIKEY", configCatKernel);
 
     assert.isDefined(client);
@@ -24,7 +24,7 @@ describe("ConfigCatClient index (main)", () => {
 
   it("createClientWithManualPoll ShouldCreateInstance", () => {
 
-    let configCatKernel: FakeConfigCatKernel = {configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
     var client: IConfigCatClient = configcatClient.createClientWithManualPoll("APIKEY", configCatKernel);
 
     assert.isDefined(client);
