@@ -4,7 +4,7 @@ export function sha1 (msg: any) {
     return t4;
   };
   function cvt_hex(val:any) {
-    var str="";        
+    var str="";
     var v;
     for(var i=7; i>=0; i-- ) {
       v = (val>>>(i*4))&0x0f;
@@ -61,7 +61,7 @@ export function sha1 (msg: any) {
       i = msg.charCodeAt(msg_len-2)<<24 | msg.charCodeAt(msg_len-1)<<16 | 0x08000;
       break;
     case 3:
-      i = msg.charCodeAt(msg_len-3)<<24 | msg.charCodeAt(msg_len-2)<<16 | msg.charCodeAt(msg_len-1)<<8    | 0x80;
+      i = msg.charCodeAt(msg_len-3)<<24 | msg.charCodeAt(msg_len-2)<<16 | msg.charCodeAt(msg_len-1)<<8 | 0x80;
       break;
   }
   word_array.push( i );

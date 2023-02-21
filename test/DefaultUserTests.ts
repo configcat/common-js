@@ -85,7 +85,6 @@ describe("DefaultUser", () => {
     assert.equal(variationIds[0], "defaultVariationId");
   });
 
-
   it("Default user set works with options", async () => {
     const redEyeColorUser = { identifier: 'redIdentifier', custom: { 'eyeColor': 'red' } };
     const blueEyeColorUser = { identifier: 'blueIdentifier', custom: { 'eyeColor': 'blue' } };
@@ -153,7 +152,6 @@ describe("DefaultUser", () => {
     variationIds = await client.getAllVariationIdsAsync();
     assert.equal(variationIds[0], "defaultVariationId");
   });
-
 
 });
 

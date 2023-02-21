@@ -306,7 +306,6 @@ describe("Options", () => {
     assert.instanceOf(options.cache, InMemoryCache);
   });
 
-
   it("AutoPollOptions initialization - sdkVersion works", () => {
     let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
     assert.equal("common/a-1.0.0", options.clientVersion);

@@ -80,7 +80,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     else {
       this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired.");
     }
-      
+
     return cacheConfig;
   }
 

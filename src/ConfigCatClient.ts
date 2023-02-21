@@ -94,7 +94,7 @@ export interface IConfigCatClient extends IProvidesHooks {
   /** Returns the values along with evaluation details of all feature flags or settings */
   getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]>;
 
-  /** Sets the default user for feature flag evaluations. 
+  /** Sets the default user for feature flag evaluations.
    * In case the getValue function isn't called with a UserObject, this default user will be used instead.
    */
   setDefaultUser(defaultUser: User): void;
@@ -252,7 +252,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
   private static finalize(data: IFinalizationData) {
     // Safeguard against situations where user forgets to dispose of the client instance.
-        
+
     data.logger?.debug("finalize() called");
 
     if (data.cacheToken) {
@@ -300,7 +300,7 @@ export class ConfigCatClient implements IConfigCatClient {
       throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
     }
   }
-    
+
   getValue<T extends SettingValue>(key: string, defaultValue: T, callback: (value: SettingTypeOf<T>) => void, user?: User): void {
     this.options.logger.debug("getValue() called.");
     this.getValueAsync(key, defaultValue, user).then(callback);
@@ -492,7 +492,7 @@ export class ConfigCatClient implements IConfigCatClient {
           for (let i = 0; i < percentageItems.length; i++) {
             const percentageItem: RolloutPercentageItem = percentageItems[i];
             if (variationId === percentageItem.variationId) {
-              return new SettingKeyValue(settingKey,  percentageItem.value);
+              return new SettingKeyValue(settingKey, percentageItem.value);
             }
           }
         }

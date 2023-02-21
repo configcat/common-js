@@ -65,7 +65,7 @@ describe("ConfigServiceBaseTests", () => {
 
     cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(3));
     fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.AtLeast(3));
-        
+
     service.dispose();
   });
 
@@ -106,7 +106,7 @@ describe("ConfigServiceBaseTests", () => {
     // Assert
 
     cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(2));
-        
+
     service.dispose();
   });
 
@@ -152,7 +152,6 @@ describe("ConfigServiceBaseTests", () => {
       It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))),
     Times.Once());
 
-            
     service.dispose();
   });
 
@@ -204,7 +203,7 @@ describe("ConfigServiceBaseTests", () => {
     assert.isNotNull(actualProjectConfig?.ConfigJSON);
     assert.equal(actualProjectConfig?.HttpETag, projectConfigNew.HttpETag);
     assert.equal(JSON.stringify(actualProjectConfig?.ConfigJSON), JSON.stringify(projectConfigNew?.ConfigJSON));
-        
+
     service.dispose();
   });
 
@@ -457,7 +456,7 @@ describe("ConfigServiceBaseTests", () => {
   });
 
   it("AutoPollConfigService - getConfig() should return cached config when cached config is not expired", async () => {
-    // Arrange 
+    // Arrange
 
     const pollIntervalSeconds = 2;
 
@@ -495,7 +494,7 @@ describe("ConfigServiceBaseTests", () => {
   });
 
   it("AutoPollConfigService - getConfig() should wait for fetch when cached config is expired", async () => {
-    // Arrange 
+    // Arrange
 
     const pollIntervalSeconds = 2;
 
@@ -537,7 +536,7 @@ describe("ConfigServiceBaseTests", () => {
   });
 
   it("LazyLoadConfigService - getConfig() should return cached config when cached config is not expired", async () => {
-    // Arrange 
+    // Arrange
 
     const cacheTimeToLiveSeconds = 5;
 
@@ -574,7 +573,7 @@ describe("ConfigServiceBaseTests", () => {
   });
 
   it("LazyLoadConfigService - getConfig() should fetch when cached config is expired", async () => {
-    // Arrange 
+    // Arrange
 
     const cacheTimeToLiveSeconds = 5;
 
@@ -615,7 +614,7 @@ describe("ConfigServiceBaseTests", () => {
   });
 
   it("fetchAsync() should not initiate a request when there is a pending one", async () => {
-    // Arrange 
+    // Arrange
 
     const fr: FetchResult = createFetchResult();
     const pc: ProjectConfig = createConfigFromFetchResult(fr);
@@ -650,7 +649,7 @@ describe("ConfigServiceBaseTests", () => {
   })
 
   it("fetchAsync() should initiate a request when there is not a pending one", async () => {
-    // Arrange 
+    // Arrange
 
     const fr: FetchResult = createFetchResult();
     const pc: ProjectConfig = createConfigFromFetchResult(fr);

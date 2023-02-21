@@ -180,7 +180,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           variationId: rule.variationId,
           matchedRule: rule
         };
-                
+
         switch (comparator) {
           case 0: // is one of
 

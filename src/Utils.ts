@@ -15,12 +15,12 @@ export function getSettingsFromConfig(json: any): { [name: string]: Setting } {
   }));
 }
 
-export function getTimestampAsDate(projectConfig: ProjectConfig | null): Date | undefined { 
+export function getTimestampAsDate(projectConfig: ProjectConfig | null): Date | undefined {
   return projectConfig ? new Date(projectConfig.Timestamp) : void 0;
 }
 
 export function errorToString(err: any, includeStackTrace = false): string {
-  return err instanceof Error 
+  return err instanceof Error
     ? includeStackTrace && err.stack ? err.stack : err.toString()
     : err + "";
 }

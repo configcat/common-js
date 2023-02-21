@@ -34,8 +34,8 @@ export class MapOverrideDataSource implements IOverrideDataSource {
   private map: { [name: string]: Setting } = {};
 
   constructor(map: { [name: string]: any }) {
-    this.map = Object.fromEntries(Object.entries(map).map(([key, value]) => { 
-      return [key, { 
+    this.map = Object.fromEntries(Object.entries(map).map(([key, value]) => {
+      return [key, {
         value: value,
         variationId: "",
         rolloutRules: [],
@@ -46,7 +46,7 @@ export class MapOverrideDataSource implements IOverrideDataSource {
 
   getOverrides(): Promise<{ [name: string]: Setting }> {
     return Promise.resolve(this.map);
-  }    
+  }
 }
 
 /**

@@ -215,7 +215,7 @@ describe("ConfigCatClient", () => {
 
     const flagEvaluatedEvents: IEvaluationDetails[] = [];
     client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
-    
+
     const value = await client.getValueAsync("debug", true);
     assert.equal(true, value);
 
@@ -275,32 +275,32 @@ describe("ConfigCatClient", () => {
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is not available`, async () => {
 
       // Arrange
-  
+
       const key = "notexists";
       const defaultValue = false;
       const timestamp = new Date().getTime();
-  
+
       const configFetcherClass = FakeConfigFetcherWithTwoKeys;
       const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
       const configCache = new FakeCache(cachedPc);
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
       const client = new ConfigCatClient(options, configCatKernel);
-  
+
       const user = new User("a@configcat.com");
 
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
 
       // Act
-  
+
       const actual = await (isAsync
         ? client.getValueDetailsAsync(key, defaultValue, user)
         : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
       );
-  
+
       // Assert
-  
+
       assert.strictEqual(key, actual.key);
       assert.strictEqual(defaultValue, actual.value);
       assert.isTrue(actual.isDefaultValue);
@@ -315,36 +315,36 @@ describe("ConfigCatClient", () => {
       assert.equal(1, flagEvaluatedEvents.length);
       assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
-  
+
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available but no rule applies`, async () => {
-  
+
       // Arrange
-  
+
       const key = "debug";
       const defaultValue = false;
       const timestamp = new Date().getTime();
-  
+
       const configFetcherClass = FakeConfigFetcherWithTwoKeys;
       const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
       const configCache = new FakeCache(cachedPc);
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
       const client = new ConfigCatClient(options, configCatKernel);
-  
+
       const user = new User("a@configcat.com");
 
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
 
       // Act
-  
+
       const actual = await (isAsync
         ? client.getValueDetailsAsync(key, defaultValue, user)
         : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
       );
-  
+
       // Assert
-  
+
       assert.strictEqual(key, actual.key);
       assert.strictEqual(true, actual.value);
       assert.isFalse(actual.isDefaultValue);
@@ -359,22 +359,22 @@ describe("ConfigCatClient", () => {
       assert.equal(1, flagEvaluatedEvents.length);
       assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
-  
+
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available and a comparison-based rule applies`, async () => {
-  
+
       // Arrange
-  
+
       const key = "debug";
       const defaultValue = "N/A";
       const timestamp = new Date().getTime();
-  
+
       const configFetcherClass = FakeConfigFetcherWithRules;
       const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
       const configCache = new FakeCache(cachedPc);
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
       const client = new ConfigCatClient(options, configCatKernel);
-  
+
       const user = new User("a@configcat.com");
       user.custom = { eyeColor: "red" };
 
@@ -382,14 +382,14 @@ describe("ConfigCatClient", () => {
       client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
 
       // Act
-  
+
       const actual = await (isAsync
         ? client.getValueDetailsAsync(key, defaultValue, user)
         : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
       );
-  
+
       // Assert
-  
+
       assert.strictEqual(key, actual.key);
       assert.strictEqual("redValue", actual.value);
       assert.isFalse(actual.isDefaultValue);
@@ -406,36 +406,36 @@ describe("ConfigCatClient", () => {
       assert.equal(1, flagEvaluatedEvents.length);
       assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
-  
+
     it(`getValueDetails${isAsync ? "Async" : ""}() should return correct result when setting is available and a percentage-based rule applies`, async () => {
-  
+
       // Arrange
-  
+
       const key = "string25Cat25Dog25Falcon25Horse";
       const defaultValue = "N/A";
       const timestamp = new Date().getTime();
-  
+
       const configFetcherClass = FakeConfigFetcherWithPercantageRules;
       const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
       const configCache = new FakeCache(cachedPc);
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
       const client = new ConfigCatClient(options, configCatKernel);
-  
+
       const user = new User("a@configcat.com");
 
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       client.on("flagEvaluated", ed => flagEvaluatedEvents.push(ed));
 
       // Act
-  
+
       const actual = await (isAsync
         ? client.getValueDetailsAsync(key, defaultValue, user)
         : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
       );
-  
+
       // Assert
-  
+
       assert.strictEqual(key, actual.key);
       assert.strictEqual("Cat", actual.value);
       assert.isFalse(actual.isDefaultValue);
@@ -452,29 +452,29 @@ describe("ConfigCatClient", () => {
       assert.equal(1, flagEvaluatedEvents.length);
       assert.strictEqual(actual, flagEvaluatedEvents[0]);
     });
-    
+
     it(`getValueDetails${isAsync ? "Async" : ""}() should return default value when exception thrown`, async () => {
-  
+
       // Arrange
-  
+
       const key = "debug";
       const defaultValue = false;
       const timestamp = new Date().getTime();
-  
+
       const configFetcherClass = FakeConfigFetcherWithTwoKeys;
       const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
       const configCache = new FakeCache(cachedPc);
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
       const client = new ConfigCatClient(options, configCatKernel);
-  
+
       const err = new Error("Something went wrong.");
       client["evaluator"] = new class implements IRolloutEvaluator {
         Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
           throw err;
         }
       };
-  
+
       const user = new User("a@configcat.com");
 
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
@@ -483,14 +483,14 @@ describe("ConfigCatClient", () => {
       client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]))
 
       // Act
-  
+
       const actual = await (isAsync
         ? client.getValueDetailsAsync(key, defaultValue, user)
         : new Promise<IEvaluationDetails>(resolve => client.getValueDetails(key, defaultValue, resolve, user))
       );
-  
+
       // Assert
-  
+
       assert.strictEqual(key, actual.key);
       assert.strictEqual(defaultValue, actual.value);
       assert.isTrue(actual.isDefaultValue);
@@ -567,25 +567,25 @@ describe("ConfigCatClient", () => {
     });
 
     it(`getAllValueDetails${isAsync ? "Async" : ""}() should return default value when exception thrown`, async () => {
-  
+
       // Arrange
-  
+
       const timestamp = new Date().getTime();
-  
+
       const configFetcherClass = FakeConfigFetcherWithTwoKeys;
       const cachedPc = new ProjectConfig(timestamp, configFetcherClass.configJson, "etag");
       const configCache = new FakeCache(cachedPc);
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: 'common', sdkVersion: '1.0.0' };
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCache);
       const client = new ConfigCatClient(options, configCatKernel);
-  
+
       const err = new Error("Something went wrong.");
       client["evaluator"] = new class implements IRolloutEvaluator {
         Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
           throw err;
         }
       };
-  
+
       const user = new User("a@configcat.com");
 
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
@@ -594,12 +594,12 @@ describe("ConfigCatClient", () => {
       client.on("clientError", (msg: string, err: any) => errorEvents.push([msg, err]))
 
       // Act
-  
+
       const actual = await (isAsync
         ? client.getAllValueDetailsAsync(user)
         : new Promise<IEvaluationDetails[]>(resolve => client.getAllValueDetails(resolve, user))
       );
-  
+
       // Assert
 
       for (const key of [ "debug", "debug2" ]) {
@@ -640,7 +640,7 @@ describe("ConfigCatClient", () => {
     let counter: number = 0;
     let configChangedEventCount = 0;
     const pollIntervalSeconds = 1;
-    const userOptions: IAutoPollOptions = { 
+    const userOptions: IAutoPollOptions = {
       logger: null,
       pollIntervalSeconds,
       configChanged: () => { counter++; },
@@ -1014,7 +1014,7 @@ describe("ConfigCatClient", () => {
       this.skip();
     }
     const isFinalizationRegistryAvailable = typeof FinalizationRegistry !== "undefined";
-    
+
     const sdkKey1 = "test1", sdkKey2 = "test2";
 
     const logger = new FakeLogger(LogLevel.Debug);
@@ -1035,7 +1035,7 @@ describe("ConfigCatClient", () => {
     // We need to allow the event loop to run so the runtime can detect there's no more strong references to the created clients.
     await allowEventLoop();
     gc();
-   
+
     if (isFinalizationRegistryAvailable) {
       // We need to allow the finalizer callbacks to execute.
       await allowEventLoop(10);
@@ -1080,16 +1080,16 @@ describe("ConfigCatClient", () => {
       // 1. Checks that client is initialized to offline mode
       assert.isTrue(client.isOffline);
       assert.isNull(await configService.getConfig());
-  
+
       // 2. Checks that repeated calls to setOffline() have no effect
       client.setOffline();
-  
+
       assert.isTrue(client.isOffline);
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
-  
+
       // 3. Checks that setOnline() does enable HTTP calls
       client.setOnline();
-      
+
       if (configService instanceof AutoPollConfigService) {
         assert.isTrue(await configService["waitForInitializationAsync"]());
         expectedFetchTimes++;
@@ -1108,20 +1108,20 @@ describe("ConfigCatClient", () => {
       // 4. Checks that forceRefreshAsync() initiates a HTTP call in online mode
       const refreshResult = await client.forceRefreshAsync();
       expectedFetchTimes++;
-  
+
       assert.isFalse(client.isOffline);
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
-  
+
       const etag2 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;
       assert.isTrue(etag2 > etag1);
-  
+
       assert.isTrue(refreshResult.isSuccess);
       assert.isNull(refreshResult.errorMessage);
       assert.isUndefined(refreshResult.errorException);
 
       // 5. Checks that setOnline() has no effect after client gets disposed
       client.dispose();
-  
+
       client.setOnline();
       assert.isTrue(client.isOffline);
     });
@@ -1142,55 +1142,55 @@ describe("ConfigCatClient", () => {
       const options = optionsFactory("APIKEY", configCatKernel, configCache, false);
       const client = new ConfigCatClient(options, configCatKernel);
       const configService = client["configService"] as ConfigServiceBase<OptionsBase>;
-  
+
       let expectedFetchTimes = 0;
 
       // 1. Checks that client is initialized to online mode
       assert.isFalse(client.isOffline);
-      
+
       if (configService instanceof AutoPollConfigService) {
         assert.isTrue(await configService["waitForInitializationAsync"]());
         expectedFetchTimes++;
       }
 
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
-  
+
       const etag1 = ((await configService.getConfig())?.HttpETag ?? "0") as any | 0;;
       if (configService instanceof LazyLoadConfigService) {
         expectedFetchTimes++;
       }
 
       (expectedFetchTimes > 0 ? assert.notEqual : assert.equal)(0, etag1);
-  
-      // 2. Checks that repeated calls to setOnline() have no effect 
+
+      // 2. Checks that repeated calls to setOnline() have no effect
       client.setOnline();
-  
+
       assert.isFalse(client.isOffline);
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
-  
+
       // 3. Checks that setOffline() does disable HTTP calls
       client.setOffline();
-  
+
       assert.isTrue(client.isOffline);
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
-  
+
       assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
-  
+
       // 4. Checks that forceRefreshAsync() does not initiate a HTTP call in offline mode
       const refreshResult = await client.forceRefreshAsync();
-  
+
       assert.isTrue(client.isOffline);
       assert.equal(expectedFetchTimes, configFetcher.calledTimes);
-  
+
       assert.equal(etag1, ((await configService.getConfig())?.HttpETag ?? "0") as any | 0);
-  
+
       assert.isFalse(refreshResult.isSuccess);
       expect(refreshResult.errorMessage).to.contain("offline mode");
       assert.isUndefined(refreshResult.errorException);
 
       // 5. Checks that setOnline() has no effect after client gets disposed
       client.dispose();
-  
+
       client.setOnline();
       assert.isTrue(client.isOffline);
     });

@@ -183,7 +183,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
   /** The client's poll interval in seconds. Default: 60 seconds. */
   public pollIntervalSeconds: number = 60;
 
-  /** You can subscribe to configuration changes with this callback. 
+  /** You can subscribe to configuration changes with this callback.
    * @deprecated This property is obsolete and will be removed from the public API in a future major version. Please use the 'options.setupHooks = hooks => hooks.on("configChanged", ...)' format instead.
    */
   public configChanged: () => void = () => { };
