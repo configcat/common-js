@@ -279,18 +279,15 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  logStatusChange(status: ConfigServiceStatus)
-  {
+  logStatusChange(status: ConfigServiceStatus) {
     this.options.logger.debug(`Switched to ${ConfigServiceStatus[status]?.toUpperCase()} mode.`);
   }
 
-  logOfflineModeWarning()
-  {
+  logOfflineModeWarning() {
     this.options.logger.warn("Client is in offline mode, it can't initiate HTTP calls.");
   }
 
-  logDisposedWarning(methodName: string)
-  {
+  logDisposedWarning(methodName: string) {
     this.options.logger.warn(`Client has already been disposed, thus ${methodName}() has no effect.`);
   }
 }

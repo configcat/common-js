@@ -23,8 +23,9 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
+      for (const [, args] of emittedArgs) {
         ee.emit("evt1", ...args);
+      }
 
       // Assert
 
@@ -58,8 +59,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -94,8 +94,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -130,8 +129,7 @@ describe("DefaultEventEmitter", () => {
 
     // Act
 
-    for (const [, args] of emittedArgs)
-      ee.emit("evt1", ...args);
+    for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
     // Assert
 
@@ -171,8 +169,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -213,8 +210,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -254,8 +250,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -295,8 +290,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -334,8 +328,7 @@ describe("DefaultEventEmitter", () => {
 
       // Act
 
-      for (const [, args] of emittedArgs)
-        ee.emit("evt1", ...args);
+      for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
       // Assert
 
@@ -372,8 +365,7 @@ describe("DefaultEventEmitter", () => {
 
     // Act
 
-    for (const [, args] of emittedArgs)
-      ee.emit("evt1", ...args);
+    for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
     // Assert
 
@@ -410,8 +402,7 @@ it("emit() should not call listeners removed by removeAllListeners() when listen
 
   // Act
 
-  for (const [, args] of emittedArgs)
-    ee.emit("evt1", ...args);
+  for (const [, args] of emittedArgs) { ee.emit("evt1", ...args); }
 
   // Assert
 

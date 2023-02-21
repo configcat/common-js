@@ -14,8 +14,7 @@ export interface IProvidesHooks extends IEventProvider<HookEvents> { }
 
 const disconnectedEventEmitter = new NullEventEmitter();
 
-export class Hooks implements IProvidesHooks, IEventEmitter<HookEvents>
-{
+export class Hooks implements IProvidesHooks, IEventEmitter<HookEvents> {
   private eventEmitter: IEventEmitter;
 
   constructor(eventEmitter: IEventEmitter) {

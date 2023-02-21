@@ -54,7 +54,8 @@ describe("MatrixTests", () => {
           // assert
           assert.strictEqual(actual, expected);
         }
-      } else {
+      }
+      else {
         header = line.split(";");
       }
 

@@ -1020,8 +1020,7 @@ describe("ConfigCatClient", () => {
     const logger = new FakeLogger(LogLevel.Debug);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
 
-    function createClients()
-    {
+    function createClients() {
       ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { logger, maxInitWaitTimeSeconds: 0 }, configCatKernel);
       ConfigCatClient.get(sdkKey2, PollingMode.ManualPoll, { logger }, configCatKernel);
 
@@ -1268,8 +1267,7 @@ describe("ConfigCatClient", () => {
       // 4. All flags are evaluated
       const keys = await client.getAllKeysAsync();
       var evaluationDetails: IEvaluationDetails[] = [];
-      for (let key of keys)
-      {
+      for (let key of keys) {
         evaluationDetails.push(await client.getValueDetailsAsync(key, false));
       }
 

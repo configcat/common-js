@@ -673,8 +673,7 @@ export class ConfigCatClient implements IConfigCatClient {
 export class SettingKeyValue<TValue = SettingValue> {
   constructor(
     public settingKey: string,
-    public settingValue: TValue)
-  { }
+    public settingValue: TValue) { }
 }
 
 /* GC finalization support */
