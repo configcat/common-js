@@ -93,7 +93,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
     this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
-    let eLog: EvaluateLogger = new EvaluateLogger();
+    const eLog: EvaluateLogger = new EvaluateLogger();
 
     eLog.User = user;
     eLog.KeyName = key;
@@ -159,13 +159,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       for (let i: number = 0; i < rolloutRules.length; i++) {
 
-        let rule: RolloutRule = rolloutRules[i];
+        const rule: RolloutRule = rolloutRules[i];
 
-        let comparisonAttribute = this.GetUserAttribute(user, rule.comparisonAttribute);
+        const comparisonAttribute = this.GetUserAttribute(user, rule.comparisonAttribute);
 
-        let comparator: number = rule.comparator;
+        const comparator: number = rule.comparator;
 
-        let comparisonValue: string = rule.comparisonValue;
+        const comparisonValue: string = rule.comparisonValue;
 
         let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
 
@@ -175,7 +175,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           continue;
         }
 
-        let result: IEvaluateResult<RolloutRule> = {
+        const result: IEvaluateResult<RolloutRule> = {
           value: rule.value,
           variationId: rule.variationId,
           matchedRule: rule
@@ -184,7 +184,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         switch (comparator) {
           case 0: // is one of
 
-            let cvs: string[] = comparisonValue.split(",");
+            const cvs: string[] = comparisonValue.split(",");
 
             for (let ci: number = 0; ci < cvs.length; ci++) {
 
@@ -281,7 +281,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             break;
           case 16: // is one of (sensitive)
-            let values: string[] = comparisonValue.split(",");
+            const values: string[] = comparisonValue.split(",");
 
             for (let ci: number = 0; ci < values.length; ci++) {
 
@@ -329,9 +329,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
-      let hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
-      let hashValue: any = sha1(hashCandidate).substring(0, 7);
-      let hashScale: number = parseInt(hashValue, 16) % 100;
+      const hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
+      const hashValue: any = sha1(hashCandidate).substring(0, 7);
+      const hashScale: number = parseInt(hashValue, 16) % 100;
       let bucket: number = 0;
 
       for (let i: number = 0; i < rolloutPercentageItems.length; i++) {
@@ -372,9 +372,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     switch (comparator) {
       case 10:
-        return n1 == n2;
+        return n1 === n2;
       case 11:
-        return n1 != n2;
+        return n1 !== n2;
       case 12:
         return n1 < n2;
       case 13:
@@ -401,7 +401,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     switch (comparator) {
       case 4:
         // in
-        let sv: string[] = v2.split(",");
+        const sv: string[] = v2.split(",");
         let found: boolean = false;
         for (let ci: number = 0; ci < sv.length; ci++) {
 

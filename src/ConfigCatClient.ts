@@ -161,8 +161,8 @@ export class ConfigCatClientCache {
 
   public clear(): ConfigCatClient[] {
     const removedInstances: ConfigCatClient[] = [];
-    for (let [sdkKey, [weakRef]] of Object.entries(this.instances)) {
-      let instance = weakRef.deref();
+    for (const [sdkKey, [weakRef]] of Object.entries(this.instances)) {
+      const instance = weakRef.deref();
       if (instance) {
         removedInstances.push(instance);
       }
@@ -234,7 +234,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     this.evaluator = new RolloutEvaluator(options.logger);
 
-    if (options.flagOverrides?.behaviour != OverrideBehaviour.LocalOnly) {
+    if (options.flagOverrides?.behaviour !== OverrideBehaviour.LocalOnly) {
       const configServiceClass =
         options instanceof AutoPollOptions ? AutoPollConfigService :
         options instanceof ManualPollOptions ? ManualPollConfigService :
@@ -285,7 +285,7 @@ export class ConfigCatClient implements IConfigCatClient {
     const removedInstances = clientInstanceCache.clear();
 
     let errors: any[] | undefined;
-    for (let instance of removedInstances) {
+    for (const instance of removedInstances) {
       try {
         ConfigCatClient.close(instance.configService, instance.options.logger, instance.options.hooks);
         instance.suppressFinalize();
@@ -451,7 +451,7 @@ export class ConfigCatClient implements IConfigCatClient {
       result = [];
     }
 
-    for (let evaluationDetail of evaluationDetailsArray) {
+    for (const evaluationDetail of evaluationDetailsArray) {
       this.options.hooks.emit("flagEvaluated", evaluationDetail);
     }
 
@@ -532,7 +532,7 @@ export class ConfigCatClient implements IConfigCatClient {
       result = [];
     }
 
-    for (let evaluationDetail of evaluationDetailsArray) {
+    for (const evaluationDetail of evaluationDetailsArray) {
       this.options.hooks.emit("flagEvaluated", evaluationDetail);
     }
 
@@ -562,7 +562,7 @@ export class ConfigCatClient implements IConfigCatClient {
       evaluationDetailsArray ??= [];
     }
 
-    for (let evaluationDetail of evaluationDetailsArray) {
+    for (const evaluationDetail of evaluationDetailsArray) {
       this.options.hooks.emit("flagEvaluated", evaluationDetail);
     }
 

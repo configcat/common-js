@@ -63,7 +63,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Assert
 
-    cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(3));
+    cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag === fr.eTag && JSON.stringify(c.ConfigJSON) === JSON.stringify(pc.ConfigJSON))), Times.Exactly(3));
     fetcherMock.verify(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()), Times.AtLeast(3));
 
     service.dispose();
@@ -105,7 +105,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Assert
 
-    cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))), Times.Exactly(2));
+    cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag === fr.eTag && JSON.stringify(c.ConfigJSON) === JSON.stringify(pc.ConfigJSON))), Times.Exactly(2));
 
     service.dispose();
   });
@@ -121,7 +121,7 @@ describe("ConfigServiceBaseTests", () => {
     const fetcherMock = new Mock<IConfigFetcher>()
       .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
       .callback(() => {
-        var result = Promise.resolve(currentResp);
+        const result = Promise.resolve(currentResp);
         currentResp = { statusCode: 500, reasonPhrase: "Internal Server Error" };
         return result;
       });
@@ -149,7 +149,7 @@ describe("ConfigServiceBaseTests", () => {
 
     cacheMock.verify(v => v.set(
       It.IsAny<string>(),
-      It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(pc.ConfigJSON))),
+      It.Is<ProjectConfig>(c => c.HttpETag === fr.eTag && JSON.stringify(c.ConfigJSON) === JSON.stringify(pc.ConfigJSON))),
     Times.Once());
 
     service.dispose();
@@ -345,7 +345,7 @@ describe("ConfigServiceBaseTests", () => {
     assert.isTrue(ProjectConfig.equals(actualConfig, newConfig));
 
     fetcherMock.verify(v => v.fetchLogic(It.IsAny<OptionsBase>(), "oldConfig"), Times.Once());
-    cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag == fr.eTag && JSON.stringify(c.ConfigJSON) == JSON.stringify(newConfig.ConfigJSON))), Times.Once());
+    cacheMock.verify(v => v.set(It.IsAny<string>(), It.Is<ProjectConfig>(c => c.HttpETag === fr.eTag && JSON.stringify(c.ConfigJSON) === JSON.stringify(newConfig.ConfigJSON))), Times.Once());
   });
 
   it("LazyLoadConfigService - ProjectConfig is cached - should not invoke fetch", async () => {
@@ -431,10 +431,10 @@ describe("ConfigServiceBaseTests", () => {
       .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
     const cacheMock = new Mock<ICache>(asyncInjectorServiceConfig)
-      .setup(async m => m.get(It.IsAny<string>()))
-      .returnsAsync(config)
-      .setup(async m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
-      .returnsAsync();
+      .setup(m => m.get(It.IsAny<string>()))
+      .returns(Promise.resolve(config))
+      .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
+      .returns(Promise.resolve());
 
     const service: LazyLoadConfigService = new LazyLoadConfigService(
       fetcherMock.object(),

@@ -93,7 +93,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove(sdkKey, client1["cacheToken"]!);
+    const success = cache.remove(sdkKey, client1["cacheToken"]!);
 
     // Assert
 
@@ -124,7 +124,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove(sdkKey, client1["cacheToken"]!);
+    const success = cache.remove(sdkKey, client1["cacheToken"]!);
 
     // Assert
 
@@ -167,7 +167,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove(sdkKey, {});
+    const success = cache.remove(sdkKey, {});
 
     // Assert
 
@@ -193,7 +193,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove("321", {});
+    const success = cache.remove("321", {});
 
     // Assert
 

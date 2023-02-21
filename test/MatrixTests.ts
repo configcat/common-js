@@ -34,14 +34,14 @@ describe("MatrixTests", () => {
 
     public static CreateUser(row: string, headers: string[]): User | undefined {
 
-      let column: string[] = row.split(";");
+      const column: string[] = row.split(";");
       const USERNULL: string = "##null##";
 
       if (column[0] === USERNULL) {
-        return undefined;
+        return;
       }
 
-      let result: User = new User(column[0]);
+      const result: User = new User(column[0]);
 
       if (column[1] !== USERNULL) {
         result.email = column[1];
@@ -79,7 +79,7 @@ describe("MatrixTests", () => {
     public static async RunMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
 
       const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
-      let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE), sdkType: "common", sdkVersion: "1.0.0" };
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE), sdkType: "common", sdkVersion: "1.0.0" };
       const client = createClientWithManualPoll("SDKKEY", configCatKernel, {
         logger: new ConfigCatConsoleLogger(LogLevel.Off)
       });
@@ -88,27 +88,27 @@ describe("MatrixTests", () => {
 
       const data = fs.readFileSync(matrixFilePath, "utf8");
 
-      var lines: string[] = data.toString().split(EOL);
-      let header: string[] = lines.shift()?.split(";") ?? [];
+      const lines: string[] = data.toString().split(EOL);
+      const header: string[] = lines.shift()?.split(";") ?? [];
 
       for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-        let line = lines[lineIndex];
+        const line = lines[lineIndex];
 
         if (!line) {
           return;
         }
 
-        let user = Helper.CreateUser(line, header);
+        const user = Helper.CreateUser(line, header);
 
         for (let i = 4; i < header.length; i++) {
 
-          let key: string = header[i];
-          let actual: any = await client.getValueAsync(key, null, user);
-          let expected: any = Helper.GetTypedValue(line.split(";")[i], key);
+          const key: string = header[i];
+          const actual: any = await client.getValueAsync(key, null, user);
+          const expected: any = Helper.GetTypedValue(line.split(";")[i], key);
 
           if (actual !== expected) {
 
-            let l = `Matrix test failed in line ${lineIndex + 1}.\n User: ${JSON.stringify(user)},\n Key: ${key},\n Actual: ${actual}, Expected: ${expected}`;
+            const l = `Matrix test failed in line ${lineIndex + 1}.\n User: ${JSON.stringify(user)},\n Key: ${key},\n Actual: ${actual}, Expected: ${expected}`;
             console.log(l);
           }
 

@@ -209,7 +209,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       const baseUrl = preferences[Preferences.BaseUrl];
 
       // If the base_url is the same as the last called one, just return the response.
-      if (!baseUrl || baseUrl == options.baseUrl) {
+      if (!baseUrl || baseUrl === options.baseUrl) {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): baseUrl OK.");
         return [response, configJSON];
       }
@@ -269,7 +269,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   protected setOfflineCore() { }
 
   setOffline(): void {
-    if (this.status == ConfigServiceStatus.Online) {
+    if (this.status === ConfigServiceStatus.Online) {
       this.setOfflineCore();
       this.status = ConfigServiceStatus.Offline;
       this.logStatusChange(this.status);

@@ -7,7 +7,7 @@ function createHandler(eventName: string, capturedArgs: any[][]) {
 }
 
 describe("DefaultEventEmitter", () => {
-  for (let subscriberMethod of ["on", "addListener"] as ("on" | "addListener")[]) {
+  for (const subscriberMethod of ["on", "addListener"] as ("on" | "addListener")[]) {
     it(`emit() should call single listener added by ${subscriberMethod}()`, (done) => {
       // Arrange
 
@@ -147,7 +147,7 @@ describe("DefaultEventEmitter", () => {
     done();
   });
 
-  for (let unsubscriberMethod of ["off", "removeListener"] as ("off" | "removeListener")[]) {
+  for (const unsubscriberMethod of ["off", "removeListener"] as ("off" | "removeListener")[]) {
     it(`emit() should not call listener removed by ${unsubscriberMethod}() when multiple listeners are left and a listener is added multiple times`, (done) => {
       // Arrange
 

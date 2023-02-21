@@ -12,22 +12,22 @@ describe("MatrixTests", () => {
 
   it("GetVariationId", async () => {
 
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase(variationid_v5),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null }, null);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     let header: string[] | null = null;
     let rowNo: number = 1;
 
     const data = fs.readFileSync("test/data/testmatrix_variationId.csv", "utf8");
 
-    var lines: string[] = data.toString().split(require("os").EOL);
+    const lines: string[] = data.toString().split(require("os").EOL);
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      let line = lines[lineIndex];
+      const line = lines[lineIndex];
 
       if (header) {
 
@@ -35,8 +35,8 @@ describe("MatrixTests", () => {
           return;
         }
 
-        let user = Helper.CreateUser(line, header);
-        let splittedLine = line.split(";");
+        const user = Helper.CreateUser(line, header);
+        const splittedLine = line.split(";");
         for (let i: number = 4; i < header.length; i++) {
 
           const key: string = header[i];
@@ -46,7 +46,7 @@ describe("MatrixTests", () => {
           if (actual !== expected) {
 
             // tslint:disable-next-line:max-line-length
-            let l: string = <string><any>rowNo + "." + " User -  " + user + "(" + <string>key + ") " + <string><any>actual + " === " + <string><any>expected + " = " + <string><any>(actual === expected);
+            const l: string = <string><any>rowNo + "." + " User -  " + user + "(" + <string>key + ") " + <string><any>actual + " === " + <string><any>expected + " = " + <string><any>(actual === expected);
 
             console.log(l);
           }
@@ -67,13 +67,13 @@ describe("MatrixTests", () => {
 
     public static CreateUser(row: string, headers: string[]): User | undefined {
 
-      let up: string[] = row.split(";");
+      const up: string[] = row.split(";");
 
       if (up[0] === "##null##") {
-        return undefined;
+        return;
       }
 
-      let result: User = new User(up[0]);
+      const result: User = new User(up[0]);
 
       if (up[1] !== "##null##") {
         result.email = up[1];

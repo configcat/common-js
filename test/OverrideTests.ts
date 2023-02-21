@@ -7,12 +7,12 @@ import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("Local Overrides", () => {
   it("Values from map - LocalOnly", async () => {
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
         dataSource: new MapOverrideDataSource({
           enabledFeature: true,
@@ -24,7 +24,7 @@ describe("Local Overrides", () => {
         behaviour: OverrideBehaviour.LocalOnly
       }
     }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     assert.equal(await client.getValueAsync("enabledFeature", false), true);
     assert.equal(await client.getValueAsync("disabledFeature", true), false);
@@ -34,12 +34,12 @@ describe("Local Overrides", () => {
   });
 
   it("Values from map - LocalOverRemote", async () => {
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
         dataSource: new MapOverrideDataSource({
           fakeKey: true,
@@ -48,19 +48,19 @@ describe("Local Overrides", () => {
         behaviour: OverrideBehaviour.LocalOverRemote
       }
     }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     assert.equal(await client.getValueAsync("fakeKey", false), true);
     assert.equal(await client.getValueAsync("nonexisting", false), true);
   });
 
   it("Values from map - RemoteOverLocal", async () => {
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
         dataSource: new MapOverrideDataSource({
           fakeKey: true,
@@ -69,19 +69,19 @@ describe("Local Overrides", () => {
         behaviour: OverrideBehaviour.RemoteOverLocal
       }
     }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     assert.equal(await client.getValueAsync("fakeKey", true), false);
     assert.equal(await client.getValueAsync("nonexisting", false), true);
   });
 
   it("Values from map - RemoteOverLocal - failing remote", async () => {
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase(null),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
         dataSource: new MapOverrideDataSource({
           fakeKey: true,
@@ -91,31 +91,31 @@ describe("Local Overrides", () => {
       },
       maxInitWaitTimeSeconds: 1
     }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     assert.equal(await client.getValueAsync("fakeKey", false), true);
     assert.equal(await client.getValueAsync("nonexisting", false), true);
   });
 
   it("Values from map - another map style", async () => {
-    let dataSource: { [name: string]: any } = {};
+    const dataSource: { [name: string]: any } = {};
     dataSource["enabled-feature"] = true;
     dataSource["disabled_feature"] = false;
     dataSource["int-setting"] = 5;
     dataSource["double_setting"] = 3.14;
     dataSource["string-setting"] = "test";
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
         dataSource: new MapOverrideDataSource(dataSource),
         behaviour: OverrideBehaviour.RemoteOverLocal
       }
     }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     assert.equal(await client.getValueAsync("enabled-feature", false), true);
     assert.equal(await client.getValueAsync("disabled_feature", true), false);
@@ -126,12 +126,12 @@ describe("Local Overrides", () => {
   });
 
   it("LocalOnly - forceRefresh() should return failure", async () => {
-    let configCatKernel: FakeConfigCatKernel = {
+    const configCatKernel: FakeConfigCatKernel = {
       configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
-    let options: ManualPollOptions = new ManualPollOptions("localhost", "common", "1.0.0", {
+    const options: ManualPollOptions = new ManualPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
         dataSource: new MapOverrideDataSource({
           "fakeKey": true,
@@ -140,9 +140,9 @@ describe("Local Overrides", () => {
         behaviour: OverrideBehaviour.LocalOnly
       }
     }, null);
-    let client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
-    var refreshResult = await client.forceRefreshAsync();
+    const refreshResult = await client.forceRefreshAsync();
 
     assert.isTrue(await client.getValueAsync("fakeKey", false));
     assert.isTrue(await client.getValueAsync("nonexisting", false));

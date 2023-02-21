@@ -96,4 +96,4 @@ export function getWeakRefStub<T extends object>(): WeakRefConstructor {
   return WeakRef;
 }
 
-export const isWeakRefAvailable = () => typeof WeakRef === "function" && !WeakRef.hasOwnProperty("isFallback");
+export const isWeakRefAvailable = () => typeof WeakRef === "function" && !Object.prototype.hasOwnProperty.call(WeakRef, "isFallback");

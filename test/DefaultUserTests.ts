@@ -10,18 +10,18 @@ describe("DefaultUser", () => {
     const redEyeColorUser = { identifier: "redIdentifier", custom: { "eyeColor": "red" } };
     const blueEyeColorUser = { identifier: "blueIdentifier", custom: { "eyeColor": "blue" } };
 
-    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
-    var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug) });
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
+    const client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug) });
 
     // Without passing the userobject, default values/variationids should be returned
-    var value = await client.getValueAsync("debug", "N/A");
+    let value = await client.getValueAsync("debug", "N/A");
     assert.equal(value, "defaultValue");
-    var variationId = await client.getVariationIdAsync("debug", "N/A");
+    let variationId = await client.getVariationIdAsync("debug", "N/A");
     assert.equal(variationId, "defaultVariationId");
-    var values = await client.getAllValuesAsync();
+    let values = await client.getAllValuesAsync();
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "defaultValue");
-    var variationIds = await client.getAllVariationIdsAsync();
+    let variationIds = await client.getAllVariationIdsAsync();
     assert.equal(variationIds[0], "defaultVariationId");
 
     // Passing directly the userobject to the functions, the rollout rules should work (red eyed case)
@@ -89,18 +89,18 @@ describe("DefaultUser", () => {
     const redEyeColorUser = { identifier: "redIdentifier", custom: { "eyeColor": "red" } };
     const blueEyeColorUser = { identifier: "blueIdentifier", custom: { "eyeColor": "blue" } };
 
-    let configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
-    var client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug), defaultUser: redEyeColorUser });
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
+    const client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug), defaultUser: redEyeColorUser });
 
     // Without passing the userobject, default user from the constructor should be returned
-    var value = await client.getValueAsync("debug", "N/A", redEyeColorUser);
+    let value = await client.getValueAsync("debug", "N/A", redEyeColorUser);
     assert.equal(value, "redValue");
-    var variationId = await client.getVariationIdAsync("debug", "N/A", redEyeColorUser);
+    let variationId = await client.getVariationIdAsync("debug", "N/A", redEyeColorUser);
     assert.equal(variationId, "redVariationId");
-    var values = await client.getAllValuesAsync(redEyeColorUser);
+    let values = await client.getAllValuesAsync(redEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "redValue");
-    var variationIds = await client.getAllVariationIdsAsync(redEyeColorUser);
+    let variationIds = await client.getAllVariationIdsAsync(redEyeColorUser);
     assert.equal(variationIds[0], "redVariationId");
 
     // Passing directly the userobject to the functions, the rollout rules should work (blue eyed case)

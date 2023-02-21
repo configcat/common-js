@@ -6,7 +6,7 @@ export class FakeConfigFetcher implements IConfigFetcher {
   private currentETag = 0;
 
   fetchLogic(_options: OptionsBase, lastEtag: string | null): Promise<IFetchResponse> {
-    return Promise.resolve(this.currentFetchResponse.statusCode == 200 && (this.currentETag + "") === lastEtag
+    return Promise.resolve(this.currentFetchResponse.statusCode === 200 && (this.currentETag + "") === lastEtag
       ? <IFetchResponse>{ statusCode: 304, reasonPhrase: "Not Modified" }
       : this.currentFetchResponse);
   }

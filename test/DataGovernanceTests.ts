@@ -18,7 +18,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://cdn-global.configcat.com
     // and the second should call https://cdn-global.configcat.com
     // without force redirects
-    let configService = new FakeConfigServiceBase();
+    const configService = new FakeConfigServiceBase();
     configService.prepareResponse(globalUrl, globalUrl, 0, testObject);
 
     let [, config] = await configService.refreshLogicAsync();
@@ -38,7 +38,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://cdn-eu.configcat.com
     // and the second should call https://cdn-global.configcat.com
     // without force redirects
-    let configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
+    const configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
     configService.prepareResponse(euOnlyUrl, globalUrl, 0, testObject);
     configService.prepareResponse(globalUrl, globalUrl, 0, testObject);
 
@@ -60,7 +60,7 @@ describe("DataGovernance", () => {
     // with an immediate redirect to https://cdn-eu.configcat.com
     // and the second should call https://cdn-eu.configcat.com
 
-    let configService = new FakeConfigServiceBase(DataGovernance.Global);
+    const configService = new FakeConfigServiceBase(DataGovernance.Global);
     configService.prepareResponse(euOnlyUrl, euOnlyUrl, 0, testObject);
     configService.prepareResponse(globalUrl, euOnlyUrl, 1, null);
 
@@ -83,7 +83,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://cdn-eu.configcat.com
     // and the second should call https://cdn-eu.configcat.com
     // without redirects
-    let configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
+    const configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
     configService.prepareResponse(euOnlyUrl, euOnlyUrl, 0, testObject);
 
     let [, config] = await configService.refreshLogicAsync();
@@ -103,7 +103,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://custom.configcat.com
     // and the second should call https://custom.configcat.com
     // without redirects
-    let configService = new FakeConfigServiceBase(DataGovernance.Global, customUrl);
+    const configService = new FakeConfigServiceBase(DataGovernance.Global, customUrl);
     configService.prepareResponse(customUrl, globalUrl, 0, testObject);
 
     let [, config] = await configService.refreshLogicAsync();
@@ -123,7 +123,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://custom.configcat.com
     // and the second should call https://custom.configcat.com
     // without redirects
-    let configService = new FakeConfigServiceBase(DataGovernance.EuOnly, customUrl);
+    const configService = new FakeConfigServiceBase(DataGovernance.EuOnly, customUrl);
     configService.prepareResponse(customUrl, globalUrl, 0, testObject);
 
     let [, config] = await configService.refreshLogicAsync();
@@ -143,7 +143,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://cdn-global.configcat.com
     // with an immediate redirect to https://forced.configcat.com
     // and the second should call https://forced.configcat.com
-    let configService = new FakeConfigServiceBase(DataGovernance.Global);
+    const configService = new FakeConfigServiceBase(DataGovernance.Global);
     configService.prepareResponse(globalUrl, forcedUrl, 2, null);
     configService.prepareResponse(forcedUrl, forcedUrl, 2, testObject);
 
@@ -166,7 +166,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://cdn-eu.configcat.com
     // with an immediate redirect to https://forced.configcat.com
     // and the second should call https://forced.configcat.com
-    let configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
+    const configService = new FakeConfigServiceBase(DataGovernance.EuOnly);
     configService.prepareResponse(euOnlyUrl, forcedUrl, 2, null);
     configService.prepareResponse(forcedUrl, forcedUrl, 2, testObject);
 
@@ -189,7 +189,7 @@ describe("DataGovernance", () => {
     // the first invocation should call https://cdn-custom.configcat.com
     // with an immediate redirect to https://forced.configcat.com
     // and the second should call https://forced.configcat.com
-    let configService = new FakeConfigServiceBase(DataGovernance.EuOnly, customUrl);
+    const configService = new FakeConfigServiceBase(DataGovernance.EuOnly, customUrl);
     configService.prepareResponse(customUrl, forcedUrl, 2, null);
     configService.prepareResponse(forcedUrl, forcedUrl, 2, testObject);
 
@@ -215,7 +215,7 @@ describe("DataGovernance", () => {
     // the second invocation should call https://cdn-eu.configcat.com
     // with an immediate redirect to https://cdn-global.configcat.com
     // with an immediate redirect to https://cdn-eu.configcat.com
-    let configService = new FakeConfigServiceBase(DataGovernance.Global);
+    const configService = new FakeConfigServiceBase(DataGovernance.Global);
     configService.prepareResponse(globalUrl, euOnlyUrl, 1, null);
     configService.prepareResponse(euOnlyUrl, globalUrl, 1, null);
 

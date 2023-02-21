@@ -141,15 +141,14 @@ export class DefaultEventEmitter implements IEventEmitter {
 
   eventNames(): (string | symbol)[] {
     const names: (string | symbol)[] = [];
-    let events: Record<string | symbol, Listeners>;
 
     if (this.eventCount === 0) {
       return names;
     }
 
-    events = this.events;
-    for (let name in events) {
-      if (events.hasOwnProperty(name)) {
+    const events = this.events;
+    for (const name in events) {
+      if (Object.prototype.hasOwnProperty.call(events, name)) {
         names.push(name);
       }
     }
@@ -194,8 +193,9 @@ export class DefaultEventEmitter implements IEventEmitter {
         case 3: listener.fn.call(this, arg0, arg1, arg2); break;
         case 4: listener.fn.call(this, arg0, arg1, arg2, arg3); break;
         default:
-          let args = new Array(argCount);
+          const args = new Array(argCount);
           for (let j = 0; j < argCount; j++) {
+            // eslint-disable-next-line prefer-rest-params
             args[j] = arguments[j + 1];
           }
           listener.fn.apply(this, args);

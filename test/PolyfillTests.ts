@@ -7,6 +7,7 @@ describe("Polyfills", () => {
     assert.deepEqual([], ObjectValuesPolyfill<any>("" as any));
 
     assert.deepEqual([], ObjectValuesPolyfill<any>([]));
+    // eslint-disable-next-line no-sparse-arrays
     expect(ObjectValuesPolyfill<any>([1, , "b"])).to.have.members([1, "b"]);
 
     assert.deepEqual([], ObjectValuesPolyfill<any>({}));
@@ -17,6 +18,7 @@ describe("Polyfills", () => {
     assert.deepEqual([], ObjectEntriesPolyfill<any>("" as any));
 
     assert.deepEqual([], ObjectEntriesPolyfill<any>([]));
+    // eslint-disable-next-line no-sparse-arrays
     expect(ObjectEntriesPolyfill<any>([1, , "b"])).to.have.deep.members([["0", 1], ["2", "b"]]);
 
     assert.deepEqual([], ObjectEntriesPolyfill<any>({}));
@@ -38,7 +40,7 @@ describe("Polyfills", () => {
   it("WeakRef API polyfill should work", () => {
     const weakRefCtor = getWeakRefStub();
 
-    let obj: {} | null = {};
+    const obj: {} | null = {};
     const objWeakRef = new weakRefCtor(obj);
 
     assert.strictEqual(objWeakRef.deref(), obj);
