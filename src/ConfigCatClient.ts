@@ -14,7 +14,7 @@ import { ManualPollConfigService } from "./ManualPollConfigService";
 import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
 import { ConfigFile } from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, SettingValue, User, VariationIdTypeOf, VariationIdValue } from "./RolloutEvaluator";
-import { checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, RolloutEvaluator } from "./RolloutEvaluator";
+import { RolloutEvaluator, checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId } from "./RolloutEvaluator";
 import { errorToString, getSettingsFromConfig, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {

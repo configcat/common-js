@@ -1,7 +1,7 @@
+import { InMemoryCache } from "src/Cache.ts";
+import { LogLevel, PollingMode, User, createConsoleLogger, getClient } from "src/index.ts";
 import * as path from "std/path/mod.ts";
 import { FakeConfigFetcher } from "./fake-config-fetcher.ts";
-import { getClient, createConsoleLogger, LogLevel, User, PollingMode } from "src/index.ts";
-import { InMemoryCache } from "src/Cache.ts";
 
 const basePath = path.dirname(path.fromFileUrl(Deno.mainModule));
 const sampleJsonPath = path.resolve(basePath, "sample.json");

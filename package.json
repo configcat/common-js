@@ -42,6 +42,7 @@
     "chai": "^4.3.7",
     "cross-env": "^7.0.3",
     "eslint": "^8.34.0",
+    "eslint-plugin-import": "^2.27.5",
     "mocha": "^10.2.0",
     "moq.ts": "^7.4.1",
     "nyc": "^15.1.0",
