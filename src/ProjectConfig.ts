@@ -4,12 +4,16 @@
 // (As a matter of fact, this type should have been defined as an interface to prevent such complications but
 // we can't really change this any more because this would be a too dangerous breaking change at this point.)
 export class ProjectConfig {
+  /* eslint-disable @typescript-eslint/naming-convention */
+
   /** Entity identifier */
   HttpETag?: string;
   /** ConfigCat config */
   ConfigJSON: any;
   /** Timestamp of last successful download (regardless of whether the config has changed or not) in milliseconds */
   Timestamp: number;
+
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(timeStamp: number, jsonConfig: string | object, httpETag?: string) {
     this.Timestamp = timeStamp;
@@ -59,18 +63,23 @@ export class ProjectConfig {
 }
 
 export class ConfigFile {
+  /* eslint-disable @typescript-eslint/naming-convention */
   static Preferences = "p";
 
   static FeatureFlags = "f";
+  /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 export class Preferences {
+  /* eslint-disable @typescript-eslint/naming-convention */
   static BaseUrl = "u";
 
   static Redirect = "r";
+  /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 export class Setting {
+  /* eslint-disable @typescript-eslint/naming-convention */
   static Value = "v";
 
   static SettingType = "t";
@@ -80,6 +89,7 @@ export class Setting {
   static RolloutRules = "r";
 
   static VariationId = "i";
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   value: any;
   rolloutPercentageItems: RolloutPercentageItem[];
@@ -103,6 +113,7 @@ export class Setting {
 }
 
 export class RolloutRule {
+  /* eslint-disable @typescript-eslint/naming-convention */
   static Order = "o";
 
   static ComparisonAttribute = "a";
@@ -114,6 +125,7 @@ export class RolloutRule {
   static Value = "v";
 
   static VariationId = "i";
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   comparisonAttribute: string;
   comparator: number;
@@ -140,6 +152,7 @@ export class RolloutRule {
 }
 
 export class RolloutPercentageItem {
+  /* eslint-disable @typescript-eslint/naming-convention */
   static Order = "o";
 
   static Value = "v";
@@ -147,6 +160,7 @@ export class RolloutPercentageItem {
   static Percentage = "p";
 
   static VariationId = "i";
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   percentage: number;
   value: any;

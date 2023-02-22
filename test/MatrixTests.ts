@@ -10,28 +10,28 @@ import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 describe("MatrixTests", () => {
 
   it("GetValue basic operators", async () => {
-    await Helper.RunMatrixTest("test/data/sample_v5.json", "test/data/testmatrix.csv");
+    await Helper.runMatrixTest("test/data/sample_v5.json", "test/data/testmatrix.csv");
   });
 
   it("GetValue numeric operators", async () => {
-    await Helper.RunMatrixTest("test/data/sample_number_v5.json", "test/data/testmatrix_number.csv");
+    await Helper.runMatrixTest("test/data/sample_number_v5.json", "test/data/testmatrix_number.csv");
   });
 
   it("GetValue semver operators", async () => {
-    await Helper.RunMatrixTest("test/data/sample_semantic_v5.json", "test/data/testmatrix_semantic.csv");
+    await Helper.runMatrixTest("test/data/sample_semantic_v5.json", "test/data/testmatrix_semantic.csv");
   });
 
   it("GetValue semver operators", async () => {
-    await Helper.RunMatrixTest("test/data/sample_semantic_2_v5.json", "test/data/testmatrix_semantic_2.csv");
+    await Helper.runMatrixTest("test/data/sample_semantic_2_v5.json", "test/data/testmatrix_semantic_2.csv");
   });
 
   it("GetValue sensitive operators", async () => {
-    await Helper.RunMatrixTest("test/data/sample_sensitive_v5.json", "test/data/testmatrix_sensitive.csv");
+    await Helper.runMatrixTest("test/data/sample_sensitive_v5.json", "test/data/testmatrix_sensitive.csv");
   });
 
   class Helper {
 
-    static CreateUser(row: string, headers: string[]): User | undefined {
+    static createUser(row: string, headers: string[]): User | undefined {
 
       const column: string[] = row.split(";");
       const USERNULL = "##null##";
@@ -58,7 +58,7 @@ describe("MatrixTests", () => {
       return result;
     }
 
-    static GetTypedValue(value: string, header: string): string | boolean | number {
+    static getTypedValue(value: string, header: string): string | boolean | number {
 
       if (header.substring(0, "bool".length) === "bool") {
         return value.toLowerCase() === "true";
@@ -75,7 +75,7 @@ describe("MatrixTests", () => {
       return value;
     }
 
-    static async RunMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
+    static async runMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
 
       const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE), sdkType: "common", sdkVersion: "1.0.0" };
@@ -97,13 +97,13 @@ describe("MatrixTests", () => {
           return;
         }
 
-        const user = Helper.CreateUser(line, header);
+        const user = Helper.createUser(line, header);
 
         for (let i = 4; i < header.length; i++) {
 
           const key: string = header[i];
           const actual: any = await client.getValueAsync(key, null, user);
-          const expected: any = Helper.GetTypedValue(line.split(";")[i], key);
+          const expected: any = Helper.getTypedValue(line.split(";")[i], key);
 
           if (actual !== expected) {
 

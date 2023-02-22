@@ -23,7 +23,7 @@ export type VariationIdTypeOf<T> =
   any;
 
 export interface IRolloutEvaluator {
-  Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: VariationIdValue): IEvaluationDetails;
+  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: VariationIdValue): IEvaluationDetails;
 }
 
 export interface IEvaluationDetails<TValue = SettingValue> {
@@ -90,14 +90,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     this.logger = logger;
   }
 
-  Evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
+  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
     this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
     const eLog: EvaluateLogger = new EvaluateLogger();
 
-    eLog.User = user;
-    eLog.KeyName = key;
-    eLog.ReturnValue = defaultValue;
+    eLog.user = user;
+    eLog.keyName = key;
+    eLog.returnValue = defaultValue;
 
     let result: IEvaluateResult<object | undefined> | null;
 
@@ -105,23 +105,23 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       if (user) {
         // evaluate comparison-based rules
 
-        result = this.EvaluateRules(setting.rolloutRules, user, eLog);
+        result = this.evaluateRules(setting.rolloutRules, user, eLog);
         if (result !== null) {
-          eLog.ReturnValue = result.value;
+          eLog.returnValue = result.value;
 
           return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
         }
 
         // evaluate percentage-based rules
 
-        result = this.EvaluatePercentageRules(setting.rolloutPercentageItems, key, user);
+        result = this.evaluatePercentageRules(setting.rolloutPercentageItems, key, user);
 
         if (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0) {
-          eLog.OpAppendLine("Evaluating % options => " + (!result ? "user not targeted" : "user targeted"));
+          eLog.opAppendLine("Evaluating % options => " + (!result ? "user not targeted" : "user targeted"));
         }
 
         if (result !== null) {
-          eLog.ReturnValue = result.value;
+          eLog.returnValue = result.value;
 
           return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
         }
@@ -142,16 +142,16 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         value: setting.value,
         variationId: setting.variationId
       };
-      eLog.ReturnValue = result.value;
+      eLog.returnValue = result.value;
 
       return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
     }
     finally {
-      this.logger.info(eLog.GetLog());
+      this.logger.info(eLog.getLog());
     }
   }
 
-  private EvaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
+  private evaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
 
     this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
 
@@ -161,17 +161,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         const rule: RolloutRule = rolloutRules[i];
 
-        const comparisonAttribute = this.GetUserAttribute(user, rule.comparisonAttribute);
+        const comparisonAttribute = this.getUserAttribute(user, rule.comparisonAttribute);
 
         const comparator: number = rule.comparator;
 
         const comparisonValue: string = rule.comparisonValue;
 
-        let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.RuleToString(comparator) + " '" + comparisonValue + "' => ";
+        let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.ruleToString(comparator) + " '" + comparisonValue + "' => ";
 
         if (!comparisonAttribute) {
           log += "NO MATCH (Attribute is not defined on the user object)";
-          eLog.OpAppendLine(log);
+          eLog.opAppendLine(log);
           continue;
         }
 
@@ -190,7 +190,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
               if (cvs[ci].trim() === comparisonAttribute) {
                 log += "MATCH";
-                eLog.OpAppendLine(log);
+                eLog.opAppendLine(log);
 
                 return result;
               }
@@ -210,7 +210,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
               return false;
             })) {
               log += "MATCH";
-              eLog.OpAppendLine(log);
+              eLog.opAppendLine(log);
 
               return result;
             }
@@ -223,7 +223,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             if (comparisonAttribute.indexOf(comparisonValue) !== -1) {
               log += "MATCH";
-              eLog.OpAppendLine(log);
+              eLog.opAppendLine(log);
 
               return result;
             }
@@ -236,7 +236,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             if (comparisonAttribute.indexOf(comparisonValue) === -1) {
               log += "MATCH";
-              eLog.OpAppendLine(log);
+              eLog.opAppendLine(log);
 
               return result;
             }
@@ -252,9 +252,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           case 8:
           case 9:
 
-            if (this.EvaluateSemver(comparisonAttribute, comparisonValue, comparator)) {
+            if (this.evaluateSemver(comparisonAttribute, comparisonValue, comparator)) {
               log += "MATCH";
-              eLog.OpAppendLine(log);
+              eLog.opAppendLine(log);
 
               return result;
             }
@@ -270,9 +270,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           case 14:
           case 15:
 
-            if (this.EvaluateNumber(comparisonAttribute, comparisonValue, comparator)) {
+            if (this.evaluateNumber(comparisonAttribute, comparisonValue, comparator)) {
               log += "MATCH";
-              eLog.OpAppendLine(log);
+              eLog.opAppendLine(log);
 
               return result;
             }
@@ -287,7 +287,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
               if (values[ci].trim() === sha1(comparisonAttribute)) {
                 log += "MATCH";
-                eLog.OpAppendLine(log);
+                eLog.opAppendLine(log);
 
                 return result;
               }
@@ -306,7 +306,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
               return false;
             })) {
               log += "MATCH";
-              eLog.OpAppendLine(log);
+              eLog.opAppendLine(log);
 
               return result;
             }
@@ -318,14 +318,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             break;
         }
 
-        eLog.OpAppendLine(log);
+        eLog.opAppendLine(log);
       }
     }
 
     return null;
   }
 
-  private EvaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
+  private evaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
     this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
@@ -351,7 +351,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return null;
   }
 
-  private EvaluateNumber(v1: string, v2: string, comparator: number): boolean {
+  private evaluateNumber(v1: string, v2: string, comparator: number): boolean {
     this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
 
     let n1: number, n2: number;
@@ -390,7 +390,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return false;
   }
 
-  private EvaluateSemver(v1: string, v2: string, comparator: number): boolean {
+  private evaluateSemver(v1: string, v2: string, comparator: number): boolean {
     this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
     if (semver.valid(v1) == null || isUndefined(v2)) {
       return false;
@@ -471,7 +471,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return false;
   }
 
-  private GetUserAttribute(user: User, attribute: string): string | undefined {
+  private getUserAttribute(user: User, attribute: string): string | undefined {
     switch (attribute) {
       case "Identifier":
         return user.identifier;
@@ -484,7 +484,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
   }
 
-  private RuleToString(rule: number): string {
+  private ruleToString(rule: number): string {
     switch (rule) {
       case 0:
         return "IS ONE OF";
@@ -535,23 +535,23 @@ interface IEvaluateResult<TRule> {
 }
 
 class EvaluateLogger {
-  User!: User | undefined;
+  user!: User | undefined;
 
-  KeyName!: string;
+  keyName!: string;
 
-  ReturnValue!: any;
+  returnValue!: any;
 
-  Operations = "";
+  operations = "";
 
-  OpAppendLine(s: string): void {
-    this.Operations += " " + s + "\n";
+  opAppendLine(s: string): void {
+    this.operations += " " + s + "\n";
   }
 
-  GetLog(): string {
-    return "Evaluate '" + this.KeyName + "'"
-            + "\n User : " + JSON.stringify(this.User)
-            + "\n" + this.Operations
-            + " Returning value : " + this.ReturnValue;
+  getLog(): string {
+    return "Evaluate '" + this.keyName + "'"
+            + "\n User : " + JSON.stringify(this.user)
+            + "\n" + this.operations
+            + " Returning value : " + this.returnValue;
   }
 }
 
@@ -614,7 +614,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   ensureAllowedDefaultValue(defaultValue);
 
-  const evaluationDetails = evaluator.Evaluate(setting, key, defaultValue, user, remoteConfig);
+  const evaluationDetails = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
 
   if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
     throw new Error(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
@@ -640,7 +640,7 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  return evaluator.Evaluate(setting, key, null, user, remoteConfig, defaultVariationId);
+  return evaluator.evaluate(setting, key, null, user, remoteConfig, defaultVariationId);
 }
 
 function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
@@ -659,7 +659,7 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
-      evaluationDetails = evaluator.Evaluate(setting, key, null, user, remoteConfig);
+      evaluationDetails = evaluator.evaluate(setting, key, null, user, remoteConfig);
     }
     catch (err) {
       errors ??= [];

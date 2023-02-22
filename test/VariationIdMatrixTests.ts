@@ -9,12 +9,12 @@ import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("MatrixTests", () => {
 
-  const variationid_v5: string = fs.readFileSync("test/data/sample_variationid_v5.json", "utf8");
+  const variationIdV5: string = fs.readFileSync("test/data/sample_variationid_v5.json", "utf8");
 
   it("GetVariationId", async () => {
 
     const configCatKernel: FakeConfigCatKernel = {
-      configFetcher: new FakeConfigFetcherBase(variationid_v5),
+      configFetcher: new FakeConfigFetcherBase(variationIdV5),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
@@ -36,7 +36,7 @@ describe("MatrixTests", () => {
           return;
         }
 
-        const user = Helper.CreateUser(line, header);
+        const user = Helper.createUser(line, header);
         const splittedLine = line.split(";");
         for (let i = 4; i < header.length; i++) {
 
@@ -66,7 +66,7 @@ describe("MatrixTests", () => {
 
   class Helper {
 
-    static CreateUser(row: string, headers: string[]): User | undefined {
+    static createUser(row: string, headers: string[]): User | undefined {
 
       const up: string[] = row.split(";");
 
@@ -92,7 +92,7 @@ describe("MatrixTests", () => {
       return result;
     }
 
-    static GetTypedValue(value: string, header: string): string | boolean | number {
+    static getTypedValue(value: string, header: string): string | boolean | number {
 
       if (header.substring(0, "bool".length) === "bool") {
         return value.toLowerCase() === "true";

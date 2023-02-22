@@ -11,6 +11,7 @@ describe("Polyfills", () => {
     expect(ObjectValuesPolyfill<any>([1, , "b"])).to.have.members([1, "b"]);
 
     assert.deepEqual([], ObjectValuesPolyfill<any>({}));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     expect(ObjectValuesPolyfill<any>({ "a": 1, 2: "b" })).to.have.members([1, "b"]);
   });
 
@@ -22,6 +23,7 @@ describe("Polyfills", () => {
     expect(ObjectEntriesPolyfill<any>([1, , "b"])).to.have.deep.members([["0", 1], ["2", "b"]]);
 
     assert.deepEqual([], ObjectEntriesPolyfill<any>({}));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     expect(ObjectEntriesPolyfill<any>({ "a": 1, 2: "b" })).to.have.deep.members([["a", 1], ["2", "b"]]);
   });
 
@@ -29,9 +31,11 @@ describe("Polyfills", () => {
     assert.deepEqual({}, ObjectFromEntriesPolyfill<any>("" as any));
 
     assert.deepEqual({}, ObjectFromEntriesPolyfill<any>([]));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>([["a", 1], [2, "b"]]));
 
     assert.deepEqual({}, ObjectFromEntriesPolyfill<any>((function* () { })()));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>((function* () { yield* [["a", 1], [2, "b"]]; })()));
 
     assert.throws(() => ObjectFromEntriesPolyfill<any>(1 as any));

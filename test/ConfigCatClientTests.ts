@@ -470,7 +470,7 @@ describe("ConfigCatClient", () => {
 
       const err = new Error("Something went wrong.");
       client["evaluator"] = new class implements IRolloutEvaluator {
-        Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+        evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
           throw err;
         }
       };
@@ -581,7 +581,7 @@ describe("ConfigCatClient", () => {
 
       const err = new Error("Something went wrong.");
       client["evaluator"] = new class implements IRolloutEvaluator {
-        Evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+        evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
           throw err;
         }
       };
@@ -733,7 +733,6 @@ describe("ConfigCatClient", () => {
   });
 
   it("getValueAsync - case sensitive attribute tests", async () => {
-
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithTwoCaseSensitiveKeys(), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
