@@ -240,7 +240,7 @@ describe("DataGovernance", () => {
 });
 
 export class FakeConfigFetcher implements IConfigFetcher {
-  responses: { [url: string]: FetchResult; } = {};
+  responses: { [url: string]: FetchResult } = {};
   calls: any[] = [];
 
   prepareResponse(url: string, fetchResult: FetchResult): void {

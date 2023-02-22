@@ -40,7 +40,7 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   fetchTime?: Date;
 
   /** The User object used for the evaluation (if available). */
-  user?: User
+  user?: User;
 
   /** Indicates whether the default value passed to IConfigCatClient.getValue or IConfigCatClient.getValueAsync is used as the result of the evaluation. */
   isDefaultValue: boolean;
@@ -49,7 +49,7 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   errorMessage?: string;
 
   /** The exception object related to the error in case evaluation failed (if any). */
-  errorException?: any
+  errorException?: any;
 
   /** The comparison-based targeting rule which was used to select the evaluated value (if any). */
   matchedEvaluationRule?: RolloutRule;
