@@ -1,7 +1,8 @@
-import { ManualPollOptions } from "./ConfigCatClientOptions";
+import type { ManualPollOptions } from "./ConfigCatClientOptions";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { ConfigServiceBase, IConfigService, RefreshResult } from "./ConfigServiceBase";
-import { ProjectConfig } from "./ProjectConfig";
+import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
+import { ConfigServiceBase } from "./ConfigServiceBase";
+import type { ProjectConfig } from "./ProjectConfig";
 
 export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
 

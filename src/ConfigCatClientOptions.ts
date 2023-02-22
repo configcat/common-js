@@ -1,10 +1,13 @@
-import { ICache, InMemoryCache } from "./Cache";
-import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
+import type { ICache } from "./Cache";
+import { InMemoryCache } from "./Cache";
+import type { IConfigCatLogger } from "./ConfigCatLogger";
+import { ConfigCatConsoleLogger, LoggerWrapper } from "./ConfigCatLogger";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
-import { FlagOverrides } from "./FlagOverrides";
-import { Hooks, IProvidesHooks } from "./Hooks";
-import { User } from "./RolloutEvaluator";
+import type { FlagOverrides } from "./FlagOverrides";
+import type { IProvidesHooks } from "./Hooks";
+import { Hooks } from "./Hooks";
+import type { User } from "./RolloutEvaluator";
 
 export enum PollingMode {
   AutoPoll = 0,

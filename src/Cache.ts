@@ -1,4 +1,4 @@
-import { ProjectConfig } from "./ProjectConfig";
+import type { ProjectConfig } from "./ProjectConfig";
 
 export interface ICache {
   set(key: string, config: ProjectConfig): Promise<void> | void;

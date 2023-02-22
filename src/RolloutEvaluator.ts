@@ -1,5 +1,6 @@
-import { LoggerWrapper } from "./ConfigCatLogger";
-import { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
+import type { LoggerWrapper } from "./ConfigCatLogger";
+import type { ProjectConfig, Setting } from "./ProjectConfig";
+import { RolloutPercentageItem, RolloutRule } from "./ProjectConfig";
 import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
 import { errorToString, getTimestampAsDate, isUndefined } from "./Utils";

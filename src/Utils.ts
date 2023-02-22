@@ -1,4 +1,5 @@
-import { ConfigFile, ProjectConfig, Setting } from "./ProjectConfig";
+import type { ProjectConfig } from "./ProjectConfig";
+import { ConfigFile, Setting } from "./ProjectConfig";
 
 export const isUndefined = (comp: any): boolean => comp === void 0;
 

@@ -1,6 +1,9 @@
-import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "./ConfigCatClient";
-import { AutoPollOptions, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsForPollingMode, PollingMode } from "./ConfigCatClientOptions";
-import { ConfigCatConsoleLogger, IConfigCatLogger, LogLevel } from "./ConfigCatLogger";
+import type { IConfigCatClient, IConfigCatKernel } from "./ConfigCatClient";
+import { ConfigCatClient } from "./ConfigCatClient";
+import type { IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, OptionsForPollingMode } from "./ConfigCatClientOptions";
+import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from "./ConfigCatClientOptions";
+import type { IConfigCatLogger } from "./ConfigCatLogger";
+import { ConfigCatConsoleLogger, LogLevel } from "./ConfigCatLogger";
 import { setupPolyfills } from "./Polyfills";
 
 setupPolyfills();

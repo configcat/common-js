@@ -37,6 +37,20 @@
             "extendDefaults": true
           }
         ],
+        // NOTE: Deno fails if types are not exported 
+        "@typescript-eslint/consistent-type-exports": [
+          "error",
+          {
+            "fixMixedExportsWithInlineTypeSpecifier": false
+          }
+        ],
+        "@typescript-eslint/consistent-type-imports": [
+          "error",
+          {
+            "prefer": "type-imports",
+            "fixStyle": "separate-type-imports"
+          }
+        ],
         // https://github.com/typescript-eslint/typescript-eslint/issues/1824#issuecomment-1378327382
         "indent": "off",
         "@typescript-eslint/indent": [
@@ -65,6 +79,7 @@
             "allowArgumentsExplicitlyTypedAsAny": true
           }
         ],
+        "@typescript-eslint/no-import-type-side-effects": "warn",
         "@typescript-eslint/member-delimiter-style": "warn",
         // Based on: https://typescript-eslint.io/rules/naming-convention/#enforce-the-codebase-follows-eslints-camelcase-conventions
         "@typescript-eslint/naming-convention": [

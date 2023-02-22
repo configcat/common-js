@@ -1,7 +1,8 @@
-import { AutoPollOptions } from "./ConfigCatClientOptions";
-import { LoggerWrapper } from "./ConfigCatLogger";
+import type { AutoPollOptions } from "./ConfigCatClientOptions";
+import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { ConfigServiceBase, IConfigService, RefreshResult } from "./ConfigServiceBase";
+import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
+import { ConfigServiceBase } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 

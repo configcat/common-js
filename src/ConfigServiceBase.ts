@@ -1,5 +1,6 @@
-import { OptionsBase } from "./ConfigCatClientOptions";
-import { FetchError, FetchResult, FetchStatus, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
+import type { OptionsBase } from "./ConfigCatClientOptions";
+import type { IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
+import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
 export class RefreshResult {

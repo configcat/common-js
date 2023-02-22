@@ -1,4 +1,4 @@
-import { Hooks } from "./Hooks";
+import type { Hooks } from "./Hooks";
 import { errorToString } from "./Utils";
 
 export enum LogLevel {

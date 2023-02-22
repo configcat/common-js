@@ -1,7 +1,8 @@
-import { LazyLoadOptions } from "./ConfigCatClientOptions";
-import { LoggerWrapper } from "./ConfigCatLogger";
+import type { LazyLoadOptions } from "./ConfigCatClientOptions";
+import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { ConfigServiceBase, IConfigService, RefreshResult } from "./ConfigServiceBase";
+import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
+import { ConfigServiceBase } from "./ConfigServiceBase";
 import { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {

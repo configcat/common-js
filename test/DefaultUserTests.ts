@@ -1,8 +1,9 @@
 import { assert } from "chai";
 import "mocha";
-import { IConfigCatClient } from "../src/ConfigCatClient";
+import type { IConfigCatClient } from "../src/ConfigCatClient";
 import * as configcatClient from "../src/index";
-import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./helpers/fakes";
+import type { FakeConfigCatKernel } from "./helpers/fakes";
+import { FakeConfigFetcherWithRules } from "./helpers/fakes";
 
 describe("DefaultUser", () => {
 

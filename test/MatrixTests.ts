@@ -5,7 +5,8 @@ import { EOL } from "os";
 import { createClientWithManualPoll } from "../src";
 import { ConfigCatConsoleLogger, LogLevel } from "../src/ConfigCatLogger";
 import { User } from "../src/RolloutEvaluator";
-import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
+import type { FakeConfigCatKernel } from "./helpers/fakes";
+import { FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("MatrixTests", () => {
 

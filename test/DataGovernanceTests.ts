@@ -1,9 +1,10 @@
 import { assert } from "chai";
 import "mocha";
 import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
-import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
+import type { IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
+import { FetchResult } from "../src/ConfigFetcher";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
-import { ProjectConfig } from "../src/ProjectConfig";
+import type { ProjectConfig } from "../src/ProjectConfig";
 
 const globalUrl = "https://cdn-global.configcat.com";
 const euOnlyUrl = "https://cdn-eu.configcat.com";

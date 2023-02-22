@@ -1,5 +1,6 @@
-import { IEventEmitter, IEventProvider, NullEventEmitter } from "./EventEmitter";
-import { ProjectConfig } from "./ProjectConfig";
+import type { IEventEmitter, IEventProvider } from "./EventEmitter";
+import { NullEventEmitter } from "./EventEmitter";
+import type { ProjectConfig } from "./ProjectConfig";
 import type { IEvaluationDetails } from "./RolloutEvaluator";
 
 export type HookEvents = {

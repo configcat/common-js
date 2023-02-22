@@ -1,4 +1,4 @@
-import { Setting } from "./ProjectConfig";
+import type { Setting } from "./ProjectConfig";
 
 /**
  * Describes how the overrides should behave.

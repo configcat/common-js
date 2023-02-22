@@ -1,4 +1,4 @@
-import { IConfigFetcher, OptionsBase } from "src/index.ts";
+import type { IConfigFetcher, OptionsBase } from "src/index.ts";
 import type { IFetchResponse } from "../../src/ConfigFetcher.ts";
 
 export class FakeConfigFetcher implements IConfigFetcher {

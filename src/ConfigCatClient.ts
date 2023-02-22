@@ -1,16 +1,20 @@
 import { AutoPollConfigService } from "./AutoPollConfigService";
 import type { ICache } from "./Cache";
-import { AutoPollOptions, ConfigCatClientOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, OptionsForPollingMode, PollingMode } from "./ConfigCatClientOptions";
-import { IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
+import type { ConfigCatClientOptions, OptionsBase, OptionsForPollingMode } from "./ConfigCatClientOptions";
+import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from "./ConfigCatClientOptions";
+import type { IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { IConfigService, RefreshResult } from "./ConfigServiceBase";
+import type { IConfigService } from "./ConfigServiceBase";
+import { RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
 import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
-import { ConfigFile, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
-import { checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, IEvaluationDetails, IRolloutEvaluator, RolloutEvaluator, SettingTypeOf, SettingValue, User, VariationIdTypeOf, VariationIdValue } from "./RolloutEvaluator";
+import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
+import { ConfigFile } from "./ProjectConfig";
+import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, SettingValue, User, VariationIdTypeOf, VariationIdValue } from "./RolloutEvaluator";
+import { checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId, RolloutEvaluator } from "./RolloutEvaluator";
 import { errorToString, getSettingsFromConfig, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {

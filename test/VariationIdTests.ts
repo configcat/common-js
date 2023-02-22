@@ -1,9 +1,11 @@
 import { assert } from "chai";
 import "mocha";
-import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
+import type { IConfigCatClient } from "../src/ConfigCatClient";
+import { ConfigCatClient } from "../src/ConfigCatClient";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { IEvaluationDetails } from "../src/RolloutEvaluator";
-import { FakeConfigCatKernel, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules } from "./helpers/fakes";
+import type { IEvaluationDetails } from "../src/RolloutEvaluator";
+import type { FakeConfigCatKernel } from "./helpers/fakes";
+import { FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules } from "./helpers/fakes";
 
 describe("ConfigCatClient", () => {
   it("getVariationId() works", (done) => {

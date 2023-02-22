@@ -1,4 +1,4 @@
-import { OptionsBase } from "./ConfigCatClientOptions";
+import type { OptionsBase } from "./ConfigCatClientOptions";
 
 export enum FetchStatus {
   Fetched = 0,
