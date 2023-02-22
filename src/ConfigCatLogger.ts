@@ -27,7 +27,9 @@ export interface IConfigCatLogger {
 }
 
 export class LoggerWrapper implements IConfigCatLogger {
-  get level() { return this.logger.level ?? LogLevel.Warn; }
+  get level(): LogLevel {
+    return this.logger.level ?? LogLevel.Warn;
+  }
 
   constructor(private logger: IConfigCatLogger, private hooks?: Hooks) {
   }

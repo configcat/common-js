@@ -11,11 +11,11 @@ export class FakeConfigFetcher implements IConfigFetcher {
       : this.currentFetchResponse);
   }
 
-  setSuccess(configJson: string) {
+  setSuccess(configJson: string): void {
     this.currentFetchResponse = { statusCode: 200, reasonPhrase: "OK", eTag: (++this.currentETag) + "", body: configJson };
   }
 
-  setError(statusCode: number, reasonPhrase: string) {
+  setError(statusCode: number, reasonPhrase: string): void {
     this.currentFetchResponse = { statusCode, reasonPhrase };
   }
 }

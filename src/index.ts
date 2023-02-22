@@ -22,7 +22,7 @@ export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode
 /**
  * Disposes all existing ConfigCatClient instances.
  */
-export function disposeAllClients() {
+export function disposeAllClients(): void {
   ConfigCatClient.disposeAll();
 }
 

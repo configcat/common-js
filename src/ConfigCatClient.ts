@@ -569,11 +569,11 @@ export class ConfigCatClient implements IConfigCatClient {
     return evaluationDetailsArray;
   }
 
-  setDefaultUser(defaultUser: User) {
+  setDefaultUser(defaultUser: User): void {
     this.defaultUser = defaultUser;
   }
 
-  clearDefaultUser() {
+  clearDefaultUser(): void {
     this.defaultUser = void 0;
   }
 

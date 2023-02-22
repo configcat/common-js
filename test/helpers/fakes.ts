@@ -11,7 +11,7 @@ export class FakeLogger implements IConfigCatLogger {
 
   constructor(public level = LogLevel.Info) { }
 
-  reset() { this.messages.splice(0); }
+  reset(): void { this.messages.splice(0); }
 
   log(message: string): void {
     this.info(message);
@@ -90,7 +90,7 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
 }
 
 export class FakeConfigFetcher extends FakeConfigFetcherBase {
-  static get configJson() {
+  static get configJson(): string {
     return '{"f": { "debug": { "v": true, "i": "abcdefgh", "t": 0, "p": [], "r": [] } } }';
   }
 
@@ -104,25 +104,25 @@ export class FakeConfigFetcher extends FakeConfigFetcherBase {
 }
 
 export class FakeConfigFetcherWithTwoKeys extends FakeConfigFetcher {
-  static get configJson() {
+  static get configJson(): string {
     return '{"f": { "debug": { "v": true, "i": "abcdefgh", "t": 0, "p": [], "r": [] }, "debug2": { "v": true, "i": "12345678", "t": 0, "p": [], "r": [] } } }';
   }
 }
 
 export class FakeConfigFetcherWithTwoCaseSensitiveKeys extends FakeConfigFetcher {
-  static get configJson() {
+  static get configJson(): string {
     return '{"f": { "debug": { "v": "debug", "i": "abcdefgh", "t": 1, "p": [], "r": [{ "o":0, "a":"CUSTOM", "t":0, "c":"c", "v":"UPPER-VALUE", "i":"6ada5ff2"}, { "o":1, "a":"custom", "t":0, "c":"c", "v":"lower-value", "i":"6ada5ff2"}] }, "DEBUG": { "v": "DEBUG", "i": "12345678", "t": 1, "p": [], "r": [] } } }';
   }
 }
 
 export class FakeConfigFetcherWithTwoKeysAndRules extends FakeConfigFetcher {
-  static get configJson() {
+  static get configJson(): string {
     return '{"f": { "debug": { "v": "def", "i": "abcdefgh", "t": 1, "p": [], "r": [{ "o":0, "a":"a", "t":1, "c":"abcd", "v":"value", "i":"6ada5ff2"}] }, "debug2": { "v": "def", "i": "12345678", "t": 1, "p": [{"o":0, "v":"value1", "p":50, "i":"d227b334" }, { "o":1, "v":"value2", "p":50, "i":"622f5d07" }], "r": [] } } }';
   }
 }
 
 export class FakeConfigFetcherWithRules extends FakeConfigFetcher {
-  static get configJson() {
+  static get configJson(): string {
     return '{"f": { "debug": { "v": "defaultValue", "i": "defaultVariationId", "t": 0, "p": [], "r": [{ "o":0, "a":"eyeColor", "t":0, "c":"red", "v":"redValue", "i":"redVariationId"}, { "o":1, "a":"eyeColor", "t":0, "c":"blue", "v":"blueValue", "i":"blueVariationId"}] } } }';
   }
 }
@@ -134,7 +134,7 @@ export class FakeConfigFetcherWithNullNewConfig extends FakeConfigFetcherBase {
 }
 
 export class FakeConfigFetcherWithAlwaysVariableEtag extends FakeConfigFetcher {
-  static get configJson() {
+  static get configJson(): string {
     return '{ "f": { "debug": { "v": true, "i": "abcdefgh", "t": 0, "p": [], "r": [] } }}';
   }
 
@@ -144,7 +144,7 @@ export class FakeConfigFetcherWithAlwaysVariableEtag extends FakeConfigFetcher {
 }
 
 export class FakeConfigFetcherWithPercantageRules extends FakeConfigFetcher {
-  static get configJson() {
+  static get configJson(): string {
     return '{"f":{"string25Cat25Dog25Falcon25Horse":{"v":"Chicken","i":"ChickenVariationId","t":1,"p":[{"o":0,"v":"Cat","p":25,"i":"CatVariationId"},{"o":1,"v":"Dog","p":25,"i":"DogVariationId"},{"o":2,"v":"Falcon","p":25,"i":"FalconVariationId"},{"o":3,"v":"Horse","p":25,"i":"HorseVariationId"}],"r":[]}}}';
   }
 }

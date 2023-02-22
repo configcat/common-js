@@ -243,7 +243,7 @@ export class FakeConfigFetcher implements IConfigFetcher {
   responses: { [url: string]: FetchResult; } = {};
   calls: any[] = [];
 
-  prepareResponse(url: string, fetchResult: FetchResult) {
+  prepareResponse(url: string, fetchResult: FetchResult): void {
     this.responses[url] = fetchResult;
   }
 
@@ -274,7 +274,7 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
     return this.refreshConfigCoreAsync(null);
   }
 
-  prepareResponse(baseUrl: string, jsonBaseUrl: string, jsonRedirect: number, jsonFeatureFlags: any) {
+  prepareResponse(baseUrl: string, jsonBaseUrl: string, jsonRedirect: number, jsonFeatureFlags: any): void {
     const configFetcher = this.configFetcher as FakeConfigFetcher;
 
     const configJson = {
@@ -289,12 +289,12 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
       FetchResult.success(JSON.stringify(configJson), "etag"));
   }
 
-  validateCallCount(callCount: number) {
+  validateCallCount(callCount: number): void {
     const configFetcher = this.configFetcher as FakeConfigFetcher;
     assert.equal(configFetcher.calls.length, callCount);
   }
 
-  validateCall(index: number, baseUrl: string) {
+  validateCall(index: number, baseUrl: string): void {
     const configFetcher = this.configFetcher as FakeConfigFetcher;
     assert.equal(this.getUrl(baseUrl), configFetcher.calls[index]);
   }

@@ -696,7 +696,7 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
   return true;
 }
 
-export function ensureAllowedDefaultValue(value: SettingValue) {
+export function ensureAllowedDefaultValue(value: SettingValue): void {
   if (value === null || value === void 0) {
     return;
   }

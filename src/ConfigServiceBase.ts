@@ -64,7 +64,9 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     this.status = ConfigServiceStatus.Disposed;
   }
 
-  protected get disposed() { return this.status === ConfigServiceStatus.Disposed; }
+  protected get disposed(): boolean {
+    return this.status === ConfigServiceStatus.Disposed;
+  }
 
   abstract getConfig(): Promise<ProjectConfig | null>;
 
@@ -253,7 +255,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     return this.status !== ConfigServiceStatus.Online;
   }
 
-  protected setOnlineCore() { }
+  protected setOnlineCore(): void { }
 
   setOnline(): void {
     if (this.status === ConfigServiceStatus.Offline) {
@@ -266,7 +268,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  protected setOfflineCore() { }
+  protected setOfflineCore(): void { }
 
   setOffline(): void {
     if (this.status === ConfigServiceStatus.Online) {
@@ -279,15 +281,15 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  logStatusChange(status: ConfigServiceStatus) {
+  logStatusChange(status: ConfigServiceStatus): void {
     this.options.logger.debug(`Switched to ${ConfigServiceStatus[status]?.toUpperCase()} mode.`);
   }
 
-  logOfflineModeWarning() {
+  logOfflineModeWarning(): void {
     this.options.logger.warn("Client is in offline mode, it can't initiate HTTP calls.");
   }
 
-  logDisposedWarning(methodName: string) {
+  logDisposedWarning(methodName: string): void {
     this.options.logger.warn(`Client has already been disposed, thus ${methodName}() has no effect.`);
   }
 }

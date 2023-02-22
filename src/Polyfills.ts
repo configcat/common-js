@@ -19,7 +19,7 @@ const getGlobalObject = (() => {
   };
 })();
 
-export function setupPolyfills() {
+export function setupPolyfills(): void {
   // Object.values
   if (typeof Object.values === "undefined") {
     Object.values = ObjectValuesPolyfill;
@@ -96,4 +96,4 @@ export function getWeakRefStub<T extends object>(): WeakRefConstructor {
   return WeakRef;
 }
 
-export const isWeakRefAvailable = () => typeof WeakRef === "function" && !Object.prototype.hasOwnProperty.call(WeakRef, "isFallback");
+export const isWeakRefAvailable = (): boolean => typeof WeakRef === "function" && !Object.prototype.hasOwnProperty.call(WeakRef, "isFallback");
