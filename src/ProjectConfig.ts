@@ -20,7 +20,7 @@ export class ProjectConfig {
   /**
    * Determines whether the specified ProjectConfig instances are considered equal.
    */
-  public static equals(projectConfig1: ProjectConfig | null, projectConfig2: ProjectConfig | null): boolean {
+  static equals(projectConfig1: ProjectConfig | null, projectConfig2: ProjectConfig | null): boolean {
     if (!projectConfig1) {
       // If both configs are null, we consider them equal.
       return !projectConfig2;
@@ -37,7 +37,7 @@ export class ProjectConfig {
       : JSON.stringify(projectConfig1.ConfigJSON) === JSON.stringify(projectConfig2.ConfigJSON);
   }
 
-  public static compareEtags(etag1?: string, etag2?: string): boolean {
+  static compareEtags(etag1?: string, etag2?: string): boolean {
     return this.ensureStrictEtag(etag1) === this.ensureStrictEtag(etag2);
   }
 
@@ -53,7 +53,7 @@ export class ProjectConfig {
     return etag;
   }
 
-  public static isExpired(projectConfig: ProjectConfig | null, expirationMs: number): boolean {
+  static isExpired(projectConfig: ProjectConfig | null, expirationMs: number): boolean {
     return !projectConfig || projectConfig.Timestamp + expirationMs < new Date().getTime();
   }
 }
@@ -81,10 +81,10 @@ export class Setting {
 
   static VariationId = "i";
 
-  public value: any;
-  public rolloutPercentageItems: RolloutPercentageItem[];
-  public rolloutRules: RolloutRule[];
-  public variationId: string;
+  value: any;
+  rolloutPercentageItems: RolloutPercentageItem[];
+  rolloutRules: RolloutRule[];
+  variationId: string;
 
   constructor(value: any, rolloutPercentageItems: RolloutPercentageItem[], rolloutRules: RolloutRule[], variationId: string) {
     this.value = value;
@@ -115,11 +115,11 @@ export class RolloutRule {
 
   static VariationId = "i";
 
-  public comparisonAttribute: string;
-  public comparator: number;
-  public comparisonValue: string;
-  public value: any;
-  public variationId: string;
+  comparisonAttribute: string;
+  comparator: number;
+  comparisonValue: string;
+  value: any;
+  variationId: string;
 
   constructor(comparisonAttribute: string, comparator: number, comparisonValue: string, value: any, variationId: string) {
     this.comparisonAttribute = comparisonAttribute;
@@ -148,9 +148,9 @@ export class RolloutPercentageItem {
 
   static VariationId = "i";
 
-  public percentage: number;
-  public value: any;
-  public variationId: string;
+  percentage: number;
+  value: any;
+  variationId: string;
 
   constructor(percentage: number, value: any, variationId: string) {
     this.percentage = percentage;

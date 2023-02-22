@@ -31,7 +31,7 @@ describe("MatrixTests", () => {
 
   class Helper {
 
-    public static CreateUser(row: string, headers: string[]): User | undefined {
+    static CreateUser(row: string, headers: string[]): User | undefined {
 
       const column: string[] = row.split(";");
       const USERNULL = "##null##";
@@ -58,7 +58,7 @@ describe("MatrixTests", () => {
       return result;
     }
 
-    public static GetTypedValue(value: string, header: string): string | boolean | number {
+    static GetTypedValue(value: string, header: string): string | boolean | number {
 
       if (header.substring(0, "bool".length) === "bool") {
         return value.toLowerCase() === "true";
@@ -75,7 +75,7 @@ describe("MatrixTests", () => {
       return value;
     }
 
-    public static async RunMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
+    static async RunMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
 
       const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE), sdkType: "common", sdkVersion: "1.0.0" };

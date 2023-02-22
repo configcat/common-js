@@ -535,19 +535,19 @@ interface IEvaluateResult<TRule> {
 }
 
 class EvaluateLogger {
-  public User!: User | undefined;
+  User!: User | undefined;
 
-  public KeyName!: string;
+  KeyName!: string;
 
-  public ReturnValue!: any;
+  ReturnValue!: any;
 
-  public Operations = "";
+  Operations = "";
 
-  public OpAppendLine(s: string): void {
+  OpAppendLine(s: string): void {
     this.Operations += " " + s + "\n";
   }
 
-  public GetLog(): string {
+  GetLog(): string {
     return "Evaluate '" + this.KeyName + "'"
             + "\n User : " + JSON.stringify(this.User)
             + "\n" + this.Operations

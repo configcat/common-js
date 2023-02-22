@@ -9,7 +9,7 @@ export class RefreshResult {
   ) {
   }
 
-  public get isSuccess(): boolean { return this.errorMessage === null; }
+  get isSuccess(): boolean { return this.errorMessage === null; }
 
   static from(fetchResult: FetchResult): RefreshResult {
     return fetchResult.status !== FetchStatus.Errored

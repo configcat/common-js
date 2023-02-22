@@ -66,7 +66,7 @@ describe("MatrixTests", () => {
 
   class Helper {
 
-    public static CreateUser(row: string, headers: string[]): User | undefined {
+    static CreateUser(row: string, headers: string[]): User | undefined {
 
       const up: string[] = row.split(";");
 
@@ -92,7 +92,7 @@ describe("MatrixTests", () => {
       return result;
     }
 
-    public static GetTypedValue(value: string, header: string): string | boolean | number {
+    static GetTypedValue(value: string, header: string): string | boolean | number {
 
       if (header.substring(0, "bool".length) === "bool") {
         return value.toLowerCase() === "true";

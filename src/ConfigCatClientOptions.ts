@@ -75,31 +75,31 @@ export abstract class OptionsBase implements IOptions {
 
   private configFileName = "config_v5";
 
-  public logger: LoggerWrapper;
+  logger: LoggerWrapper;
 
-  public apiKey: string;
+  apiKey: string;
 
-  public clientVersion: string;
+  clientVersion: string;
 
-  public requestTimeoutMs: number = 30000;
+  requestTimeoutMs: number = 30000;
 
-  public baseUrl: string;
+  baseUrl: string;
 
-  public baseUrlOverriden: boolean = false;
+  baseUrlOverriden: boolean = false;
 
-  public proxy: string = "";
+  proxy: string = "";
 
-  public dataGovernance: DataGovernance;
+  dataGovernance: DataGovernance;
 
-  public cache: ICache;
+  cache: ICache;
 
-  public flagOverrides?: FlagOverrides;
+  flagOverrides?: FlagOverrides;
 
-  public defaultUser?: User;
+  defaultUser?: User;
 
-  public offline: boolean = false;
+  offline: boolean = false;
 
-  public hooks: Hooks;
+  hooks: Hooks;
 
   constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
     if (!apiKey) {
@@ -183,15 +183,15 @@ export abstract class OptionsBase implements IOptions {
 export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
   /** The client's poll interval in seconds. Default: 60 seconds. */
-  public pollIntervalSeconds: number = 60;
+  pollIntervalSeconds: number = 60;
 
   /** You can subscribe to configuration changes with this callback.
    * @deprecated This property is obsolete and will be removed from the public API in a future major version. Please use the 'options.setupHooks = hooks => hooks.on("configChanged", ...)' format instead.
    */
-  public configChanged: () => void = () => { };
+  configChanged: () => void = () => { };
 
   /** Maximum waiting time between the client initialization and the first config acquisition in seconds. */
-  public maxInitWaitTimeSeconds: number = 5;
+  maxInitWaitTimeSeconds: number = 5;
 
   constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
 
@@ -231,7 +231,7 @@ export class ManualPollOptions extends OptionsBase implements IManualPollOptions
 export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions {
 
   /** The cache TTL. */
-  public cacheTimeToLiveSeconds: number = 60;
+  cacheTimeToLiveSeconds: number = 60;
 
   constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
 

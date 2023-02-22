@@ -126,7 +126,7 @@ export interface IConfigCatKernel {
 export class ConfigCatClientCache {
   private instances: Record<string, [WeakRef<ConfigCatClient>, object]> = {};
 
-  public getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
+  getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
     let instance: ConfigCatClient | undefined;
 
     const cachedInstance = this.instances[options.apiKey];
@@ -144,7 +144,7 @@ export class ConfigCatClientCache {
     return [instance, false];
   }
 
-  public remove(sdkKey: string, cacheToken: object): boolean {
+  remove(sdkKey: string, cacheToken: object): boolean {
     const cachedInstance = this.instances[sdkKey];
 
     if (cachedInstance) {
@@ -159,7 +159,7 @@ export class ConfigCatClientCache {
     return false;
   }
 
-  public clear(): ConfigCatClient[] {
+  clear(): ConfigCatClient[] {
     const removedInstances: ConfigCatClient[] = [];
     for (const [sdkKey, [weakRef]] of Object.entries(this.instances)) {
       const instance = weakRef.deref();
@@ -185,7 +185,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
   private static get instanceCache() { return clientInstanceCache; }
 
-  public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
+  static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
     if (!sdkKey) {
       throw new Error("Invalid 'sdkKey' value");
     }

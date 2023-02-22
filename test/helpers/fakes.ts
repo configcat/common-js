@@ -7,7 +7,7 @@ import { ProjectConfig } from "../../src/ProjectConfig";
 import { delay } from "../../src/Utils";
 
 export class FakeLogger implements IConfigCatLogger {
-  public messages: [LogLevel, string][] = [];
+  messages: [LogLevel, string][] = [];
 
   constructor(public level = LogLevel.Info) { }
 

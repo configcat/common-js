@@ -53,8 +53,8 @@ export class MapOverrideDataSource implements IOverrideDataSource {
  * Describes feature flag and setting overrides.
  */
 export class FlagOverrides {
-  public behaviour: OverrideBehaviour;
-  public dataSource: IOverrideDataSource;
+  behaviour: OverrideBehaviour;
+  dataSource: IOverrideDataSource;
 
   constructor(dataSource: IOverrideDataSource, behaviour: OverrideBehaviour) {
     this.dataSource = dataSource;

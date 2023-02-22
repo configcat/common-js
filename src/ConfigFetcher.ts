@@ -42,7 +42,7 @@ export type FetchErrorCauses = {
 };
 
 export class FetchError<TCause extends keyof FetchErrorCauses> extends Error {
-  public args: FetchErrorCauses[TCause];
+  args: FetchErrorCauses[TCause];
 
   constructor(public cause: TCause, ...args: FetchErrorCauses[TCause]) {
     let message: string | undefined;
