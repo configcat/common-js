@@ -47,13 +47,13 @@ enum ConfigServiceStatus {
 }
 
 export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
-  protected configFetcher: IConfigFetcher;
-  protected options: TOptions;
   private status: ConfigServiceStatus;
 
   private pendingFetch: Promise<[FetchResult, ProjectConfig | null]> | null = null;
 
-  constructor(configFetcher: IConfigFetcher, options: TOptions) {
+  constructor(
+    protected readonly configFetcher: IConfigFetcher,
+    protected readonly options: TOptions) {
 
     this.configFetcher = configFetcher;
     this.options = options;

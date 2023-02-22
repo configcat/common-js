@@ -6,7 +6,7 @@ import { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
 
-  private cacheTimeToLiveSeconds: number;
+  private readonly cacheTimeToLiveSeconds: number;
 
   constructor(configFetcher: IConfigFetcher, options: LazyLoadOptions) {
 

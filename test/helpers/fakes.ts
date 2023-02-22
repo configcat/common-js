@@ -59,8 +59,8 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
 
   constructor(
     private config: string | null,
-    private callbackDelay: number = 0,
-    private getFetchResponse?: (lastConfig: string | null, lastEtag: string | null) => IFetchResponse) {
+    private readonly callbackDelay: number = 0,
+    private readonly getFetchResponse?: (lastConfig: string | null, lastEtag: string | null) => IFetchResponse) {
 
     this.config ??= this.defaultConfigJson;
   }
@@ -98,7 +98,7 @@ export class FakeConfigFetcher extends FakeConfigFetcherBase {
 
   protected get defaultConfigJson(): string | null { return this.constructor.configJson; }
 
-  constructor(private callbackDelayInMilliseconds: number = 0) {
+  constructor(callbackDelayInMilliseconds = 0) {
     super(null, callbackDelayInMilliseconds);
   }
 }
@@ -128,7 +128,7 @@ export class FakeConfigFetcherWithRules extends FakeConfigFetcher {
 }
 
 export class FakeConfigFetcherWithNullNewConfig extends FakeConfigFetcherBase {
-  constructor(private callbackDelayInMilliseconds: number = 0) {
+  constructor(callbackDelayInMilliseconds = 0) {
     super(null, callbackDelayInMilliseconds);
   }
 }

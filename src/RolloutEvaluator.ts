@@ -83,7 +83,7 @@ export class User {
 
 export class RolloutEvaluator implements IRolloutEvaluator {
 
-  private logger: LoggerWrapper;
+  private readonly logger: LoggerWrapper;
 
   constructor(logger: LoggerWrapper) {
 

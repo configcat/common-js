@@ -7,7 +7,7 @@ export interface ICache {
 }
 
 export class InMemoryCache implements ICache {
-  cache: { [apiKey: string] : ProjectConfig } = {};
+  cache: { [apiKey: string]: ProjectConfig } = {};
 
   set(key: string, config: ProjectConfig): void {
     this.cache[key] = config;

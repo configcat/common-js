@@ -8,7 +8,7 @@ import { delay } from "./Utils";
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
 
   private initialized: boolean;
-  private initialization: Promise<void>;
+  private readonly initialization: Promise<void>;
   private signalInitialization: () => void = (void 0)!; // the initial value is only for keeping the TS compiler happy
   private timerId?: ReturnType<typeof setTimeout>;
 

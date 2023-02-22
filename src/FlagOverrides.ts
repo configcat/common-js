@@ -31,7 +31,7 @@ export interface IOverrideDataSource {
 }
 
 export class MapOverrideDataSource implements IOverrideDataSource {
-  private map: { [name: string]: Setting } = {};
+  private readonly map: { [name: string]: Setting } = {};
 
   constructor(map: { [name: string]: any }) {
     this.map = Object.fromEntries(Object.entries(map).map(([key, value]) => {
@@ -53,11 +53,8 @@ export class MapOverrideDataSource implements IOverrideDataSource {
  * Describes feature flag and setting overrides.
  */
 export class FlagOverrides {
-  behaviour: OverrideBehaviour;
-  dataSource: IOverrideDataSource;
-
-  constructor(dataSource: IOverrideDataSource, behaviour: OverrideBehaviour) {
-    this.dataSource = dataSource;
-    this.behaviour = behaviour;
+  constructor(
+    public dataSource: IOverrideDataSource,
+    public behaviour: OverrideBehaviour) {
   }
 }

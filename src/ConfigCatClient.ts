@@ -124,7 +124,7 @@ export interface IConfigCatKernel {
 }
 
 export class ConfigCatClientCache {
-  private instances: Record<string, [WeakRef<ConfigCatClient>, object]> = {};
+  private readonly instances: Record<string, [WeakRef<ConfigCatClient>, object]> = {};
 
   getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
     let instance: ConfigCatClient | undefined;
@@ -177,11 +177,11 @@ const clientInstanceCache = new ConfigCatClientCache();
 type SettingsWithRemoteConfig = [{ [name: string]: Setting } | null, ProjectConfig | null];
 
 export class ConfigCatClient implements IConfigCatClient {
-  private configService?: IConfigService;
-  private evaluator: IRolloutEvaluator;
-  private options: OptionsBase;
+  protected configService?: IConfigService;
+  protected evaluator: IRolloutEvaluator;
+  private readonly options: OptionsBase;
   private defaultUser?: User;
-  private suppressFinalize: () => void;
+  private readonly suppressFinalize: () => void;
 
   private static get instanceCache() { return clientInstanceCache; }
 
@@ -210,7 +210,7 @@ export class ConfigCatClient implements IConfigCatClient {
   constructor(
     options: ConfigCatClientOptions,
     configCatKernel: IConfigCatKernel,
-    private cacheToken?: object) {
+    private readonly cacheToken?: object) {
 
     if (!options) {
       throw new Error("Invalid 'options' value");

@@ -73,7 +73,7 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
 
 export abstract class OptionsBase implements IOptions {
 
-  private configFileName = "config_v5";
+  private readonly configFileName = "config_v5";
 
   logger: LoggerWrapper;
 

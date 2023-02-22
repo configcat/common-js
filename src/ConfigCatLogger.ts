@@ -31,7 +31,9 @@ export class LoggerWrapper implements IConfigCatLogger {
     return this.logger.level ?? LogLevel.Warn;
   }
 
-  constructor(private logger: IConfigCatLogger, private hooks?: Hooks) {
+  constructor(
+    private readonly logger: IConfigCatLogger,
+    private readonly hooks?: Hooks) {
   }
 
   log(message: string): void {
