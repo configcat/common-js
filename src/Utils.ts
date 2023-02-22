@@ -7,7 +7,7 @@ export function delay(delayMs: number, obtainCancel?: (cancel: () => void) => vo
   const promise = new Promise<void>(resolve => timerId = setTimeout(resolve, delayMs));
   obtainCancel?.(() => clearTimeout(timerId));
   return promise;
-};
+}
 
 export function getSettingsFromConfig(json: any): { [name: string]: Setting } {
   return Object.fromEntries(Object.entries(json[ConfigFile.FeatureFlags]).map(([key, value]) => {

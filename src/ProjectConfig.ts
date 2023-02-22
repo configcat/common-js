@@ -59,27 +59,27 @@ export class ProjectConfig {
 }
 
 export class ConfigFile {
-  static Preferences: string = "p";
+  static Preferences = "p";
 
-  static FeatureFlags: string = "f";
+  static FeatureFlags = "f";
 }
 
 export class Preferences {
-  static BaseUrl: string = "u";
+  static BaseUrl = "u";
 
-  static Redirect: string = "r";
+  static Redirect = "r";
 }
 
 export class Setting {
-  static Value: string = "v";
+  static Value = "v";
 
-  static SettingType: string = "t";
+  static SettingType = "t";
 
-  static RolloutPercentageItems : string = "p";
+  static RolloutPercentageItems = "p";
 
-  static RolloutRules: string = "r";
+  static RolloutRules = "r";
 
-  static VariationId: string = "i";
+  static VariationId = "i";
 
   public value: any;
   public rolloutPercentageItems: RolloutPercentageItem[];
@@ -103,17 +103,17 @@ export class Setting {
 }
 
 export class RolloutRule {
-  static Order: string = "o";
+  static Order = "o";
 
-  static ComparisonAttribute: string = "a";
+  static ComparisonAttribute = "a";
 
-  static Comparator: string = "t";
+  static Comparator = "t";
 
-  static ComparisonValue: string = "c";
+  static ComparisonValue = "c";
 
-  static Value: string = "v";
+  static Value = "v";
 
-  static VariationId: string = "i";
+  static VariationId = "i";
 
   public comparisonAttribute: string;
   public comparator: number;
@@ -140,13 +140,13 @@ export class RolloutRule {
 }
 
 export class RolloutPercentageItem {
-  static Order: string = "o";
+  static Order = "o";
 
-  static Value: string = "v";
+  static Value = "v";
 
-  static Percentage: string = "p";
+  static Percentage = "p";
 
-  static VariationId: string = "i";
+  static VariationId = "i";
 
   public percentage: number;
   public value: any;

@@ -69,6 +69,8 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
   TMode extends PollingMode.LazyLoad ? ILazyLoadingOptions :
   never;
 
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+
 export abstract class OptionsBase implements IOptions {
 
   private configFileName = "config_v5";

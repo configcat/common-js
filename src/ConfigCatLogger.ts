@@ -73,7 +73,7 @@ export class LoggerWrapper implements IConfigCatLogger {
 
 export class ConfigCatConsoleLogger implements IConfigCatLogger {
 
-  SOURCE: string = "ConfigCat";
+  SOURCE = "ConfigCat";
 
   /**
    * Create an instance of ConfigCatConsoleLogger

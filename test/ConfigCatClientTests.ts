@@ -637,7 +637,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions - config changed in every fetch - should fire configChanged every polling iteration", async () => {
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithAlwaysVariableEtag(), sdkType: "common", sdkVersion: "1.0.0" };
-    let counter: number = 0;
+    let counter = 0;
     let configChangedEventCount = 0;
     const pollIntervalSeconds = 1;
     const userOptions: IAutoPollOptions = {
@@ -657,7 +657,7 @@ describe("ConfigCatClient", () => {
 
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait", async () => {
 
-    const maxInitWaitTimeSeconds: number = 2;
+    const maxInitWaitTimeSeconds = 2;
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(500), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
@@ -674,7 +674,7 @@ describe("ConfigCatClient", () => {
 
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait for maxInitWaitTimeSeconds only and return default value", async () => {
 
-    const maxInitWaitTimeSeconds: number = 1;
+    const maxInitWaitTimeSeconds = 1;
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
@@ -901,7 +901,6 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, instanceCount);
       assert.strictEqual(client1, client2);
-      const x = messages1.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0);
       assert.isEmpty(messages1.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
 
       if (passOptionsToSecondGet) {
@@ -1002,6 +1001,8 @@ describe("ConfigCatClient", () => {
 
     assert.equal(2, instanceCount1);
     assert.equal(0, instanceCount2);
+    assert.isObject(client1);
+    assert.isObject(client2);
 
     done();
   });

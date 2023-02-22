@@ -1,6 +1,7 @@
 import { assert } from "chai";
 import * as fs from "fs";
 import "mocha";
+import { EOL } from "os";
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
 import { User } from "../src/RolloutEvaluator";
@@ -21,11 +22,11 @@ describe("MatrixTests", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     let header: string[] | null = null;
-    let rowNo: number = 1;
+    let rowNo = 1;
 
     const data = fs.readFileSync("test/data/testmatrix_variationId.csv", "utf8");
 
-    const lines: string[] = data.toString().split(require("os").EOL);
+    const lines: string[] = data.toString().split(EOL);
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       const line = lines[lineIndex];
 
@@ -37,7 +38,7 @@ describe("MatrixTests", () => {
 
         const user = Helper.CreateUser(line, header);
         const splittedLine = line.split(";");
-        for (let i: number = 4; i < header.length; i++) {
+        for (let i = 4; i < header.length; i++) {
 
           const key: string = header[i];
           const expected = splittedLine[i];

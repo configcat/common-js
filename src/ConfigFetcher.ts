@@ -1,5 +1,4 @@
 import { OptionsBase } from "./ConfigCatClientOptions";
-import { errorToString } from "./Utils";
 
 export enum FetchStatus {
   Fetched = 0,

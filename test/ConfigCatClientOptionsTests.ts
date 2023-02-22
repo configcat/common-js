@@ -60,7 +60,7 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
-      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { requestTimeoutMs: -1 }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { requestTimeoutMs: -1 }, null);
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 

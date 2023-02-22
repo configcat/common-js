@@ -40,7 +40,7 @@ describe("ConfigServiceBaseTests", () => {
       .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
       .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
-    let callNo: number = 1;
+    let callNo = 1;
 
     const cacheMock = new Mock<ICache>()
       .setup(m => m.get(It.IsAny<string>()))
@@ -80,7 +80,7 @@ describe("ConfigServiceBaseTests", () => {
       .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
       .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.eTag, body: fr.responseBody });
 
-    let callNo: number = 1;
+    let callNo = 1;
 
     const cacheMock = new Mock<ICache>()
       .setup(m => m.get(It.IsAny<string>()))
@@ -164,7 +164,7 @@ describe("ConfigServiceBaseTests", () => {
     const frOld: FetchResult = createFetchResult();
     frOld.eTag = "oldEtag";
 
-    const pollInterval: number = 10;
+    const pollInterval = 10;
 
     const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew);
     const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld);
@@ -216,9 +216,8 @@ describe("ConfigServiceBaseTests", () => {
     const frOld: FetchResult = createFetchResult();
     frOld.eTag = "oldEtag";
 
-    const pollInterval: number = 10;
+    const pollInterval = 10;
 
-    const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew);
     const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld);
 
     const time: number = new Date().getTime();
@@ -264,7 +263,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Arrange
 
-    const pollIntervalSeconds: number = 10;
+    const pollIntervalSeconds = 10;
 
     const fr: FetchResult = createFetchResult();
 
@@ -309,7 +308,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Arrange
 
-    const cacheTimeToLiveSeconds: number = 10;
+    const cacheTimeToLiveSeconds = 10;
     const oldConfig: ProjectConfig = createProjectConfig();
     oldConfig.Timestamp = new Date().getTime() - (cacheTimeToLiveSeconds * 1000) - 1000;
     oldConfig.HttpETag = "oldConfig";
@@ -689,8 +688,6 @@ describe("ConfigServiceBaseTests", () => {
 
     // Arrange
 
-    const fr: FetchResult = FetchResult.error();
-
     const fetcherMock = new Mock<IConfigFetcher>()
       .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
       .returnsAsync({ statusCode: 502, reasonPhrase: "Bad Gateway" });
@@ -719,7 +716,6 @@ describe("ConfigServiceBaseTests", () => {
     // Arrange
 
     const cachedPc: ProjectConfig = createConfigFromFetchResult(createFetchResult());
-    const fr: FetchResult = FetchResult.error();
 
     const fetcherMock = new Mock<IConfigFetcher>()
       .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))

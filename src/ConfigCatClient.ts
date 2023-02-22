@@ -183,7 +183,7 @@ export class ConfigCatClient implements IConfigCatClient {
   private defaultUser?: User;
   private suppressFinalize: () => void;
 
-  private static get instanceCache() { return clientInstanceCache; };
+  private static get instanceCache() { return clientInstanceCache; }
 
   public static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
     if (!sdkKey) {
@@ -682,7 +682,7 @@ export class SettingKeyValue<TValue = SettingValue> {
 // Since a strong reference is stored to the held value (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry),
 // objects implementing this interface MUST NOT contain a strong reference (either directly or transitively) to the ConfigCatClient object because
 // that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
-interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: LoggerWrapper };
+interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService, logger?: LoggerWrapper }
 
 let registerForFinalization = function (client: ConfigCatClient, data: IFinalizationData): () => void {
   // Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.

@@ -1,14 +1,13 @@
 import { assert } from "chai";
 import * as fs from "fs";
 import "mocha";
+import { EOL } from "os";
 import { createClientWithManualPoll } from "../src";
 import { ConfigCatConsoleLogger, LogLevel } from "../src/ConfigCatLogger";
 import { User } from "../src/RolloutEvaluator";
 import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
 
 describe("MatrixTests", () => {
-
-  const EOL: string = require("os").EOL;
 
   it("GetValue basic operators", async () => {
     await Helper.RunMatrixTest("test/data/sample_v5.json", "test/data/testmatrix.csv");
@@ -35,7 +34,7 @@ describe("MatrixTests", () => {
     public static CreateUser(row: string, headers: string[]): User | undefined {
 
       const column: string[] = row.split(";");
-      const USERNULL: string = "##null##";
+      const USERNULL = "##null##";
 
       if (column[0] === USERNULL) {
         return;

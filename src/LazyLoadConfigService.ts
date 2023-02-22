@@ -20,7 +20,7 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
   async getConfig(): Promise<ProjectConfig | null> {
     this.options.logger.debug("LazyLoadConfigService.getConfig() called.");
 
-    function logExpired(logger: LoggerWrapper, appendix: string = "") {
+    function logExpired(logger: LoggerWrapper, appendix = "") {
       logger.debug(`LazyLoadConfigService.getConfig(): cache is empty or expired${appendix}.`);
     }
 

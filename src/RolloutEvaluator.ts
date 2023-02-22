@@ -157,7 +157,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     if (rolloutRules && rolloutRules.length > 0) {
 
-      for (let i: number = 0; i < rolloutRules.length; i++) {
+      for (let i = 0; i < rolloutRules.length; i++) {
 
         const rule: RolloutRule = rolloutRules[i];
 
@@ -186,7 +186,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             const cvs: string[] = comparisonValue.split(",");
 
-            for (let ci: number = 0; ci < cvs.length; ci++) {
+            for (let ci = 0; ci < cvs.length; ci++) {
 
               if (cvs[ci].trim() === comparisonAttribute) {
                 log += "MATCH";
@@ -283,7 +283,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           case 16: // is one of (sensitive)
             const values: string[] = comparisonValue.split(",");
 
-            for (let ci: number = 0; ci < values.length; ci++) {
+            for (let ci = 0; ci < values.length; ci++) {
 
               if (values[ci].trim() === sha1(comparisonAttribute)) {
                 log += "MATCH";
@@ -332,9 +332,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       const hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
       const hashValue: any = sha1(hashCandidate).substring(0, 7);
       const hashScale: number = parseInt(hashValue, 16) % 100;
-      let bucket: number = 0;
+      let bucket = 0;
 
-      for (let i: number = 0; i < rolloutPercentageItems.length; i++) {
+      for (let i = 0; i < rolloutPercentageItems.length; i++) {
         const percentageRule: RolloutPercentageItem = rolloutPercentageItems[i];
         bucket += +percentageRule.percentage;
 
@@ -402,8 +402,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case 4:
         // in
         const sv: string[] = v2.split(",");
-        let found: boolean = false;
-        for (let ci: number = 0; ci < sv.length; ci++) {
+        let found = false;
+        for (let ci = 0; ci < sv.length; ci++) {
 
           if (!sv[ci] || isUndefined(sv[ci]) || sv[ci].trim() === "") {
             continue;
@@ -541,7 +541,7 @@ class EvaluateLogger {
 
   public ReturnValue!: any;
 
-  public Operations: string = "";
+  public Operations = "";
 
   public OpAppendLine(s: string): void {
     this.Operations += " " + s + "\n";
@@ -687,7 +687,7 @@ export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: 
     (key, fetchTime, user, err) => evaluationDetailsFromDefaultVariationId(key, null, fetchTime, user, errorToString(err), err));
 }
 
-export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, appendix: string = ""): settings is { [name: string]: Setting } {
+export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, appendix = ""): settings is { [name: string]: Setting } {
   if (!settings) {
     logger.error(`config.json is not present${appendix}`);
     return false;
