@@ -3,7 +3,7 @@ import type { ProjectConfig, Setting } from "./ProjectConfig";
 import { RolloutPercentageItem, RolloutRule } from "./ProjectConfig";
 import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
-import { errorToString, getTimestampAsDate, isUndefined } from "./Utils";
+import { errorToString, getTimestampAsDate } from "./Utils";
 
 export type SettingValue = boolean | number | string | null | undefined;
 
@@ -393,7 +393,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
   private evaluateSemver(v1: string, v2: string, comparator: number): boolean {
     this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
-    if (semver.valid(v1) == null || isUndefined(v2)) {
+    if (semver.valid(v1) == null || v2 === void 0) {
       return false;
     }
 
@@ -406,7 +406,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         let found = false;
         for (let ci = 0; ci < sv.length; ci++) {
 
-          if (!sv[ci] || isUndefined(sv[ci]) || sv[ci].trim() === "") {
+          if (!sv[ci] || sv[ci].trim() === "") {
             continue;
           }
 
@@ -425,7 +425,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         // not in
         return !v2.split(",").some(e => {
 
-          if (!e || isUndefined(e) || e.trim() === "") {
+          if (!e || e.trim() === "") {
             return false;
           }
 

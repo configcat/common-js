@@ -1,8 +1,6 @@
 import type { ProjectConfig } from "./ProjectConfig";
 import { ConfigFile, Setting } from "./ProjectConfig";
 
-export const isUndefined = (comp: any): boolean => comp === void 0;
-
 export function delay(delayMs: number, obtainCancel?: (cancel: () => void) => void): Promise<void> {
   let timerId: ReturnType<typeof setTimeout>;
   const promise = new Promise<void>(resolve => timerId = setTimeout(resolve, delayMs));

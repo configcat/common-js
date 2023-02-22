@@ -38,7 +38,7 @@
             "extendDefaults": true
           }
         ],
-        // NOTE: Deno fails if types are not exported 
+        // NOTE: Deno doesn't like type exports without the "type" keyword.
         "@typescript-eslint/consistent-type-exports": [
           "error",
           {
