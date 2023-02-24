@@ -87,11 +87,11 @@ export function getWeakRefStub<T extends object>(): WeakRefConstructor {
   type WeakRefImpl = WeakRef<T> & { target: T };
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const WeakRef = function (this: WeakRefImpl, target: T) {
+  const WeakRef = function(this: WeakRefImpl, target: T) {
     this.target = target;
   } as Function as WeakRefConstructor & { isFallback: boolean };
 
-  WeakRef.prototype.deref = function (this: WeakRefImpl) {
+  WeakRef.prototype.deref = function(this: WeakRefImpl) {
     return this.target;
   };
 

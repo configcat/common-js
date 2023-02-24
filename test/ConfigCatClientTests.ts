@@ -29,20 +29,20 @@ describe("ConfigCatClient", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
-    client.getValue("debug", false, function (value) {
+    client.getValue("debug", false, function(value) {
       assert.equal(true, value);
 
-      client.getValue("debug", false, function (value) {
+      client.getValue("debug", false, function(value) {
         assert.equal(true, value);
 
-        client.forceRefresh(function () {
-          client.getValue("debug", false, function (value) {
+        client.forceRefresh(function() {
+          client.getValue("debug", false, function(value) {
             assert.equal(true, value);
 
-            client.getValue("debug", false, function (value) {
+            client.getValue("debug", false, function(value) {
               assert.equal(true, value);
 
-              client.getValue("NOT_EXISTS", false, function (value) {
+              client.getValue("NOT_EXISTS", false, function(value) {
                 assert.equal(false, value);
 
                 done();
@@ -76,17 +76,17 @@ describe("ConfigCatClient", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
-    client.getValue("debug", false, function (value) {
+    client.getValue("debug", false, function(value) {
       assert.equal(true, value);
 
-      client.getValue("debug", false, function (value) {
+      client.getValue("debug", false, function(value) {
         assert.equal(true, value);
 
-        client.getValue("NOT_EXISTS", false, function (value) {
+        client.getValue("NOT_EXISTS", false, function(value) {
           assert.equal(false, value);
 
-          client.forceRefresh(function () {
-            client.getValue("debug", false, function (value) {
+          client.forceRefresh(function() {
+            client.getValue("debug", false, function(value) {
               assert.equal(true, value);
               done();
             }, new User("identifier"));
@@ -117,20 +117,20 @@ describe("ConfigCatClient", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
-    client.getValue("debug", false, function (value) {
+    client.getValue("debug", false, function(value) {
       assert.equal(false, value);
 
-      client.getValue("debug", false, function (value) {
+      client.getValue("debug", false, function(value) {
         assert.equal(false, value);
 
-        client.forceRefresh(function () {
-          client.getValue("debug", false, function (value) {
+        client.forceRefresh(function() {
+          client.getValue("debug", false, function(value) {
             assert.equal(true, value);
 
-            client.getValue("debug", false, function (value) {
+            client.getValue("debug", false, function(value) {
               assert.equal(true, value);
 
-              client.getValue("NOT_EXISTS", false, function (value) {
+              client.getValue("NOT_EXISTS", false, function(value) {
                 assert.equal(false, value);
 
                 done();
@@ -165,7 +165,7 @@ describe("ConfigCatClient", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
     client.forceRefresh(() => {
-      client.getValue("debug", false, function (value) {
+      client.getValue("debug", false, function(value) {
         assert.equal(true, value);
         done();
       });
@@ -179,7 +179,7 @@ describe("ConfigCatClient", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
-    client.getValue("debug", false, function (value) {
+    client.getValue("debug", false, function(value) {
       assert.equal(true, value);
       done();
     });
@@ -192,7 +192,7 @@ describe("ConfigCatClient", () => {
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
 
-    client.getValue("debug", false, function (value) {
+    client.getValue("debug", false, function(value) {
       assert.equal(false, value);
       done();
     });
@@ -205,7 +205,7 @@ describe("ConfigCatClient", () => {
 
     assert.isDefined(client);
 
-    client.getValue("debug", false, function (value) {
+    client.getValue("debug", false, function(value) {
       assert.equal(value, true);
       done();
     });
@@ -234,7 +234,7 @@ describe("ConfigCatClient", () => {
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null }, null);
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
-    client.getAllKeys(function (keys) {
+    client.getAllKeys(function(keys) {
       assert.equal(keys.length, 2);
       assert.equal(keys[0], "debug");
       assert.equal(keys[1], "debug2");
@@ -260,7 +260,7 @@ describe("ConfigCatClient", () => {
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null, maxInitWaitTimeSeconds: 0 }, null);
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     assert.isDefined(client);
-    client.getAllKeys(function (keys) {
+    client.getAllKeys(function(keys) {
       assert.equal(keys.length, 0);
       done();
     });
@@ -1011,7 +1011,7 @@ describe("ConfigCatClient", () => {
     done();
   });
 
-  it("GC should be able to collect cached instances when no strong references are left", async function () {
+  it("GC should be able to collect cached instances when no strong references are left", async function() {
     // Arrange
 
     setupPolyfills();

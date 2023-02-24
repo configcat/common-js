@@ -118,6 +118,18 @@
               "typeProperty",
               "accessor"
             ],
+            "modifiers": [
+              "requiresQuotes"
+            ],
+            "format": null
+          },
+          {
+            "selector": [
+              "classProperty",
+              "objectLiteralProperty",
+              "typeProperty",
+              "accessor"
+            ],
             "format": [
               "camelCase",
               "UPPER_CASE"
@@ -331,7 +343,7 @@
     "space-before-function-paren": [
       "warn",
       {
-        "anonymous": "always",
+        "anonymous": "never",
         "named": "never",
         "asyncArrow": "always"
       }

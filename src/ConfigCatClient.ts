@@ -688,7 +688,7 @@ export class SettingKeyValue<TValue = SettingValue> {
 // that would prevent the client object from being GC'd, which would defeat the whole purpose of the finalization logic.
 interface IFinalizationData { sdkKey: string; cacheToken?: object; configService?: IConfigService; logger?: LoggerWrapper }
 
-let registerForFinalization = function (client: ConfigCatClient, data: IFinalizationData): () => void {
+let registerForFinalization = function(client: ConfigCatClient, data: IFinalizationData): () => void {
   // Use FinalizationRegistry (finalization callbacks) if the runtime provides that feature.
   if (typeof FinalizationRegistry !== "undefined") {
     const finalizationRegistry = new FinalizationRegistry<IFinalizationData>(data => ConfigCatClient["finalize"](data));

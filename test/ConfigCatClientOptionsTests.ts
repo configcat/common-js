@@ -81,7 +81,7 @@ describe("Options", () => {
   it("AutoPollOptions initialization With parameters works", () => {
     const fakeLogger: FakeLogger = new FakeLogger();
 
-    const configChanged = function () { };
+    const configChanged = function() { };
     const options: AutoPollOptions = new AutoPollOptions(
       "APIKEY", "common", "1.0.0",
       {
