@@ -256,7 +256,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     return this.status !== ConfigServiceStatus.Online;
   }
 
-  protected setOnlineCore(): void { }
+  protected setOnlineCore(): void { /* Intentionally empty. */ }
 
   setOnline(): void {
     if (this.status === ConfigServiceStatus.Offline) {
@@ -269,7 +269,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  protected setOfflineCore(): void { }
+  protected setOfflineCore(): void { /* Intentionally empty. */ }
 
   setOffline(): void {
     if (this.status === ConfigServiceStatus.Online) {
