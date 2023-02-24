@@ -4,8 +4,7 @@ import { ConfigCatClient, ConfigCatClientCache } from "../src/ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import "./helpers/ConfigCatClientCacheExtensions";
-import type { FakeConfigCatKernel } from "./helpers/fakes";
-import { FakeConfigFetcher } from "./helpers/fakes";
+import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClientCache", () => {

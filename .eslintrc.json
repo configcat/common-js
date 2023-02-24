@@ -38,20 +38,6 @@
             "extendDefaults": true
           }
         ],
-        // NOTE: Deno doesn't like type exports without the "type" keyword.
-        "@typescript-eslint/consistent-type-exports": [
-          "error",
-          {
-            "fixMixedExportsWithInlineTypeSpecifier": false
-          }
-        ],
-        "@typescript-eslint/consistent-type-imports": [
-          "error",
-          {
-            "prefer": "type-imports",
-            "fixStyle": "separate-type-imports"
-          }
-        ],
         // https://github.com/typescript-eslint/typescript-eslint/issues/1824#issuecomment-1378327382
         "indent": "off",
         "@typescript-eslint/indent": [
@@ -80,7 +66,6 @@
             "allowArgumentsExplicitlyTypedAsAny": true
           }
         ],
-        "@typescript-eslint/no-import-type-side-effects": "warn",
         "@typescript-eslint/member-delimiter-style": "warn",
         // Based on: https://typescript-eslint.io/rules/naming-convention/#enforce-the-codebase-follows-eslints-camelcase-conventions
         "@typescript-eslint/naming-convention": [
@@ -168,7 +153,31 @@
         "@typescript-eslint/prefer-return-this-type": "warn",
         "@typescript-eslint/switch-exhaustiveness-check": "warn",
         "@typescript-eslint/type-annotation-spacing": "warn"
-      }
+      },
+      "overrides": [
+        {
+          "files": [
+            "src/**"
+          ],
+          "rules": {
+            // NOTE: Deno doesn't like type exports without the "type" keyword.
+            "@typescript-eslint/consistent-type-exports": [
+              "error",
+              {
+                "fixMixedExportsWithInlineTypeSpecifier": false
+              }
+            ],
+            "@typescript-eslint/consistent-type-imports": [
+              "error",
+              {
+                "prefer": "type-imports",
+                "fixStyle": "separate-type-imports"
+              }
+            ],
+            "@typescript-eslint/no-import-type-side-effects": "warn"
+          }
+        }
+      ]
     }
   ],
   "rules": {

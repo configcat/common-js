@@ -1,10 +1,9 @@
-import type { ICache } from "../../src/Cache";
-import type { IConfigCatKernel } from "../../src/ConfigCatClient";
-import type { OptionsBase } from "../../src/ConfigCatClientOptions";
-import type { IConfigCatLogger } from "../../src/ConfigCatLogger";
-import { LogLevel } from "../../src/ConfigCatLogger";
-import type { IConfigFetcher, IFetchResponse } from "../../src/ConfigFetcher";
-import type { ProjectConfig } from "../../src/ProjectConfig";
+import { ICache } from "../../src/Cache";
+import { IConfigCatKernel } from "../../src/ConfigCatClient";
+import { OptionsBase } from "../../src/ConfigCatClientOptions";
+import { IConfigCatLogger, LogLevel } from "../../src/ConfigCatLogger";
+import { IConfigFetcher, IFetchResponse } from "../../src/ConfigFetcher";
+import { ProjectConfig } from "../../src/ProjectConfig";
 import { delay } from "../../src/Utils";
 
 export class FakeLogger implements IConfigCatLogger {

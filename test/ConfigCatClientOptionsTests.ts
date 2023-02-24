@@ -1,11 +1,9 @@
 import { assert, expect } from "chai";
 import "mocha";
-import type { ICache } from "../src/Cache";
-import { InMemoryCache } from "../src/Cache";
+import { ICache, InMemoryCache } from "../src/Cache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
-import type { IConfigCatLogger } from "../src/ConfigCatLogger";
-import { ConfigCatConsoleLogger, LoggerWrapper } from "../src/ConfigCatLogger";
-import type { ProjectConfig } from "../src/ProjectConfig";
+import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "../src/ConfigCatLogger";
+import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("Options", () => {
 
