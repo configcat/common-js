@@ -205,7 +205,7 @@ export class ConfigCatClient implements IConfigCatClient {
     const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
 
     if (instanceAlreadyCreated && options) {
-      actualOptions.logger.warn(`Client for SDK key '${sdkKey}' is already created and will be reused; configuration action is being ignored.`);
+      actualOptions.logger.clientIsAlreadyCreated(sdkKey);
     }
 
     return instance;
@@ -324,7 +324,7 @@ export class ConfigCatClient implements IConfigCatClient {
       value = evaluationDetails.value;
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getValueAsync().", err);
+      this.options.logger.settingEvaluationError("getValueAsync", err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
       value = defaultValue as SettingTypeOf<T>;
     }
@@ -351,7 +351,7 @@ export class ConfigCatClient implements IConfigCatClient {
       evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getValueDetailsAsync().", err);
+      this.options.logger.settingEvaluationError("getValueDetailsAsync", err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
     }
 
@@ -373,7 +373,7 @@ export class ConfigCatClient implements IConfigCatClient {
         return result;
       }
       catch (err) {
-        this.options.logger.error("Error occurred in forceRefreshAsync().", err);
+        this.options.logger.forceRefreshError("forceRefreshAsync", err);
         return RefreshResult.failure(errorToString(err), err);
       }
     }
@@ -398,7 +398,7 @@ export class ConfigCatClient implements IConfigCatClient {
       return Object.keys(settings);
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getAllKeysAsync().", err);
+      this.options.logger.settingEvaluationError("getAllKeysAsync", err);
       return [];
     }
   }
@@ -421,7 +421,7 @@ export class ConfigCatClient implements IConfigCatClient {
       variationId = evaluationDetails.variationId as VariationIdTypeOf<T>;
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getVariationIdAsync().", err);
+      this.options.logger.settingEvaluationError("getVariationIdAsync", err);
       evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
       variationId = defaultVariationId as VariationIdTypeOf<T>;
     }
@@ -450,7 +450,7 @@ export class ConfigCatClient implements IConfigCatClient {
       result = evaluationDetailsArray.filter(details => details !== null && details !== void 0).map(details => details.variationId!);
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getAllVariationIdsAsync().", err);
+      this.options.logger.settingEvaluationError("getAllVariationIdsAsync", err);
       evaluationDetailsArray ??= [];
       result = [];
     }
@@ -502,10 +502,10 @@ export class ConfigCatClient implements IConfigCatClient {
         }
       }
 
-      this.options.logger.error("Could not find the setting for the given variation ID: " + variationId);
+      this.options.logger.settingForVariationIdIsNotPresent(variationId);
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getKeyAndValueAsync().", err);
+      this.options.logger.settingEvaluationError("getKeyAndValueAsync", err);
     }
 
     return null;
@@ -531,7 +531,7 @@ export class ConfigCatClient implements IConfigCatClient {
       result = evaluationDetailsArray.map(details => new SettingKeyValue(details.key, details.value));
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getAllValuesAsync().", err);
+      this.options.logger.settingEvaluationError("getAllValuesAsync", err);
       evaluationDetailsArray ??= [];
       result = [];
     }
@@ -562,7 +562,7 @@ export class ConfigCatClient implements IConfigCatClient {
       }
     }
     catch (err) {
-      this.options.logger.error("Error occurred in getAllValueDetailsAsync().", err);
+      this.options.logger.settingEvaluationError("getAllValueDetailsAsync", err);
       evaluationDetailsArray ??= [];
     }
 
@@ -590,7 +590,7 @@ export class ConfigCatClient implements IConfigCatClient {
       this.configService.setOnline();
     }
     else {
-      this.options.logger.warn("Client is configured to use the LocalOnly override behavior, thus SetOnline() has no effect.");
+      this.options.logger.configServiceMethodHasNoEffectDueToOverrideBehavior(OverrideBehaviour[OverrideBehaviour.LocalOnly], "setOnline");
     }
   }
 

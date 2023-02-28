@@ -128,13 +128,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         }
       }
       else {
-        if ((setting.rolloutRules && setting.rolloutRules.length > 0) ||
-                    (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
-          let s: string = "Evaluating getValue('" + key + "'). ";
-          s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
-          s += "Read more: https://configcat.com/docs/advanced/user-object";
-
-          this.logger.warn(s);
+        if ((setting.rolloutRules && setting.rolloutRules.length > 0)
+            || (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
+          this.logger.targetingIsNotPossible(key);
         }
       }
 
@@ -148,7 +144,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
     }
     finally {
-      this.logger.info(eLog.getLog());
+      this.logger.settingEvaluated(eLog);
     }
   }
 
@@ -548,7 +544,7 @@ class EvaluateLogger {
     this.operations += " " + s + "\n";
   }
 
-  getLog(): string {
+  toString(): string {
     return "Evaluate '" + this.keyName + "'"
             + "\n User : " + JSON.stringify(this.user)
             + "\n" + this.operations
@@ -601,15 +597,13 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = `config.json is not present. Returning default value: '${defaultValue}'.`;
-    logger.error(errorMessage);
+    errorMessage = logger.configJsonIsNotPresent("defaultValue", defaultValue).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
   const setting = settings[key];
   if (!setting) {
-    errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default value: '${defaultValue}'. These are the available keys: ${keysToString(settings)}.`;
-    logger.error(errorMessage);
+    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultValue", defaultValue, keysToString(settings)).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -629,15 +623,13 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = `config.json is not present. Returning default variationId: '${defaultVariationId}'.`;
-    logger.error(errorMessage);
+    errorMessage = logger.configJsonIsNotPresent("defaultVariationId", defaultVariationId).toString();
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
   const setting = settings[key];
   if (!setting) {
-    errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default variationId: '${defaultVariationId}'. These are the available keys: ${keysToString(settings)}.`;
-    logger.error(errorMessage);
+    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultVariationId", defaultVariationId, keysToString(settings)).toString();
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -690,7 +682,7 @@ export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: 
 
 export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, appendix = ""): settings is { [name: string]: Setting } {
   if (!settings) {
-    logger.error(`config.json is not present${appendix}`);
+    logger.configJsonIsNotPresentNoParam(appendix);
     return false;
   }
 
@@ -711,5 +703,5 @@ export function ensureAllowedDefaultValue(value: SettingValue): void {
 }
 
 function keysToString(settings: { [name: string]: Setting }) {
-  return Object.keys(settings).join();
+  return Object.keys(settings).map(key => `'${key}'`).join(", ");
 }

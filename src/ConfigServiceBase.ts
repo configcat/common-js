@@ -1,5 +1,5 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
-import type { IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
+import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
 import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
 
@@ -78,8 +78,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       return [RefreshResult.from(fetchResult), config];
     }
     else {
-      this.logOfflineModeWarning();
-      return [RefreshResult.failure("Client is in offline mode, it can't initiate HTTP calls."), latestConfig];
+      const errorMessage = this.options.logger.configServiceCannotInitiateHttpCalls().toString();
+      return [RefreshResult.failure(errorMessage), latestConfig];
     }
   }
 
@@ -127,15 +127,15 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     const options = this.options;
     options.logger.debug("ConfigServiceBase.fetchLogicAsync() - called.");
 
-    let errorMessage;
+    let errorMessage: string;
     try {
       const [response, configJson] = await this.fetchRequestAsync(lastConfig?.HttpETag ?? null);
 
       switch (response.statusCode) {
         case 200: // OK
           if (!configJson) {
-            errorMessage = "Fetch was successful but HTTP response was invalid";
-            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${errorMessage.charAt(0).toLowerCase()}${errorMessage.slice(1)}. Returning null.`);
+            errorMessage = options.logger.fetchReceived200WithInvalidBody().toString();
+            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
             return [FetchResult.error(errorMessage), null];
           }
 
@@ -144,8 +144,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
         case 304: // Not Modified
           if (!lastConfig) {
-            errorMessage = `HTTP response ${response.statusCode} ${response.reasonPhrase} was received when no config is cached locally`;
-            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${errorMessage.charAt(0).toLowerCase()}${errorMessage.slice(1)}. Returning null.`);
+            errorMessage = options.logger.fetchReceived304WhenLocalCacheIsEmpty(response.statusCode, response.reasonPhrase).toString();
+            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received when no config is cached locally. Returning null.`);
             return [FetchResult.error(errorMessage), null];
           }
 
@@ -154,24 +154,21 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
         case 403: // Forbidden
         case 404: // Not Found
-          errorMessage = "Double-check your SDK Key at https://app.configcat.com/sdkkey";
-          options.logger.error(errorMessage);
+          errorMessage = options.logger.fetchFailedDueToInvalidSdkKey().toString();
           options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning last config (if any) with updated timestamp.");
           return [FetchResult.error(errorMessage), lastConfig ? new ProjectConfig(new Date().getTime(), lastConfig.ConfigJSON, lastConfig.HttpETag) : null];
 
         default:
-          errorMessage = `Unexpected HTTP response was received: ${response.statusCode} ${response.reasonPhrase}`;
-          options.logger.error(errorMessage);
+          errorMessage = options.logger.fetchFailedDueToUnexpectedHttpResponse(response.statusCode, response.reasonPhrase).toString();
           options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
           return [FetchResult.error(errorMessage), null];
       }
     }
     catch (err) {
-      const errorMessage = err instanceof FetchError
-        ? err.message
-        : "Unexpected error occurred during fetching.";
+      errorMessage = (err instanceof FetchError && (err as FetchError).cause === "timeout"
+        ? options.logger.fetchFailedDueToRequestTimeout((err.args as FetchErrorCauses["timeout"])[0], err)
+        : options.logger.fetchFailedDueToUnexpectedError(err)).toString();
 
-      options.logger.error(errorMessage, err);
       options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
       return [FetchResult.error(errorMessage, err), null];
     }
@@ -233,16 +230,11 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       }
 
       if (redirect === 1) {
-
-        options.logger.warn(
-          "Your dataGovernance parameter at ConfigCatClient initialization is not in sync " +
-          "with your preferences on the ConfigCat Dashboard: " +
-          "https://app.configcat.com/organization/data-governance. " +
-          "Only Organization Admins can access this preference.");
+        options.logger.dataGovernanceIsOutOfSync();
       }
 
       if (retryNumber >= maxRetryCount) {
-        options.logger.error("Redirect loop during config.json fetch. Please contact support@configcat.com.");
+        options.logger.fetchFailedDueToRedirectLoop();
         return [response, configJSON];
       }
     }
@@ -262,10 +254,10 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     if (this.status === ConfigServiceStatus.Offline) {
       this.setOnlineCore();
       this.status = ConfigServiceStatus.Online;
-      this.logStatusChange(this.status);
+      this.options.logger.configServiceStatusChanged(ConfigServiceStatus[this.status]);
     }
     else if (this.disposed) {
-      this.logDisposedWarning("setOnline");
+      this.options.logger.configServiceMethodHasNoEffectDueToDisposedClient("setOnline");
     }
   }
 
@@ -275,22 +267,10 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     if (this.status === ConfigServiceStatus.Online) {
       this.setOfflineCore();
       this.status = ConfigServiceStatus.Offline;
-      this.logStatusChange(this.status);
+      this.options.logger.configServiceStatusChanged(ConfigServiceStatus[this.status]);
     }
     else if (this.disposed) {
-      this.logDisposedWarning("setOnline");
+      this.options.logger.configServiceMethodHasNoEffectDueToDisposedClient("setOffline");
     }
-  }
-
-  logStatusChange(status: ConfigServiceStatus): void {
-    this.options.logger.debug(`Switched to ${ConfigServiceStatus[status]?.toUpperCase()} mode.`);
-  }
-
-  logOfflineModeWarning(): void {
-    this.options.logger.warn("Client is in offline mode, it can't initiate HTTP calls.");
-  }
-
-  logDisposedWarning(methodName: string): void {
-    this.options.logger.warn(`Client has already been disposed, thus ${methodName}() has no effect.`);
   }
 }

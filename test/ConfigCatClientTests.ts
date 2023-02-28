@@ -507,7 +507,7 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, errorEvents.length);
       const [actualErrorMessage, actualErrorException] = errorEvents[0];
-      expect(actualErrorMessage).to.include("Error occurred in getValueDetailsAsync().");
+      expect(actualErrorMessage).to.include("Error occurred in the `getValueDetailsAsync` method.");
       assert.strictEqual(err, actualErrorException);
     });
   }
@@ -623,7 +623,7 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, errorEvents.length);
       const [actualErrorMessage, actualErrorException] = errorEvents[0];
-      expect(actualErrorMessage).to.include("Error occurred in getAllValueDetailsAsync().");
+      expect(actualErrorMessage).to.include("Error occurred in the `getAllValueDetailsAsync` method.");
       if (typeof AggregateError !== "undefined") {
         assert.instanceOf(actualErrorException, AggregateError);
         assert.deepEqual(Array(actual.length).fill(err), (actualErrorException as AggregateError).errors);
@@ -900,13 +900,13 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, instanceCount);
       assert.strictEqual(client1, client2);
-      assert.isEmpty(messages1.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
+      assert.isEmpty(messages1.filter(([, msg]) => msg.indexOf("the specified options are ignored") >= 0));
 
       if (passOptionsToSecondGet) {
-        assert.isNotEmpty(messages2.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
+        assert.isNotEmpty(messages2.filter(([, msg]) => msg.indexOf("the specified options are ignored") >= 0));
       }
       else {
-        assert.isEmpty(messages2.filter(([, msg]) => msg.indexOf("configuration action is being ignored") >= 0));
+        assert.isEmpty(messages2.filter(([, msg]) => msg.indexOf("the specified options are ignored") >= 0));
       }
 
       done();
@@ -1220,7 +1220,7 @@ describe("ConfigCatClient", () => {
       const userOptions: IManualPollOptions = addListenersViaOptions ? { setupHooks } : {};
       const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, userOptions, configCache);
 
-      const expectedErrorMessage = "Error occurred in forceRefreshAsync().";
+      const expectedErrorMessage = "Error occurred in the `forceRefreshAsync` method.";
       const expectedErrorException = new Error("Something went wrong.");
 
       // 1. Client gets created
