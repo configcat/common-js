@@ -92,7 +92,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
-    this.logger.debug("RolloutEvaluator.Evaluate() called.");
+    this.logger.logDebug("RolloutEvaluator.Evaluate() called.");
 
     const eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -150,7 +150,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
   private evaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
 
-    this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateRules() called.");
 
     if (rolloutRules && rolloutRules.length > 0) {
 
@@ -323,7 +323,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
-    this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
       const hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
@@ -349,7 +349,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluateNumber(v1: string, v2: string, comparator: number): boolean {
-    this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateNumber() called.");
 
     let n1: number, n2: number;
 
@@ -388,7 +388,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluateSemver(v1: string, v2: string, comparator: number): boolean {
-    this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateSemver() called.");
     if (semver.valid(v1) == null || v2 === void 0) {
       return false;
     }

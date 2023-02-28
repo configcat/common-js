@@ -108,7 +108,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   protected onConfigUpdated(newConfig: ProjectConfig): void { }
 
   protected onConfigChanged(newConfig: ProjectConfig): void {
-    this.options.logger.debug("config changed");
+    this.options.logger.logDebug("config changed");
     this.options.hooks.emit("configChanged", newConfig);
   }
 
@@ -125,7 +125,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   private async fetchLogicAsync(lastConfig: ProjectConfig | null): Promise<[FetchResult, ProjectConfig | null]> {
     const options = this.options;
-    options.logger.debug("ConfigServiceBase.fetchLogicAsync() - called.");
+    options.logger.logDebug("ConfigServiceBase.fetchLogicAsync() - called.");
 
     let errorMessage: string;
     try {
@@ -135,32 +135,32 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         case 200: // OK
           if (!configJson) {
             errorMessage = options.logger.fetchReceived200WithInvalidBody().toString();
-            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
+            options.logger.logDebug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
             return [FetchResult.error(errorMessage), null];
           }
 
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was successful. Returning new config.");
+          options.logger.logDebug("ConfigServiceBase.fetchLogicAsync(): fetch was successful. Returning new config.");
           return [FetchResult.success(response.body!, response.eTag!), new ProjectConfig(new Date().getTime(), configJson, response.eTag)];
 
         case 304: // Not Modified
           if (!lastConfig) {
             errorMessage = options.logger.fetchReceived304WhenLocalCacheIsEmpty(response.statusCode, response.reasonPhrase).toString();
-            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received when no config is cached locally. Returning null.`);
+            options.logger.logDebug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received when no config is cached locally. Returning null.`);
             return [FetchResult.error(errorMessage), null];
           }
 
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): content was not modified. Returning last config with updated timestamp.");
+          options.logger.logDebug("ConfigServiceBase.fetchLogicAsync(): content was not modified. Returning last config with updated timestamp.");
           return [FetchResult.notModified(), new ProjectConfig(new Date().getTime(), lastConfig.ConfigJSON, lastConfig.HttpETag)];
 
         case 403: // Forbidden
         case 404: // Not Found
           errorMessage = options.logger.fetchFailedDueToInvalidSdkKey().toString();
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning last config (if any) with updated timestamp.");
+          options.logger.logDebug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning last config (if any) with updated timestamp.");
           return [FetchResult.error(errorMessage), lastConfig ? new ProjectConfig(new Date().getTime(), lastConfig.ConfigJSON, lastConfig.HttpETag) : null];
 
         default:
           errorMessage = options.logger.fetchFailedDueToUnexpectedHttpResponse(response.statusCode, response.reasonPhrase).toString();
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
+          options.logger.logDebug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
           return [FetchResult.error(errorMessage), null];
       }
     }
@@ -169,17 +169,17 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         ? options.logger.fetchFailedDueToRequestTimeout((err.args as FetchErrorCauses["timeout"])[0], err)
         : options.logger.fetchFailedDueToUnexpectedError(err)).toString();
 
-      options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
+      options.logger.logDebug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
       return [FetchResult.error(errorMessage, err), null];
     }
   }
 
   private async fetchRequestAsync(lastETag: string | null, maxRetryCount = 2): Promise<[IFetchResponse, any?]> {
     const options = this.options;
-    options.logger.debug("ConfigServiceBase.fetchRequestAsync() - called.");
+    options.logger.logDebug("ConfigServiceBase.fetchRequestAsync() - called.");
 
     for (let retryNumber = 0; ; retryNumber++) {
-      options.logger.debug(`ConfigServiceBase.fetchRequestAsync(): calling fetchLogic()${retryNumber > 0 ? `, retry ${retryNumber}/${maxRetryCount}` : ""}`);
+      options.logger.logDebug(`ConfigServiceBase.fetchRequestAsync(): calling fetchLogic()${retryNumber > 0 ? `, retry ${retryNumber}/${maxRetryCount}` : ""}`);
       const response = await this.configFetcher.fetchLogic(options, lastETag);
 
       if (response.statusCode !== 200) {
@@ -187,7 +187,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       }
 
       if (!response.body) {
-        options.logger.debug("ConfigServiceBase.fetchRequestAsync(): no response body.");
+        options.logger.logDebug("ConfigServiceBase.fetchRequestAsync(): no response body.");
         return [response];
       }
 
@@ -196,13 +196,13 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         configJSON = JSON.parse(response.body);
       }
       catch {
-        options.logger.debug("ConfigServiceBase.fetchRequestAsync(): invalid response body.");
+        options.logger.logDebug("ConfigServiceBase.fetchRequestAsync(): invalid response body.");
         return [response];
       }
 
       const preferences = configJSON[ConfigFile.Preferences];
       if (!preferences) {
-        options.logger.debug("ConfigServiceBase.fetchRequestAsync(): preferences is empty.");
+        options.logger.logDebug("ConfigServiceBase.fetchRequestAsync(): preferences is empty.");
         return [response, configJSON];
       }
 
@@ -210,7 +210,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
       // If the base_url is the same as the last called one, just return the response.
       if (!baseUrl || baseUrl === options.baseUrl) {
-        options.logger.debug("ConfigServiceBase.fetchRequestAsync(): baseUrl OK.");
+        options.logger.logDebug("ConfigServiceBase.fetchRequestAsync(): baseUrl OK.");
         return [response, configJSON];
       }
 
@@ -219,7 +219,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
       // If the base_url is overridden, and the redirect parameter is not 2 (force),
       // the SDK should not redirect the calls and it just have to return the response.
       if (options.baseUrlOverriden && redirect !== 2) {
-        options.logger.debug("ConfigServiceBase.fetchRequestAsync(): options.baseUrlOverriden && redirect !== 2.");
+        options.logger.logDebug("ConfigServiceBase.fetchRequestAsync(): options.baseUrlOverriden && redirect !== 2.");
         return [response, configJSON];
       }
 

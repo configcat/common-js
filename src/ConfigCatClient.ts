@@ -222,7 +222,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     this.options = options;
 
-    this.options.logger.debug("Initializing ConfigCatClient. Options: " + JSON.stringify(this.options));
+    this.options.logger.logDebug("Initializing ConfigCatClient. Options: " + JSON.stringify(this.options));
 
     if (!configCatKernel) {
       throw new Error("Invalid 'configCatKernel' value");
@@ -257,7 +257,7 @@ export class ConfigCatClient implements IConfigCatClient {
   private static finalize(data: IFinalizationData) {
     // Safeguard against situations where user forgets to dispose of the client instance.
 
-    data.logger?.debug("finalize() called");
+    data.logger?.logDebug("finalize() called");
 
     if (data.cacheToken) {
       clientInstanceCache.remove(data.sdkKey, data.cacheToken);
@@ -267,7 +267,7 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   private static close(configService?: IConfigService, logger?: LoggerWrapper, hooks?: Hooks) {
-    logger?.debug("close() called");
+    logger?.logDebug("close() called");
 
     hooks?.tryDisconnect();
     configService?.dispose();
@@ -275,7 +275,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
   dispose(): void {
     const options = this.options;
-    options.logger.debug("dispose() called");
+    options.logger.logDebug("dispose() called");
 
     if (this.cacheToken) {
       clientInstanceCache.remove(options.apiKey, this.cacheToken);
@@ -306,12 +306,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getValue<T extends SettingValue>(key: string, defaultValue: T, callback: (value: SettingTypeOf<T>) => void, user?: User): void {
-    this.options.logger.debug("getValue() called.");
+    this.options.logger.logDebug("getValue() called.");
     this.getValueAsync(key, defaultValue, user).then(callback);
   }
 
   async getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>> {
-    this.options.logger.debug("getValueAsync() called.");
+    this.options.logger.logDebug("getValueAsync() called.");
 
     let value: SettingTypeOf<T>, evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
     let remoteConfig: ProjectConfig | null = null;
@@ -334,12 +334,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getValueDetails<T extends SettingValue>(key: string, defaultValue: T, callback: (evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>) => void, user?: User): void {
-    this.options.logger.debug("getValueDetails() called.");
+    this.options.logger.logDebug("getValueDetails() called.");
     this.getValueDetailsAsync(key, defaultValue, user).then(callback);
   }
 
   async getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>> {
-    this.options.logger.debug("getValueDetailsAsync() called.");
+    this.options.logger.logDebug("getValueDetailsAsync() called.");
 
     let evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
     let remoteConfig: ProjectConfig | null = null;
@@ -360,12 +360,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   forceRefresh(callback: (result: RefreshResult) => void): void {
-    this.options.logger.debug("forceRefresh() called.");
+    this.options.logger.logDebug("forceRefresh() called.");
     this.forceRefreshAsync().then(callback);
   }
 
   async forceRefreshAsync(): Promise<RefreshResult> {
-    this.options.logger.debug("forceRefreshAsync() called.");
+    this.options.logger.logDebug("forceRefreshAsync() called.");
 
     if (this.configService) {
       try {
@@ -383,12 +383,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getAllKeys(callback: (value: string[]) => void): void {
-    this.options.logger.debug("getAllKeys() called.");
+    this.options.logger.logDebug("getAllKeys() called.");
     this.getAllKeysAsync().then(callback);
   }
 
   async getAllKeysAsync(): Promise<string[]> {
-    this.options.logger.debug("getAllKeysAsync() called.");
+    this.options.logger.logDebug("getAllKeysAsync() called.");
 
     try {
       const [settings] = await this.getSettingsAsync();
@@ -404,12 +404,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getVariationId<T extends VariationIdValue>(key: string, defaultVariationId: T, callback: (variationId: VariationIdTypeOf<T>) => void, user?: User): void {
-    this.options.logger.debug("getVariationId() called.");
+    this.options.logger.logDebug("getVariationId() called.");
     this.getVariationIdAsync(key, defaultVariationId, user).then(callback);
   }
 
   async getVariationIdAsync<T extends VariationIdValue>(key: string, defaultVariationId: T, user?: User): Promise<VariationIdTypeOf<T>> {
-    this.options.logger.debug("getVariationIdAsync() called.");
+    this.options.logger.logDebug("getVariationIdAsync() called.");
 
     let variationId: VariationIdTypeOf<T>, evaluationDetails: IEvaluationDetails;
     let remoteConfig: ProjectConfig | null = null;
@@ -431,12 +431,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void {
-    this.options.logger.debug("getAllVariationIds() called.");
+    this.options.logger.logDebug("getAllVariationIds() called.");
     this.getAllVariationIdsAsync(user).then(callback);
   }
 
   async getAllVariationIdsAsync(user?: User): Promise<string[]> {
-    this.options.logger.debug("getAllVariationIdsAsync() called.");
+    this.options.logger.logDebug("getAllVariationIdsAsync() called.");
 
     let result: string[], evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
@@ -463,12 +463,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
-    this.options.logger.debug("getKeyAndValue() called.");
+    this.options.logger.logDebug("getKeyAndValue() called.");
     this.getKeyAndValueAsync(variationId).then(callback);
   }
 
   async getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
-    this.options.logger.debug("getKeyAndValueAsync() called.");
+    this.options.logger.logDebug("getKeyAndValueAsync() called.");
 
     try {
       const [settings] = await this.getSettingsAsync();
@@ -512,12 +512,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {
-    this.options.logger.debug("getAllValues() called.");
+    this.options.logger.logDebug("getAllValues() called.");
     this.getAllValuesAsync(user).then(callback);
   }
 
   async getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
-    this.options.logger.debug("getAllValuesAsync() called.");
+    this.options.logger.logDebug("getAllValuesAsync() called.");
 
     let result: SettingKeyValue[], evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
@@ -544,12 +544,12 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getAllValueDetails(callback: (result: IEvaluationDetails[]) => void, user?: User): void {
-    this.options.logger.debug("getAllValueDetails() called.");
+    this.options.logger.logDebug("getAllValueDetails() called.");
     this.getAllValueDetailsAsync(user).then(callback);
   }
 
   async getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]> {
-    this.options.logger.debug("getAllValueDetailsAsync() called.");
+    this.options.logger.logDebug("getAllValueDetailsAsync() called.");
 
     let evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
@@ -599,7 +599,7 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   private async getSettingsAsync(): Promise<SettingsWithRemoteConfig> {
-    this.options.logger.debug("getSettingsAsync() called.");
+    this.options.logger.logDebug("getSettingsAsync() called.");
 
     const getRemoteConfigAsync: () => Promise<SettingsWithRemoteConfig> = async () => {
       const config = await this.configService?.getConfig();

@@ -100,9 +100,7 @@ export class LoggerWrapper implements IConfigCatLogger {
     private readonly hooks?: Hooks) {
   }
 
-  debug(message: string): void {
-    this.logEvent(LogLevel.Debug, 0, message);
-  }
+  debug: (message: string) => void = this.logDebug;
 
   info(message: string): void {
     this.logEvent(LogLevel.Info, 0, message);
@@ -151,6 +149,13 @@ export class LoggerWrapper implements IConfigCatLogger {
     }
 
     return message;
+  }
+
+  /**
+   * Shorthand method for `logger.logEvent(LogLevel.Debug, 0, message);`
+   * */
+  logDebug(message: string): void {
+    this.logEvent(LogLevel.Debug, 0, message);
   }
 
   /* Common error messages (1000-1999) */

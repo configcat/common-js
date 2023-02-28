@@ -56,10 +56,10 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   }
 
   async getConfig(): Promise<ProjectConfig | null> {
-    this.options.logger.debug("AutoPollConfigService.getConfig() called.");
+    this.options.logger.logDebug("AutoPollConfigService.getConfig() called.");
 
     function logSuccess(logger: LoggerWrapper) {
-      logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
+      logger.logDebug("AutoPollConfigService.getConfig() - returning value from cache.");
     }
 
     let cacheConfig: ProjectConfig | null = null;
@@ -70,7 +70,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         return cacheConfig;
       }
 
-      this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired, waiting for initialization.");
+      this.options.logger.logDebug("AutoPollConfigService.getConfig() - cache is empty or expired, waiting for initialization.");
       await this.waitForInitializationAsync();
     }
 
@@ -79,19 +79,19 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       logSuccess(this.options.logger);
     }
     else {
-      this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired.");
+      this.options.logger.logDebug("AutoPollConfigService.getConfig() - cache is empty or expired.");
     }
 
     return cacheConfig;
   }
 
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
-    this.options.logger.debug("AutoPollConfigService.refreshConfigAsync() called.");
+    this.options.logger.logDebug("AutoPollConfigService.refreshConfigAsync() called.");
     return super.refreshConfigAsync();
   }
 
   dispose(): void {
-    this.options.logger.debug("AutoPollConfigService.dispose() called.");
+    this.options.logger.logDebug("AutoPollConfigService.dispose() called.");
     super.dispose();
     if (this.timerId) {
       this.stopRefreshWorker();
@@ -117,7 +117,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   }
 
   private async startRefreshWorker(delayMs: number) {
-    this.options.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
+    this.options.logger.logDebug("AutoPollConfigService.startRefreshWorker() called.");
 
     const latestConfig = await this.options.cache.get(this.options.getCacheKey());
     if (ProjectConfig.isExpired(latestConfig, this.options.pollIntervalSeconds * 1000)) {
@@ -135,29 +135,29 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       this.signalInitialization();
     }
 
-    this.options.logger.debug("AutoPollConfigService.startRefreshWorker() - calling refreshWorkerLogic()'s setTimeout.");
+    this.options.logger.logDebug("AutoPollConfigService.startRefreshWorker() - calling refreshWorkerLogic()'s setTimeout.");
     this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
   private stopRefreshWorker() {
-    this.options.logger.debug("AutoPollConfigService.stopRefreshWorker() - clearing setTimeout.");
+    this.options.logger.logDebug("AutoPollConfigService.stopRefreshWorker() - clearing setTimeout.");
     clearTimeout(this.timerId);
   }
 
   private async refreshWorkerLogic(delayMs: number) {
     if (this.disposed) {
-      this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called on a disposed client.");
+      this.options.logger.logDebug("AutoPollConfigService.refreshWorkerLogic() - called on a disposed client.");
       return;
     }
 
-    this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
+    this.options.logger.logDebug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
     if (!this.isOffline) {
       const latestConfig = await this.options.cache.get(this.options.getCacheKey());
       await this.refreshConfigCoreAsync(latestConfig);
     }
 
-    this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
+    this.options.logger.logDebug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
     this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 }
