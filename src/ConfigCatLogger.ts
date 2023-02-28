@@ -57,7 +57,7 @@ export interface IConfigCatLogger {
   /**
    * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
    */
-  debug(message: string): void;
+  debug?(message: string): void;
 
   /**
    * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
@@ -67,17 +67,17 @@ export interface IConfigCatLogger {
   /**
    * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
    */
-  info(message: string): void;
+  info?(message: string): void;
 
   /**
    * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
    */
-  warn(message: string): void;
+  warn?(message: string): void;
 
   /**
    * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
    */
-  error(message: string): void;
+  error?(message: string): void;
 
   /**
    * Writes a message into the log.

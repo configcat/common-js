@@ -2,7 +2,7 @@ import { AutoPollConfigService } from "./AutoPollConfigService";
 import type { ICache } from "./Cache";
 import type { ConfigCatClientOptions, OptionsBase, OptionsForPollingMode } from "./ConfigCatClientOptions";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from "./ConfigCatClientOptions";
-import type { IConfigCatLogger, LoggerWrapper } from "./ConfigCatLogger";
+import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService } from "./ConfigServiceBase";
 import { RefreshResult } from "./ConfigServiceBase";
@@ -266,7 +266,7 @@ export class ConfigCatClient implements IConfigCatClient {
     ConfigCatClient.close(data.configService, data.logger);
   }
 
-  private static close(configService?: IConfigService, logger?: IConfigCatLogger, hooks?: Hooks) {
+  private static close(configService?: IConfigService, logger?: LoggerWrapper, hooks?: Hooks) {
     logger?.debug("close() called");
 
     hooks?.tryDisconnect();
