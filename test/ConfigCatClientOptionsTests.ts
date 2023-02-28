@@ -2,7 +2,7 @@ import { assert, expect } from "chai";
 import "mocha";
 import { ICache, InMemoryCache } from "../src/Cache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
-import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "../src/ConfigCatLogger";
+import { ConfigCatConsoleLogger, IConfigCatLogger, LogEventId, LogLevel, LogMessage, LoggerWrapper } from "../src/ConfigCatLogger";
 import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("Options", () => {
@@ -42,7 +42,7 @@ describe("Options", () => {
       null);
 
     assert.isDefined(options);
-    assert.equal(fakeLogger, options.logger["logger"]);
+    assert.equal(fakeLogger as IConfigCatLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
     assert.equal(10, options.requestTimeoutMs);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
@@ -334,22 +334,29 @@ class FakeCache implements ICache {
 }
 
 export class FakeLogger implements IConfigCatLogger {
+  level?: LogLevel | undefined;
 
-  // tslint:disable-next-line:no-empty
   debug(message: string): void {
+    /* Intentionally empty. */
   }
-  // tslint:disable-next-line:no-empty
+
   info(message: string): void {
+    /* Intentionally empty. */
   }
-  // tslint:disable-next-line:no-empty
+
   warn(message: string): void {
+    /* Intentionally empty. */
   }
 
-  // tslint:disable-next-line:no-empty
   log(message: string): void {
+    /* Intentionally empty. */
   }
 
-  // tslint:disable-next-line:no-empty
   error(message: string): void {
+    /* Intentionally empty. */
+  }
+
+  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
+    /* Intentionally empty. */
   }
 }

@@ -98,7 +98,11 @@ export { DataGovernance } from "./ConfigCatClientOptions";
 
 export type { IConfigCatLogger };
 
+export type { LogEventId, LogMessage } from "./ConfigCatLogger";
+
 export { LogLevel };
+
+export { FormattableLogMessage } from "./ConfigCatLogger";
 
 export type { ICache } from "./Cache";
 
