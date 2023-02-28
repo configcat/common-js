@@ -40,7 +40,7 @@ describe("ConfigCatClientCache", () => {
     done();
   });
 
-  it("getOrCreate() should return new instance after cached instance is collected", async function () {
+  it("getOrCreate() should return new instance after cached instance is collected", async function() {
     // Arrange
 
     setupPolyfills();
@@ -93,7 +93,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove(sdkKey, client1["cacheToken"]!);
+    const success = cache.remove(sdkKey, client1["cacheToken"]!);
 
     // Assert
 
@@ -124,7 +124,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove(sdkKey, client1["cacheToken"]!);
+    const success = cache.remove(sdkKey, client1["cacheToken"]!);
 
     // Assert
 
@@ -144,7 +144,7 @@ describe("ConfigCatClientCache", () => {
     done();
   });
 
-  it("remove() should remove cache entry when cached instance is collected", async function () {
+  it("remove() should remove cache entry when cached instance is collected", async function() {
     // Arrange
 
     setupPolyfills();
@@ -167,7 +167,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove(sdkKey, {});
+    const success = cache.remove(sdkKey, {});
 
     // Assert
 
@@ -193,7 +193,7 @@ describe("ConfigCatClientCache", () => {
 
     // Act
 
-    var success = cache.remove("321", {});
+    const success = cache.remove("321", {});
 
     // Assert
 
@@ -209,7 +209,7 @@ describe("ConfigCatClientCache", () => {
     done();
   });
 
-  it("clear() should remove all cached instances", async function () {
+  it("clear() should remove all cached instances", async function() {
     // Arrange
 
     setupPolyfills();

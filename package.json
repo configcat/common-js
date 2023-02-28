@@ -10,7 +10,9 @@
     "build": "tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json",
     "prepare": "npm run build",
     "test": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
-    "test-debug": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register 'test/**/*.ts' --exit --timeout 30000"
+    "test-debug": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
   },
   "keywords": [
     "configcat",
@@ -35,8 +37,12 @@
     "@types/chai": "4.3.4",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.18",
+    "@typescript-eslint/eslint-plugin": "^5.53.0",
+    "@typescript-eslint/parser": "^5.53.0",
     "chai": "^4.3.7",
     "cross-env": "^7.0.3",
+    "eslint": "^8.34.0",
+    "eslint-plugin-import": "^2.27.5",
     "mocha": "^10.2.0",
     "moq.ts": "^7.4.1",
     "nyc": "^15.1.0",

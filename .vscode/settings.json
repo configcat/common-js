@@ -1,0 +1,7 @@
+{
+  "editor.rulers": [160],
+  "eslint.format.enable": true,
+  "eslint.validate": [
+    "typescript"
+  ]
+}

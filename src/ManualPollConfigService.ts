@@ -1,25 +1,26 @@
-import { ManualPollOptions } from "./ConfigCatClientOptions";
+import type { ManualPollOptions } from "./ConfigCatClientOptions";
 import type { IConfigFetcher } from "./ConfigFetcher";
-import { ConfigServiceBase, IConfigService, RefreshResult } from "./ConfigServiceBase";
-import { ProjectConfig } from "./ProjectConfig";
+import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
+import { ConfigServiceBase } from "./ConfigServiceBase";
+import type { ProjectConfig } from "./ProjectConfig";
 
 export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
 
-    constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
+  constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
 
-        super(configFetcher, options);
+    super(configFetcher, options);
 
-        options.hooks.emit("clientReady");
-    }
+    options.hooks.emit("clientReady");
+  }
 
-    async getConfig(): Promise<ProjectConfig | null> {
+  async getConfig(): Promise<ProjectConfig | null> {
 
-        this.options.logger.debug("ManualPollService.getConfig() called.");
-        return await this.options.cache.get(this.options.getCacheKey());
-    }
+    this.options.logger.debug("ManualPollService.getConfig() called.");
+    return await this.options.cache.get(this.options.getCacheKey());
+  }
 
-    async refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
-        this.options.logger.debug("ManualPollService.refreshConfigAsync() called.");
-        return super.refreshConfigAsync();
-    }
+  refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
+    this.options.logger.debug("ManualPollService.refreshConfigAsync() called.");
+    return super.refreshConfigAsync();
+  }
 }

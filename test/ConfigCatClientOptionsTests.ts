@@ -14,14 +14,14 @@ describe("Options", () => {
   });
 
   it("ManualPollOptions initialization With NULL 'defaultCache' Should init with InMemoryCache", () => {
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
+    const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
 
     assert.isNotNull(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache)
+    assert.instanceOf(options.cache, InMemoryCache);
   });
 
   it("ManualPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
+    const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
 
     assert.equal("APIKEY", options.apiKey);
@@ -30,9 +30,9 @@ describe("Options", () => {
   });
 
   it("ManualPollOptions initialization With parameters works", () => {
-    let fakeLogger: FakeLogger = new FakeLogger();
+    const fakeLogger: FakeLogger = new FakeLogger();
 
-    let options: ManualPollOptions = new ManualPollOptions(
+    const options: ManualPollOptions = new ManualPollOptions(
       "APIKEY", "common", "1.0.0",
       {
         logger: fakeLogger,
@@ -51,7 +51,7 @@ describe("Options", () => {
 
   it("ManualPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
+    const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
 
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
@@ -60,12 +60,12 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
     expect(() => {
-      let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { requestTimeoutMs: -1 }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { requestTimeoutMs: -1 }, null);
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 
   it("AutoPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
     assert.isTrue(options.logger instanceof LoggerWrapper);
     assert.isTrue(options.logger["logger"] instanceof ConfigCatConsoleLogger);
@@ -77,10 +77,10 @@ describe("Options", () => {
   });
 
   it("AutoPollOptions initialization With parameters works", () => {
-    let fakeLogger: FakeLogger = new FakeLogger();
+    const fakeLogger: FakeLogger = new FakeLogger();
 
-    let configChanged = function () { };
-    let options: AutoPollOptions = new AutoPollOptions(
+    const configChanged = function() { };
+    const options: AutoPollOptions = new AutoPollOptions(
       "APIKEY", "common", "1.0.0",
       {
         logger: fakeLogger,
@@ -109,33 +109,33 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With NaN 'pollIntervalSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('pollIntervalSeconds', NaN);
+    myConfig.set("pollIntervalSeconds", NaN);
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get("pollIntervalSeconds") }, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
   it("AutoPollOptions initialization With boolean value 'pollIntervalSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('pollIntervalSeconds', true);
+    myConfig.set("pollIntervalSeconds", true);
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get("pollIntervalSeconds") }, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
   it("AutoPollOptions initialization With whitespaces value 'pollIntervalSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('pollIntervalSeconds', ' ');
+    myConfig.set("pollIntervalSeconds", " ");
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get("pollIntervalSeconds") }, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
   it("AutoPollOptions initialization With new line value 'pollIntervalSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('pollIntervalSeconds', '\n');
+    myConfig.set("pollIntervalSeconds", "\n");
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get('pollIntervalSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { pollIntervalSeconds: myConfig.get("pollIntervalSeconds") }, null);
     }).to.throw("Invalid 'pollIntervalSeconds' value");
   });
 
@@ -147,7 +147,7 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With NULL 'defaultCache' Should set to InMemoryCache", () => {
 
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
 
     assert.isNotNull(options.cache);
     assert.instanceOf(options.cache, InMemoryCache);
@@ -155,7 +155,7 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
 
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
@@ -170,38 +170,38 @@ describe("Options", () => {
 
   it("AutoPollOptions initialization With NaN 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('maxInitWaitTimeSeconds', NaN);
+    myConfig.set("maxInitWaitTimeSeconds", NaN);
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get("maxInitWaitTimeSeconds") }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
   it("AutoPollOptions initialization With boolean value 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('maxInitWaitTimeSeconds', true);
+    myConfig.set("maxInitWaitTimeSeconds", true);
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get("maxInitWaitTimeSeconds") }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
   it("AutoPollOptions initialization With whitespaces value 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('maxInitWaitTimeSeconds', ' ');
+    myConfig.set("maxInitWaitTimeSeconds", " ");
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get("maxInitWaitTimeSeconds") }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
-  it(`AutoPollOptions initialization With new line value 'maxInitWaitTimeSeconds' ShouldThrowError`, () => {
+  it("AutoPollOptions initialization With new line value 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
-    myConfig.set('maxInitWaitTimeSeconds', '\n');
+    myConfig.set("maxInitWaitTimeSeconds", "\n");
     expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get('maxInitWaitTimeSeconds') }, null);
+      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: myConfig.get("maxInitWaitTimeSeconds") }, null);
     }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
   });
 
   it("AutoPollOptions initialization With 0 'maxInitWaitTimeSeconds' Should create an instance with passed value", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 0 }, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 0 }, null);
 
     assert.isDefined(options);
     assert.isNotNull(options);
@@ -209,7 +209,7 @@ describe("Options", () => {
   });
 
   it("AutoPollOptions initialization Without 'maxInitWaitTimeSeconds' Should create an instance with default value(5)", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
 
     assert.isDefined(options);
     assert.isNotNull(options);
@@ -217,7 +217,7 @@ describe("Options", () => {
   });
 
   it("LazyLoadOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", null, null);
+    const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
     assert.equal("APIKEY", options.apiKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
@@ -226,8 +226,8 @@ describe("Options", () => {
   });
 
   it("LazyLoadOptions initialization With parameters works", () => {
-    let fakeLogger: FakeLogger = new FakeLogger();
-    let options: LazyLoadOptions = new LazyLoadOptions(
+    const fakeLogger: FakeLogger = new FakeLogger();
+    const options: LazyLoadOptions = new LazyLoadOptions(
       "APIKEY", "common", "1.0.0",
       {
         logger: fakeLogger,
@@ -259,7 +259,7 @@ describe("Options", () => {
   });
 
   it("LazyLoadOptions initialization With NULL 'defaultCache' Should set to InMemoryCache", () => {
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {}, null);
+    const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {}, null);
 
     assert.isNotNull(options.cache);
     assert.instanceOf(options.cache, InMemoryCache);
@@ -267,7 +267,7 @@ describe("Options", () => {
 
   it("LazyLoadOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
 
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
+    const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
 
     assert.isDefined(options);
     assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
@@ -276,7 +276,7 @@ describe("Options", () => {
 
   it("Options initialization With 'defaultCache' Should set option cache to passed instance", () => {
 
-    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, new FakeCache());
+    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, new FakeCache());
 
     assert.instanceOf(options.cache, FakeCache);
     assert.notInstanceOf(options.cache, InMemoryCache);
@@ -284,7 +284,7 @@ describe("Options", () => {
 
   it("Options initialization With 'options.cache' Should overwrite defaultCache", () => {
 
-    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: new FakeCache() }, new InMemoryCache());
+    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: new FakeCache() }, new InMemoryCache());
 
     assert.instanceOf(options.cache, FakeCache);
     assert.notInstanceOf(options.cache, InMemoryCache);
@@ -292,7 +292,7 @@ describe("Options", () => {
 
   it("Options initialization With NULL 'cache' Should set InMemoryCache", () => {
 
-    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, null);
+    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, null);
 
     assert.isDefined(options.cache);
     assert.instanceOf(options.cache, InMemoryCache);
@@ -300,25 +300,24 @@ describe("Options", () => {
 
   it("Options initialization With NULL 'options.cache' Should set InMemoryCache", () => {
 
-    let options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: null }, null);
+    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: null }, null);
 
     assert.isDefined(options.cache);
     assert.instanceOf(options.cache, InMemoryCache);
   });
 
-
   it("AutoPollOptions initialization - sdkVersion works", () => {
-    let options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
     assert.equal("common/a-1.0.0", options.clientVersion);
   });
 
   it("LazyLoadOptions initialization - sdkVersion works", () => {
-    let options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {}, null);
+    const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {}, null);
     assert.equal("common/l-1.0.0", options.clientVersion);
   });
 
   it("ManualPollOptions initialization - sdkVersion works", () => {
-    let options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", {}, null);
+    const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", {}, null);
     assert.equal("common/m-1.0.0", options.clientVersion);
   });
 });
