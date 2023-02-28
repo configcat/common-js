@@ -42,7 +42,7 @@ describe("Options", () => {
       null);
 
     assert.isDefined(options);
-    assert.equal(fakeLogger as IConfigCatLogger, options.logger["logger"]);
+    assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
     assert.equal(10, options.requestTimeoutMs);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
