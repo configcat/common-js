@@ -281,12 +281,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             log += "no match";
 
             break;
-          case 16: // is one of (sensitive)
+          case 16: { // is one of (sensitive)
             const values: string[] = comparisonValue.split(",");
+            const hashedComparisonAttribute: string = sha1(comparisonAttribute);
 
             for (let ci = 0; ci < values.length; ci++) {
 
-              if (values[ci].trim() === sha1(comparisonAttribute)) {
+              if (values[ci].trim() === hashedComparisonAttribute) {
                 log += "MATCH";
                 eLog.opAppendLine(log);
 
@@ -297,10 +298,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             log += "no match";
 
             break;
+          }
 
-          case 17: // is not one of (sensitive)
+          case 17: { // is not one of (sensitive)
+            const hashedComparisonAttribute: string = sha1(comparisonAttribute);
+
             if (!comparisonValue.split(",").some(e => {
-              if (e.trim() === sha1(comparisonAttribute)) {
+              if (e.trim() === hashedComparisonAttribute) {
                 return true;
               }
 
@@ -315,6 +319,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             log += "no match";
 
             break;
+          }
+
           default:
             break;
         }
