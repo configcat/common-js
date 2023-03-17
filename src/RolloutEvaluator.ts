@@ -597,7 +597,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = logger.configJsonIsNotPresent("defaultValue", defaultValue).toString();
+    errorMessage = logger.configJsonIsNotPresentDP("defaultValue", defaultValue).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -623,7 +623,7 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = logger.configJsonIsNotPresent("defaultVariationId", defaultVariationId).toString();
+    errorMessage = logger.configJsonIsNotPresentDP("defaultVariationId", defaultVariationId).toString();
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -637,12 +637,12 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 }
 
 function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper,
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string,
   getDetailsForError: (key: string, fetchTime: Date | undefined, user: User | undefined, err: any) => IEvaluationDetails): [IEvaluationDetails[], any[] | undefined] {
 
   let errors: any[] | undefined;
 
-  if (!checkSettingsAvailable(settings, logger, ", returning empty array")) {
+  if (!checkSettingsAvailable(settings, logger, defaultReturnValue)) {
     return [[], errors];
   }
 
@@ -667,22 +667,22 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
 }
 
 export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): [IEvaluationDetails[], any[] | undefined] {
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
 
-  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
+  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger, defaultReturnValue,
     (key, fetchTime, user, err) => evaluationDetailsFromDefaultValue(key, null, fetchTime, user, errorToString(err), err));
 }
 
 export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): [IEvaluationDetails[], any[] | undefined] {
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
 
-  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
+  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger, defaultReturnValue,
     (key, fetchTime, user, err) => evaluationDetailsFromDefaultVariationId(key, null, fetchTime, user, errorToString(err), err));
 }
 
-export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, appendix = ""): settings is { [name: string]: Setting } {
+export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, defaultReturnValue: string): settings is { [name: string]: Setting } {
   if (!settings) {
-    logger.configJsonIsNotPresentNoParam(appendix);
+    logger.configJsonIsNotPresent(defaultReturnValue);
     return false;
   }
 

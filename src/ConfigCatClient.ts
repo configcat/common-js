@@ -324,7 +324,7 @@ export class ConfigCatClient implements IConfigCatClient {
       value = evaluationDetails.value;
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getValueAsync", err);
+      this.options.logger.settingEvaluationErrorDP("getValueAsync", key, "defaultValue", defaultValue, err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
       value = defaultValue as SettingTypeOf<T>;
     }
@@ -351,7 +351,7 @@ export class ConfigCatClient implements IConfigCatClient {
       evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getValueDetailsAsync", err);
+      this.options.logger.settingEvaluationErrorDP("getValueDetailsAsync", key, "defaultValue", defaultValue, err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
     }
 
@@ -390,15 +390,16 @@ export class ConfigCatClient implements IConfigCatClient {
   async getAllKeysAsync(): Promise<string[]> {
     this.options.logger.logDebug("getAllKeysAsync() called.");
 
+    const defaultReturnValue = "empty array";
     try {
       const [settings] = await this.getSettingsAsync();
-      if (!checkSettingsAvailable(settings, this.options.logger, ", returning empty array")) {
+      if (!checkSettingsAvailable(settings, this.options.logger, defaultReturnValue)) {
         return [];
       }
       return Object.keys(settings);
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getAllKeysAsync", err);
+      this.options.logger.settingEvaluationError("getAllKeysAsync", defaultReturnValue, err);
       return [];
     }
   }
@@ -421,7 +422,7 @@ export class ConfigCatClient implements IConfigCatClient {
       variationId = evaluationDetails.variationId as VariationIdTypeOf<T>;
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getVariationIdAsync", err);
+      this.options.logger.settingEvaluationErrorDP("getVariationIdAsync", key, "defaultVariationId", defaultVariationId, err);
       evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
       variationId = defaultVariationId as VariationIdTypeOf<T>;
     }
@@ -438,19 +439,20 @@ export class ConfigCatClient implements IConfigCatClient {
   async getAllVariationIdsAsync(user?: User): Promise<string[]> {
     this.options.logger.logDebug("getAllVariationIdsAsync() called.");
 
+    const defaultReturnValue = "empty array";
     let result: string[], evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
     try {
       const [settings, remoteConfig] = await this.getSettingsAsync();
       let errors: any[] | undefined;
-      [evaluationDetailsArray, errors] = evaluateAllVariationIds(this.evaluator, settings, user, remoteConfig, this.options.logger);
+      [evaluationDetailsArray, errors] = evaluateAllVariationIds(this.evaluator, settings, user, remoteConfig, this.options.logger, defaultReturnValue);
       if (errors?.length) {
         throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
       }
       result = evaluationDetailsArray.filter(details => details !== null && details !== void 0).map(details => details.variationId!);
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getAllVariationIdsAsync", err);
+      this.options.logger.settingEvaluationError("getAllVariationIdsAsync", defaultReturnValue, err);
       evaluationDetailsArray ??= [];
       result = [];
     }
@@ -470,9 +472,10 @@ export class ConfigCatClient implements IConfigCatClient {
   async getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
     this.options.logger.logDebug("getKeyAndValueAsync() called.");
 
+    const defaultReturnValue = "null";
     try {
       const [settings] = await this.getSettingsAsync();
-      if (!checkSettingsAvailable(settings, this.options.logger, ", returning null")) {
+      if (!checkSettingsAvailable(settings, this.options.logger, defaultReturnValue)) {
         return null;
       }
 
@@ -505,7 +508,7 @@ export class ConfigCatClient implements IConfigCatClient {
       this.options.logger.settingForVariationIdIsNotPresent(variationId);
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getKeyAndValueAsync", err);
+      this.options.logger.settingEvaluationError("getKeyAndValueAsync", defaultReturnValue, err);
     }
 
     return null;
@@ -519,19 +522,20 @@ export class ConfigCatClient implements IConfigCatClient {
   async getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
     this.options.logger.logDebug("getAllValuesAsync() called.");
 
+    const defaultReturnValue = "empty array";
     let result: SettingKeyValue[], evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
     try {
       const [settings, remoteConfig] = await this.getSettingsAsync();
       let errors: any[] | undefined;
-      [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger);
+      [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger, defaultReturnValue);
       if (errors?.length) {
         throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
       }
       result = evaluationDetailsArray.map(details => new SettingKeyValue(details.key, details.value));
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getAllValuesAsync", err);
+      this.options.logger.settingEvaluationError("getAllValuesAsync", defaultReturnValue, err);
       evaluationDetailsArray ??= [];
       result = [];
     }
@@ -551,18 +555,19 @@ export class ConfigCatClient implements IConfigCatClient {
   async getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]> {
     this.options.logger.logDebug("getAllValueDetailsAsync() called.");
 
+    const defaultReturnValue = "empty array";
     let evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
     try {
       const [settings, remoteConfig] = await this.getSettingsAsync();
       let errors: any[] | undefined;
-      [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger);
+      [evaluationDetailsArray, errors] = evaluateAll(this.evaluator, settings, user, remoteConfig, this.options.logger, defaultReturnValue);
       if (errors?.length) {
         throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
       }
     }
     catch (err) {
-      this.options.logger.settingEvaluationError("getAllValueDetailsAsync", err);
+      this.options.logger.settingEvaluationError("getAllValueDetailsAsync", defaultReturnValue, err);
       evaluationDetailsArray ??= [];
     }
 

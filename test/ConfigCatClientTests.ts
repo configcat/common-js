@@ -507,7 +507,7 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, errorEvents.length);
       const [actualErrorMessage, actualErrorException] = errorEvents[0];
-      expect(actualErrorMessage).to.include("Error occurred in the `getValueDetailsAsync` method.");
+      expect(actualErrorMessage).to.include("Error occurred in the `getValueDetailsAsync` method");
       assert.strictEqual(err, actualErrorException);
     });
   }

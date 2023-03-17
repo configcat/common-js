@@ -21,7 +21,7 @@ export class FormattableLogMessage {
   private cachedDefaultFormattedMessage?: string;
 
   constructor(
-    readonly strings: TemplateStringsArray,
+    readonly strings: ReadonlyArray<string>,
     readonly argNames: ReadonlyArray<string>,
     readonly argValues: ReadonlyArray<unknown>) {
   }
@@ -160,14 +160,14 @@ export class LoggerWrapper implements IConfigCatLogger {
 
   /* Common error messages (1000-1999) */
 
-  configJsonIsNotPresentNoParam(appendix = ""): LogMessage {
+  configJsonIsNotPresent(defaultReturnValue: string): LogMessage {
     return this.logEvent(
       LogLevel.Error, 1000,
-      `Config JSON is not present${appendix.length > 0 ? appendix : ""}.`
+      `Config JSON is not present. Returning ${defaultReturnValue}.`
     );
   }
 
-  configJsonIsNotPresent(defaultParamName?: string, defaultParamValue?: unknown): LogMessage {
+  configJsonIsNotPresentDP(defaultParamName: string, defaultParamValue: unknown): LogMessage {
     return this.logEvent(
       LogLevel.Error, 1000,
       FormattableLogMessage.from(
@@ -185,12 +185,20 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  settingEvaluationError(methodName: string, ex: any): LogMessage {
+  settingEvaluationError(methodName: string, defaultReturnValue: string, ex: any): LogMessage {
+    return this.logEvent(
+      LogLevel.Error, 1002,
+      new FormattableLogMessage(["Error occurred in the `", `\` method. Returning ${defaultReturnValue}.`], ["METHOD_NAME"], [methodName]),
+      ex
+    );
+  }
+
+  settingEvaluationErrorDP(methodName: string, key: string, defaultParamName: string, defaultParamValue: unknown, ex: any): LogMessage {
     return this.logEvent(
       LogLevel.Error, 1002,
       FormattableLogMessage.from(
-        "METHOD_NAME"
-      )`Error occurred in the \`${methodName}\` method.`,
+        "METHOD_NAME", "KEY", "DEFAULT_PARAM_NAME", "DEFAULT_PARAM_VALUE",
+      )`Error occurred in the \`${methodName}\` method while evaluating setting '${key}'. Returning the \`${defaultParamName}\` parameter that you specified in your application: '${defaultParamValue}'.`,
       ex
     );
   }
