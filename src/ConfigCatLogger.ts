@@ -253,6 +253,22 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
+  fetchReceived200WithInvalidBody(): LogMessage {
+    return this.logEvent(
+      LogLevel.Error, 1105,
+      "Fetching config JSON was successful but the HTTP response content was invalid."
+    );
+  }
+
+  fetchReceived304WhenLocalCacheIsEmpty(statusCode: number, reasonPhrase: string): LogMessage {
+    return this.logEvent(
+      LogLevel.Error, 1106,
+      FormattableLogMessage.from(
+        "STATUS_CODE", "REASON_PHRASE"
+      )`Unexpected HTTP response was received when no config JSON is cached locally: ${statusCode} ${reasonPhrase}`
+    );
+  }
+
   /* SDK-specific error messages (2000-2999) */
 
   settingForVariationIdIsNotPresent(variationId: string): LogMessage {
@@ -288,22 +304,6 @@ export class LoggerWrapper implements IConfigCatLogger {
     return this.logEvent(
       LogLevel.Warn, 3002,
       "The `dataGovernance` parameter specified at the client initialization is not in sync with the preferences on the ConfigCat Dashboard. Read more: https://configcat.com/docs/advanced/data-governance/"
-    );
-  }
-
-  fetchReceived200WithInvalidBody(): LogMessage {
-    return this.logEvent(
-      LogLevel.Warn, 3100,
-      "Fetching config JSON was successful but the HTTP response content was invalid."
-    );
-  }
-
-  fetchReceived304WhenLocalCacheIsEmpty(statusCode: number, reasonPhrase: string): LogMessage {
-    return this.logEvent(
-      LogLevel.Warn, 3101,
-      FormattableLogMessage.from(
-        "STATUS_CODE", "REASON_PHRASE"
-      )`Unexpected HTTP response was received when no config JSON is cached locally: ${statusCode} ${reasonPhrase}`
     );
   }
 
