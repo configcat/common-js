@@ -597,7 +597,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = logger.configJsonIsNotPresentDP("defaultValue", defaultValue).toString();
+    errorMessage = logger.configJsonIsNotPresentSingle(key, "defaultValue", defaultValue).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -623,7 +623,7 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = logger.configJsonIsNotPresentDP("defaultVariationId", defaultVariationId).toString();
+    errorMessage = logger.configJsonIsNotPresentSingle(key, "defaultVariationId", defaultVariationId).toString();
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 

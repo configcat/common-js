@@ -167,12 +167,12 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  configJsonIsNotPresentDP(defaultParamName: string, defaultParamValue: unknown): LogMessage {
+  configJsonIsNotPresentSingle(key: string, defaultParamName: string, defaultParamValue: unknown): LogMessage {
     return this.logEvent(
       LogLevel.Error, 1000,
       FormattableLogMessage.from(
-        "DEFAULT_PARAM_NAME", "DEFAULT_PARAM_VALUE"
-      )`Config JSON is not present. Returning the \`${defaultParamName}\` parameter that you specified in your application: '${defaultParamValue}'.`
+        "KEY", "DEFAULT_PARAM_NAME", "DEFAULT_PARAM_VALUE"
+      )`Config JSON is not present when evaluating setting '${key}'. Returning the \`${defaultParamName}\` parameter that you specified in your application: '${defaultParamValue}'.`
     );
   }
 
@@ -193,7 +193,7 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  settingEvaluationErrorDP(methodName: string, key: string, defaultParamName: string, defaultParamValue: unknown, ex: any): LogMessage {
+  settingEvaluationErrorSingle(methodName: string, key: string, defaultParamName: string, defaultParamValue: unknown, ex: any): LogMessage {
     return this.logEvent(
       LogLevel.Error, 1002,
       FormattableLogMessage.from(

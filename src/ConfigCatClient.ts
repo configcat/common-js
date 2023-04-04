@@ -324,7 +324,7 @@ export class ConfigCatClient implements IConfigCatClient {
       value = evaluationDetails.value;
     }
     catch (err) {
-      this.options.logger.settingEvaluationErrorDP("getValueAsync", key, "defaultValue", defaultValue, err);
+      this.options.logger.settingEvaluationErrorSingle("getValueAsync", key, "defaultValue", defaultValue, err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
       value = defaultValue as SettingTypeOf<T>;
     }
@@ -351,7 +351,7 @@ export class ConfigCatClient implements IConfigCatClient {
       evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
     }
     catch (err) {
-      this.options.logger.settingEvaluationErrorDP("getValueDetailsAsync", key, "defaultValue", defaultValue, err);
+      this.options.logger.settingEvaluationErrorSingle("getValueDetailsAsync", key, "defaultValue", defaultValue, err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
     }
 
@@ -422,7 +422,7 @@ export class ConfigCatClient implements IConfigCatClient {
       variationId = evaluationDetails.variationId as VariationIdTypeOf<T>;
     }
     catch (err) {
-      this.options.logger.settingEvaluationErrorDP("getVariationIdAsync", key, "defaultVariationId", defaultVariationId, err);
+      this.options.logger.settingEvaluationErrorSingle("getVariationIdAsync", key, "defaultVariationId", defaultVariationId, err);
       evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
       variationId = defaultVariationId as VariationIdTypeOf<T>;
     }
