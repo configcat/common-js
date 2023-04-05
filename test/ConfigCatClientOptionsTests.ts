@@ -2,7 +2,7 @@ import { assert, expect } from "chai";
 import "mocha";
 import { ICache, InMemoryCache } from "../src/Cache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
-import { ConfigCatConsoleLogger, IConfigCatLogger, LoggerWrapper } from "../src/ConfigCatLogger";
+import { ConfigCatConsoleLogger, IConfigCatLogger, LogEventId, LogLevel, LogMessage, LoggerWrapper } from "../src/ConfigCatLogger";
 import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("Options", () => {
@@ -334,22 +334,29 @@ class FakeCache implements ICache {
 }
 
 export class FakeLogger implements IConfigCatLogger {
+  level?: LogLevel | undefined;
 
-  // tslint:disable-next-line:no-empty
   debug(message: string): void {
+    /* Intentionally empty. */
   }
-  // tslint:disable-next-line:no-empty
+
   info(message: string): void {
+    /* Intentionally empty. */
   }
-  // tslint:disable-next-line:no-empty
+
   warn(message: string): void {
+    /* Intentionally empty. */
   }
 
-  // tslint:disable-next-line:no-empty
   log(message: string): void {
+    /* Intentionally empty. */
   }
 
-  // tslint:disable-next-line:no-empty
   error(message: string): void {
+    /* Intentionally empty. */
+  }
+
+  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
+    /* Intentionally empty. */
   }
 }

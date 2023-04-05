@@ -41,7 +41,7 @@ export type FetchErrorCauses = {
   failure: [err?: any];
 };
 
-export class FetchError<TCause extends keyof FetchErrorCauses> extends Error {
+export class FetchError<TCause extends keyof FetchErrorCauses = keyof FetchErrorCauses> extends Error {
   args: FetchErrorCauses[TCause];
 
   constructor(public cause: TCause, ...args: FetchErrorCauses[TCause]) {
@@ -51,11 +51,11 @@ export class FetchError<TCause extends keyof FetchErrorCauses> extends Error {
         message = "Request was aborted.";
         break;
       case "timeout":
-        const [timeoutMs] = args as [number];
+        const [timeoutMs] = args as FetchErrorCauses["timeout"];
         message = `Request timed out. Timeout value: ${timeoutMs}ms`;
         break;
       case "failure":
-        const [err] = args as [any?];
+        const [err] = args as FetchErrorCauses["failure"];
         message = "Request failed due to a network or protocol error.";
         if (err) {
           message += " " + (err instanceof Error ? err.message : err + "");

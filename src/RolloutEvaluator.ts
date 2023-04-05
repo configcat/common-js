@@ -92,7 +92,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
-    this.logger.debug("RolloutEvaluator.Evaluate() called.");
+    this.logger.logDebug("RolloutEvaluator.Evaluate() called.");
 
     const eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -128,13 +128,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         }
       }
       else {
-        if ((setting.rolloutRules && setting.rolloutRules.length > 0) ||
-                    (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
-          let s: string = "Evaluating getValue('" + key + "'). ";
-          s += "UserObject missing! You should pass a UserObject to getValue(), in order to make targeting work properly. ";
-          s += "Read more: https://configcat.com/docs/advanced/user-object";
-
-          this.logger.warn(s);
+        if ((setting.rolloutRules && setting.rolloutRules.length > 0)
+            || (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
+          this.logger.targetingIsNotPossible(key);
         }
       }
 
@@ -148,13 +144,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
     }
     finally {
-      this.logger.info(eLog.getLog());
+      this.logger.settingEvaluated(eLog);
     }
   }
 
   private evaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
 
-    this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateRules() called.");
 
     if (rolloutRules && rolloutRules.length > 0) {
 
@@ -333,7 +329,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
-    this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
       const hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
@@ -359,7 +355,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluateNumber(v1: string, v2: string, comparator: number): boolean {
-    this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateNumber() called.");
 
     let n1: number, n2: number;
 
@@ -398,7 +394,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluateSemver(v1: string, v2: string, comparator: number): boolean {
-    this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
+    this.logger.logDebug("RolloutEvaluator.EvaluateSemver() called.");
     if (semver.valid(v1) == null || v2 === void 0) {
       return false;
     }
@@ -554,7 +550,7 @@ class EvaluateLogger {
     this.operations += " " + s + "\n";
   }
 
-  getLog(): string {
+  toString(): string {
     return "Evaluate '" + this.keyName + "'"
             + "\n User : " + JSON.stringify(this.user)
             + "\n" + this.operations
@@ -607,15 +603,13 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = `config.json is not present. Returning default value: '${defaultValue}'.`;
-    logger.error(errorMessage);
+    errorMessage = logger.configJsonIsNotPresentSingle(key, "defaultValue", defaultValue).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
   const setting = settings[key];
   if (!setting) {
-    errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default value: '${defaultValue}'. These are the available keys: ${keysToString(settings)}.`;
-    logger.error(errorMessage);
+    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultValue", defaultValue, keysToString(settings)).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -635,15 +629,13 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 
   let errorMessage: string;
   if (!settings) {
-    errorMessage = `config.json is not present. Returning default variationId: '${defaultVariationId}'.`;
-    logger.error(errorMessage);
+    errorMessage = logger.configJsonIsNotPresentSingle(key, "defaultVariationId", defaultVariationId).toString();
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
   const setting = settings[key];
   if (!setting) {
-    errorMessage = `Evaluating '${key}' failed (key was not found in config.json). Returning default variationId: '${defaultVariationId}'. These are the available keys: ${keysToString(settings)}.`;
-    logger.error(errorMessage);
+    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultVariationId", defaultVariationId, keysToString(settings)).toString();
     return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
@@ -651,12 +643,12 @@ export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [n
 }
 
 function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper,
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string,
   getDetailsForError: (key: string, fetchTime: Date | undefined, user: User | undefined, err: any) => IEvaluationDetails): [IEvaluationDetails[], any[] | undefined] {
 
   let errors: any[] | undefined;
 
-  if (!checkSettingsAvailable(settings, logger, ", returning empty array")) {
+  if (!checkSettingsAvailable(settings, logger, defaultReturnValue)) {
     return [[], errors];
   }
 
@@ -681,22 +673,22 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
 }
 
 export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): [IEvaluationDetails[], any[] | undefined] {
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
 
-  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
+  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger, defaultReturnValue,
     (key, fetchTime, user, err) => evaluationDetailsFromDefaultValue(key, null, fetchTime, user, errorToString(err), err));
 }
 
 export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): [IEvaluationDetails[], any[] | undefined] {
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
 
-  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger,
+  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger, defaultReturnValue,
     (key, fetchTime, user, err) => evaluationDetailsFromDefaultVariationId(key, null, fetchTime, user, errorToString(err), err));
 }
 
-export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, appendix = ""): settings is { [name: string]: Setting } {
+export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, defaultReturnValue: string): settings is { [name: string]: Setting } {
   if (!settings) {
-    logger.error(`config.json is not present${appendix}`);
+    logger.configJsonIsNotPresent(defaultReturnValue);
     return false;
   }
 
@@ -717,5 +709,5 @@ export function ensureAllowedDefaultValue(value: SettingValue): void {
 }
 
 function keysToString(settings: { [name: string]: Setting }) {
-  return Object.keys(settings).join();
+  return Object.keys(settings).map(key => `'${key}'`).join(", ");
 }
