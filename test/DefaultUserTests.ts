@@ -3,6 +3,7 @@ import "mocha";
 import { IConfigCatClient } from "../src/ConfigCatClient";
 import * as configcatClient from "../src/index";
 import { FakeConfigCatKernel, FakeConfigFetcherWithRules } from "./helpers/fakes";
+import { createClientWithAutoPoll } from "./helpers/utils";
 
 describe("DefaultUser", () => {
 
@@ -11,39 +12,39 @@ describe("DefaultUser", () => {
     const blueEyeColorUser = { identifier: "blueIdentifier", custom: { "eyeColor": "blue" } };
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
-    const client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug) });
+    const client: IConfigCatClient = createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug) });
 
     // Without passing the userobject, default values/variationids should be returned
     let value = await client.getValueAsync("debug", "N/A");
     assert.equal(value, "defaultValue");
-    let variationId = await client.getVariationIdAsync("debug", "N/A");
+    let variationId = (await client.getValueDetailsAsync("debug", "N/A")).variationId;
     assert.equal(variationId, "defaultVariationId");
     let values = await client.getAllValuesAsync();
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "defaultValue");
-    let variationIds = await client.getAllVariationIdsAsync();
+    let variationIds = (await client.getAllValueDetailsAsync()).map(d => d.variationId);
     assert.equal(variationIds[0], "defaultVariationId");
 
     // Passing directly the userobject to the functions, the rollout rules should work (red eyed case)
     value = await client.getValueAsync("debug", "N/A", redEyeColorUser);
     assert.equal(value, "redValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A", redEyeColorUser);
+    variationId = (await client.getValueDetailsAsync("debug", "N/A", redEyeColorUser)).variationId;
     assert.equal(variationId, "redVariationId");
     values = await client.getAllValuesAsync(redEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "redValue");
-    variationIds = await client.getAllVariationIdsAsync(redEyeColorUser);
+    variationIds = (await client.getAllValueDetailsAsync(redEyeColorUser)).map(d => d.variationId);
     assert.equal(variationIds[0], "redVariationId");
 
     // Passing directly the userobject to the functions, the rollout rules should work (blue eyed case)
     value = await client.getValueAsync("debug", "N/A", blueEyeColorUser);
     assert.equal(value, "blueValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A", blueEyeColorUser);
+    variationId = (await client.getValueDetailsAsync("debug", "N/A", blueEyeColorUser)).variationId;
     assert.equal(variationId, "blueVariationId");
     values = await client.getAllValuesAsync(blueEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "blueValue");
-    variationIds = await client.getAllVariationIdsAsync(blueEyeColorUser);
+    variationIds = (await client.getAllValueDetailsAsync(blueEyeColorUser)).map(d => d.variationId);
     assert.equal(variationIds[0], "blueVariationId");
 
     // Set the default user
@@ -52,23 +53,23 @@ describe("DefaultUser", () => {
     // Without user object, should evaluate based on the default user (blue-eyed default)
     value = await client.getValueAsync("debug", "N/A");
     assert.equal(value, "blueValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A");
+    variationId = (await client.getValueDetailsAsync("debug", "N/A")).variationId;
     assert.equal(variationId, "blueVariationId");
     values = await client.getAllValuesAsync();
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "blueValue");
-    variationIds = await client.getAllVariationIdsAsync();
+    variationIds = (await client.getAllValueDetailsAsync()).map(d => d.variationId);
     assert.equal(variationIds[0], "blueVariationId");
 
     // With passing directly the userobject, should evaluate based on the passed in user instead of the default user (red-eyed case)
     value = await client.getValueAsync("debug", "N/A", redEyeColorUser);
     assert.equal(value, "redValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A", redEyeColorUser);
+    variationId = (await client.getValueDetailsAsync("debug", "N/A", redEyeColorUser)).variationId;
     assert.equal(variationId, "redVariationId");
     values = await client.getAllValuesAsync(redEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "redValue");
-    variationIds = await client.getAllVariationIdsAsync(redEyeColorUser);
+    variationIds = (await client.getAllValueDetailsAsync(redEyeColorUser)).map(d => d.variationId);
     assert.equal(variationIds[0], "redVariationId");
 
     // After clearing the default user, default values should be returned again
@@ -76,12 +77,12 @@ describe("DefaultUser", () => {
 
     value = await client.getValueAsync("debug", "N/A");
     assert.equal(value, "defaultValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A");
+    variationId = (await client.getValueDetailsAsync("debug", "N/A")).variationId;
     assert.equal(variationId, "defaultVariationId");
     values = await client.getAllValuesAsync();
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "defaultValue");
-    variationIds = await client.getAllVariationIdsAsync();
+    variationIds = (await client.getAllValueDetailsAsync()).map(d => d.variationId);
     assert.equal(variationIds[0], "defaultVariationId");
   });
 
@@ -90,28 +91,28 @@ describe("DefaultUser", () => {
     const blueEyeColorUser = { identifier: "blueIdentifier", custom: { "eyeColor": "blue" } };
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
-    const client: IConfigCatClient = configcatClient.createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug), defaultUser: redEyeColorUser });
+    const client: IConfigCatClient = createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug), defaultUser: redEyeColorUser });
 
     // Without passing the userobject, default user from the constructor should be returned
     let value = await client.getValueAsync("debug", "N/A", redEyeColorUser);
     assert.equal(value, "redValue");
-    let variationId = await client.getVariationIdAsync("debug", "N/A", redEyeColorUser);
+    let variationId = (await client.getValueDetailsAsync("debug", "N/A", redEyeColorUser)).variationId;
     assert.equal(variationId, "redVariationId");
     let values = await client.getAllValuesAsync(redEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "redValue");
-    let variationIds = await client.getAllVariationIdsAsync(redEyeColorUser);
+    let variationIds = (await client.getAllValueDetailsAsync(redEyeColorUser)).map(d => d.variationId);
     assert.equal(variationIds[0], "redVariationId");
 
     // Passing directly the userobject to the functions, the rollout rules should work (blue eyed case)
     value = await client.getValueAsync("debug", "N/A", blueEyeColorUser);
     assert.equal(value, "blueValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A", blueEyeColorUser);
+    variationId = (await client.getValueDetailsAsync("debug", "N/A", blueEyeColorUser)).variationId;
     assert.equal(variationId, "blueVariationId");
     values = await client.getAllValuesAsync(blueEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "blueValue");
-    variationIds = await client.getAllVariationIdsAsync(blueEyeColorUser);
+    variationIds = (await client.getAllValueDetailsAsync(blueEyeColorUser)).map(d => d.variationId);
     assert.equal(variationIds[0], "blueVariationId");
 
     // Set the default user
@@ -120,23 +121,23 @@ describe("DefaultUser", () => {
     // Without user object, should evaluate based on the default user (blue-eyed default)
     value = await client.getValueAsync("debug", "N/A");
     assert.equal(value, "blueValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A");
+    variationId = (await client.getValueDetailsAsync("debug", "N/A")).variationId;
     assert.equal(variationId, "blueVariationId");
     values = await client.getAllValuesAsync();
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "blueValue");
-    variationIds = await client.getAllVariationIdsAsync();
+    variationIds = (await client.getAllValueDetailsAsync()).map(d => d.variationId);
     assert.equal(variationIds[0], "blueVariationId");
 
     // With passing directly the userobject, should evaluate based on the passed in user instead of the default user (red-eyed case)
     value = await client.getValueAsync("debug", "N/A", redEyeColorUser);
     assert.equal(value, "redValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A", redEyeColorUser);
+    variationId = (await client.getValueDetailsAsync("debug", "N/A", redEyeColorUser)).variationId;
     assert.equal(variationId, "redVariationId");
     values = await client.getAllValuesAsync(redEyeColorUser);
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "redValue");
-    variationIds = await client.getAllVariationIdsAsync(redEyeColorUser);
+    variationIds = (await client.getAllValueDetailsAsync(redEyeColorUser)).map(d => d.variationId);
     assert.equal(variationIds[0], "redVariationId");
 
     // After clearing the default user, default values should be returned again
@@ -144,12 +145,12 @@ describe("DefaultUser", () => {
 
     value = await client.getValueAsync("debug", "N/A");
     assert.equal(value, "defaultValue");
-    variationId = await client.getVariationIdAsync("debug", "N/A");
+    variationId = (await client.getValueDetailsAsync("debug", "N/A")).variationId;
     assert.equal(variationId, "defaultVariationId");
     values = await client.getAllValuesAsync();
     assert.equal(values[0].settingKey, "debug");
     assert.equal(values[0].settingValue, "defaultValue");
-    variationIds = await client.getAllVariationIdsAsync();
+    variationIds = (await client.getAllValueDetailsAsync()).map(d => d.variationId);
     assert.equal(variationIds[0], "defaultVariationId");
   });
 
