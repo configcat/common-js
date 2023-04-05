@@ -25,23 +25,20 @@ export interface IConfigCatClient extends IProvidesHooks {
   /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
   getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>>;
 
-  /** Downloads the latest feature flag and configuration values */
-  forceRefreshAsync(): Promise<RefreshResult>;
-
   /** Gets a list of keys for all your feature flags and settings */
   getAllKeysAsync(): Promise<string[]>;
-
-  /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
-  getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
-
-  /** Releases all resources used by IConfigCatClient */
-  dispose(): void;
 
   /** Returns the values of all feature flags or settings */
   getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
 
   /** Returns the values along with evaluation details of all feature flags or settings */
   getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]>;
+
+  /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
+  getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
+
+  /** Downloads the latest feature flag and configuration values */
+  forceRefreshAsync(): Promise<RefreshResult>;
 
   /** Sets the default user for feature flag evaluations.
    * In case the getValue function isn't called with a UserObject, this default user will be used instead.
@@ -59,6 +56,9 @@ export interface IConfigCatClient extends IProvidesHooks {
 
   /** Configures the client to not initiate HTTP requests and work only from its cache. */
   setOffline(): void;
+
+  /** Releases all resources used by IConfigCatClient */
+  dispose(): void;
 }
 
 export interface IConfigCatKernel {
@@ -294,24 +294,6 @@ export class ConfigCatClient implements IConfigCatClient {
     return evaluationDetails;
   }
 
-  async forceRefreshAsync(): Promise<RefreshResult> {
-    this.options.logger.logDebug("forceRefreshAsync() called.");
-
-    if (this.configService) {
-      try {
-        const [result] = await this.configService.refreshConfigAsync();
-        return result;
-      }
-      catch (err) {
-        this.options.logger.forceRefreshError("forceRefreshAsync", err);
-        return RefreshResult.failure(errorToString(err), err);
-      }
-    }
-    else {
-      return RefreshResult.failure("Client is configured to use the LocalOnly override behavior, which prevents making HTTP requests.");
-    }
-  }
-
   async getAllKeysAsync(): Promise<string[]> {
     this.options.logger.logDebug("getAllKeysAsync() called.");
 
@@ -327,51 +309,6 @@ export class ConfigCatClient implements IConfigCatClient {
       this.options.logger.settingEvaluationError("getAllKeysAsync", defaultReturnValue, err);
       return [];
     }
-  }
-
-  async getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
-    this.options.logger.logDebug("getKeyAndValueAsync() called.");
-
-    const defaultReturnValue = "null";
-    try {
-      const [settings] = await this.getSettingsAsync();
-      if (!checkSettingsAvailable(settings, this.options.logger, defaultReturnValue)) {
-        return null;
-      }
-
-      for (const [settingKey, setting] of Object.entries(settings)) {
-        if (variationId === setting.variationId) {
-          return new SettingKeyValue(settingKey, setting.value);
-        }
-
-        const rolloutRules = settings[settingKey].rolloutRules;
-        if (rolloutRules && rolloutRules.length > 0) {
-          for (let i = 0; i < rolloutRules.length; i++) {
-            const rolloutRule: RolloutRule = rolloutRules[i];
-            if (variationId === rolloutRule.variationId) {
-              return new SettingKeyValue(settingKey, rolloutRule.value);
-            }
-          }
-        }
-
-        const percentageItems = settings[settingKey].rolloutPercentageItems;
-        if (percentageItems && percentageItems.length > 0) {
-          for (let i = 0; i < percentageItems.length; i++) {
-            const percentageItem: RolloutPercentageItem = percentageItems[i];
-            if (variationId === percentageItem.variationId) {
-              return new SettingKeyValue(settingKey, percentageItem.value);
-            }
-          }
-        }
-      }
-
-      this.options.logger.settingForVariationIdIsNotPresent(variationId);
-    }
-    catch (err) {
-      this.options.logger.settingEvaluationError("getKeyAndValueAsync", defaultReturnValue, err);
-    }
-
-    return null;
   }
 
   async getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
@@ -426,6 +363,69 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     return evaluationDetailsArray;
+  }
+
+  async getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
+    this.options.logger.logDebug("getKeyAndValueAsync() called.");
+
+    const defaultReturnValue = "null";
+    try {
+      const [settings] = await this.getSettingsAsync();
+      if (!checkSettingsAvailable(settings, this.options.logger, defaultReturnValue)) {
+        return null;
+      }
+
+      for (const [settingKey, setting] of Object.entries(settings)) {
+        if (variationId === setting.variationId) {
+          return new SettingKeyValue(settingKey, setting.value);
+        }
+
+        const rolloutRules = settings[settingKey].rolloutRules;
+        if (rolloutRules && rolloutRules.length > 0) {
+          for (let i = 0; i < rolloutRules.length; i++) {
+            const rolloutRule: RolloutRule = rolloutRules[i];
+            if (variationId === rolloutRule.variationId) {
+              return new SettingKeyValue(settingKey, rolloutRule.value);
+            }
+          }
+        }
+
+        const percentageItems = settings[settingKey].rolloutPercentageItems;
+        if (percentageItems && percentageItems.length > 0) {
+          for (let i = 0; i < percentageItems.length; i++) {
+            const percentageItem: RolloutPercentageItem = percentageItems[i];
+            if (variationId === percentageItem.variationId) {
+              return new SettingKeyValue(settingKey, percentageItem.value);
+            }
+          }
+        }
+      }
+
+      this.options.logger.settingForVariationIdIsNotPresent(variationId);
+    }
+    catch (err) {
+      this.options.logger.settingEvaluationError("getKeyAndValueAsync", defaultReturnValue, err);
+    }
+
+    return null;
+  }
+
+  async forceRefreshAsync(): Promise<RefreshResult> {
+    this.options.logger.logDebug("forceRefreshAsync() called.");
+
+    if (this.configService) {
+      try {
+        const [result] = await this.configService.refreshConfigAsync();
+        return result;
+      }
+      catch (err) {
+        this.options.logger.forceRefreshError("forceRefreshAsync", err);
+        return RefreshResult.failure(errorToString(err), err);
+      }
+    }
+    else {
+      return RefreshResult.failure("Client is configured to use the LocalOnly override behavior, which prevents making HTTP requests.");
+    }
   }
 
   setDefaultUser(defaultUser: User): void {
