@@ -9,7 +9,7 @@ describe("ConfigCatLogger", () => {
 
       const loggerImpl = new class implements IConfigCatLogger {
         level = level;
-        logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any) {
+        log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any) {
           messages.push([level, eventId, message, exception]);
         }
       };
@@ -17,10 +17,10 @@ describe("ConfigCatLogger", () => {
       const logger = new LoggerWrapper(loggerImpl);
       const err = new Error();
 
-      logger.logEvent(LogLevel.Debug, 0, `${LogLevel[LogLevel.Debug]} message`);
-      logger.logEvent(LogLevel.Info, 1, `${LogLevel[LogLevel.Info]} message`);
-      logger.logEvent(LogLevel.Warn, 2, `${LogLevel[LogLevel.Warn]} message`);
-      logger.logEvent(LogLevel.Error, 3, `${LogLevel[LogLevel.Error]} message`, err);
+      logger.log(LogLevel.Debug, 0, `${LogLevel[LogLevel.Debug]} message`);
+      logger.log(LogLevel.Info, 1, `${LogLevel[LogLevel.Info]} message`);
+      logger.log(LogLevel.Warn, 2, `${LogLevel[LogLevel.Warn]} message`);
+      logger.log(LogLevel.Error, 3, `${LogLevel[LogLevel.Error]} message`, err);
 
       let expectedCount = 0;
       if (level >= LogLevel.Debug) {

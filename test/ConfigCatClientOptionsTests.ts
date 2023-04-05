@@ -333,7 +333,7 @@ class FakeCache implements ICache {
 export class FakeLogger implements IConfigCatLogger {
   level?: LogLevel | undefined;
 
-  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
+  log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
     /* Intentionally empty. */
   }
 }

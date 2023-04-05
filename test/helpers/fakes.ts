@@ -13,7 +13,7 @@ export class FakeLogger implements IConfigCatLogger {
 
   reset(): void { this.messages.splice(0); }
 
-  logEvent(level: LogLevel, _eventId: number, message: LogMessage, _exception?: any): void {
+  log(level: LogLevel, _eventId: number, message: LogMessage, _exception?: any): void {
     this.messages.push([level, message.toString()]);
   }
 }
