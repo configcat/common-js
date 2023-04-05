@@ -55,8 +55,6 @@ export interface IAutoPollOptions extends IOptions {
   pollIntervalSeconds?: number;
 
   maxInitWaitTimeSeconds?: number;
-
-  configChanged?: () => void;
 }
 
 export interface IManualPollOptions extends IOptions {
@@ -188,11 +186,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
   /** The client's poll interval in seconds. Default: 60 seconds. */
   pollIntervalSeconds: number = 60;
 
-  /** You can subscribe to configuration changes with this callback.
-   * @deprecated This property is obsolete and will be removed from the public API in a future major version. Please use the 'options.setupHooks = hooks => hooks.on("configChanged", ...)' format instead.
-   */
-  configChanged: () => void = () => { };
-
   /** Maximum waiting time between the client initialization and the first config acquisition in seconds. */
   maxInitWaitTimeSeconds: number = 5;
 
@@ -204,10 +197,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
       if (options.pollIntervalSeconds !== void 0 && options.pollIntervalSeconds !== null) {
         this.pollIntervalSeconds = options.pollIntervalSeconds;
-      }
-
-      if (options.configChanged) {
-        this.configChanged = options.configChanged;
       }
 
       if (options.maxInitWaitTimeSeconds !== void 0 && options.maxInitWaitTimeSeconds !== null) {

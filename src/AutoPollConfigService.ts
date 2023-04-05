@@ -103,11 +103,6 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     this.signalInitialization();
   }
 
-  protected onConfigChanged(newConfig: ProjectConfig): void {
-    super.onConfigChanged(newConfig);
-    this.options.configChanged();
-  }
-
   protected setOnlineCore(): void {
     this.startRefreshWorker(this.options.pollIntervalSeconds * 1000);
   }

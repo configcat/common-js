@@ -13,68 +13,23 @@ import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
 import { ConfigFile } from "./ProjectConfig";
-import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, SettingValue, User, VariationIdTypeOf, VariationIdValue } from "./RolloutEvaluator";
-import { RolloutEvaluator, checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluateAllVariationIds, evaluateVariationId, evaluationDetailsFromDefaultValue, evaluationDetailsFromDefaultVariationId } from "./RolloutEvaluator";
+import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, SettingValue, User } from "./RolloutEvaluator";
+import { RolloutEvaluator, checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluationDetailsFromDefaultValue } from "./RolloutEvaluator";
 import { errorToString, getSettingsFromConfig, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {
 
-  /** Returns the value of a feature flag or setting based on it's key
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueAsync() method instead.
-   */
-  getValue<T extends SettingValue>(key: string, defaultValue: T, callback: (value: SettingTypeOf<T>) => void, user?: User): void;
-
   /** Returns the value of a feature flag or setting based on it's key */
   getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>>;
-
-  /** Returns the value along with evaluation details of a feature flag or setting based on it's key
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetailsAsync() method instead.
-   */
-  getValueDetails<T extends SettingValue>(key: string, defaultValue: T, callback: (evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>) => void, user?: User): void;
 
   /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
   getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>>;
 
-  /** Downloads the latest feature flag and configuration values
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the forceRefreshAsync() method instead.
-   */
-  forceRefresh(callback: (result: RefreshResult) => void): void;
-
   /** Downloads the latest feature flag and configuration values */
   forceRefreshAsync(): Promise<RefreshResult>;
 
-  /** Gets a list of keys for all your feature flags and settings
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllKeysAsync() method instead.
-   */
-  getAllKeys(callback: (value: string[]) => void): void;
-
   /** Gets a list of keys for all your feature flags and settings */
   getAllKeysAsync(): Promise<string[]>;
-
-  /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetails() method instead.
-   */
-  getVariationId<T extends VariationIdValue>(key: string, defaultVariationId: T, callback: (variationId: VariationIdTypeOf<T>) => void, user?: User): void;
-
-  /** Returns the Variation ID (analytics) of a feature flag or setting based on it's key
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getValueDetailsAsync() method instead.
-   */
-  getVariationIdAsync<T extends VariationIdValue>(key: string, defaultVariationId: T, user?: User): Promise<VariationIdTypeOf<T>>;
-
-  /** Returns the Variation IDs (analytics) of all feature flags or settings
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValueDetails() method instead.
-   */
-  getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void;
-
-  /** Returns the Variation IDs (analytics) of all feature flags or settings
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValueDetailsAsync() method instead.
-   */
-  getAllVariationIdsAsync(user?: User): Promise<string[]>;
-
-  /** Returns the key of a setting and it's value identified by the given Variation ID (analytics)
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getKeyAndValueAsync() method instead.
-   */
-  getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void;
 
   /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
   getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
@@ -82,18 +37,8 @@ export interface IConfigCatClient extends IProvidesHooks {
   /** Releases all resources used by IConfigCatClient */
   dispose(): void;
 
-  /** Returns the values of all feature flags or settings
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValuesAsync() method instead.
-   */
-  getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void;
-
   /** Returns the values of all feature flags or settings */
   getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
-
-  /** Returns the values along with evaluation details of all feature flags or settings
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please use the getAllValueDetailsAsync() method instead.
-   */
-  getAllValueDetails(callback: (result: IEvaluationDetails[]) => void, user?: User): void;
 
   /** Returns the values along with evaluation details of all feature flags or settings */
   getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]>;
@@ -305,11 +250,6 @@ export class ConfigCatClient implements IConfigCatClient {
     }
   }
 
-  getValue<T extends SettingValue>(key: string, defaultValue: T, callback: (value: SettingTypeOf<T>) => void, user?: User): void {
-    this.options.logger.logDebug("getValue() called.");
-    this.getValueAsync(key, defaultValue, user).then(callback);
-  }
-
   async getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>> {
     this.options.logger.logDebug("getValueAsync() called.");
 
@@ -333,11 +273,6 @@ export class ConfigCatClient implements IConfigCatClient {
     return value;
   }
 
-  getValueDetails<T extends SettingValue>(key: string, defaultValue: T, callback: (evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>) => void, user?: User): void {
-    this.options.logger.logDebug("getValueDetails() called.");
-    this.getValueDetailsAsync(key, defaultValue, user).then(callback);
-  }
-
   async getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>> {
     this.options.logger.logDebug("getValueDetailsAsync() called.");
 
@@ -359,11 +294,6 @@ export class ConfigCatClient implements IConfigCatClient {
     return evaluationDetails;
   }
 
-  forceRefresh(callback: (result: RefreshResult) => void): void {
-    this.options.logger.logDebug("forceRefresh() called.");
-    this.forceRefreshAsync().then(callback);
-  }
-
   async forceRefreshAsync(): Promise<RefreshResult> {
     this.options.logger.logDebug("forceRefreshAsync() called.");
 
@@ -382,11 +312,6 @@ export class ConfigCatClient implements IConfigCatClient {
     }
   }
 
-  getAllKeys(callback: (value: string[]) => void): void {
-    this.options.logger.logDebug("getAllKeys() called.");
-    this.getAllKeysAsync().then(callback);
-  }
-
   async getAllKeysAsync(): Promise<string[]> {
     this.options.logger.logDebug("getAllKeysAsync() called.");
 
@@ -402,71 +327,6 @@ export class ConfigCatClient implements IConfigCatClient {
       this.options.logger.settingEvaluationError("getAllKeysAsync", defaultReturnValue, err);
       return [];
     }
-  }
-
-  getVariationId<T extends VariationIdValue>(key: string, defaultVariationId: T, callback: (variationId: VariationIdTypeOf<T>) => void, user?: User): void {
-    this.options.logger.logDebug("getVariationId() called.");
-    this.getVariationIdAsync(key, defaultVariationId, user).then(callback);
-  }
-
-  async getVariationIdAsync<T extends VariationIdValue>(key: string, defaultVariationId: T, user?: User): Promise<VariationIdTypeOf<T>> {
-    this.options.logger.logDebug("getVariationIdAsync() called.");
-
-    let variationId: VariationIdTypeOf<T>, evaluationDetails: IEvaluationDetails;
-    let remoteConfig: ProjectConfig | null = null;
-    user ??= this.defaultUser;
-    try {
-      let settings: { [name: string]: Setting } | null;
-      [settings, remoteConfig] = await this.getSettingsAsync();
-      evaluationDetails = evaluateVariationId(this.evaluator, settings, key, defaultVariationId, user, remoteConfig, this.options.logger);
-      variationId = evaluationDetails.variationId as VariationIdTypeOf<T>;
-    }
-    catch (err) {
-      this.options.logger.settingEvaluationErrorSingle("getVariationIdAsync", key, "defaultVariationId", defaultVariationId, err);
-      evaluationDetails = evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
-      variationId = defaultVariationId as VariationIdTypeOf<T>;
-    }
-
-    this.options.hooks.emit("flagEvaluated", evaluationDetails);
-    return variationId;
-  }
-
-  getAllVariationIds(callback: (variationIds: string[]) => void, user?: User): void {
-    this.options.logger.logDebug("getAllVariationIds() called.");
-    this.getAllVariationIdsAsync(user).then(callback);
-  }
-
-  async getAllVariationIdsAsync(user?: User): Promise<string[]> {
-    this.options.logger.logDebug("getAllVariationIdsAsync() called.");
-
-    const defaultReturnValue = "empty array";
-    let result: string[], evaluationDetailsArray: IEvaluationDetails[];
-    user ??= this.defaultUser;
-    try {
-      const [settings, remoteConfig] = await this.getSettingsAsync();
-      let errors: any[] | undefined;
-      [evaluationDetailsArray, errors] = evaluateAllVariationIds(this.evaluator, settings, user, remoteConfig, this.options.logger, defaultReturnValue);
-      if (errors?.length) {
-        throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
-      }
-      result = evaluationDetailsArray.filter(details => details !== null && details !== void 0).map(details => details.variationId!);
-    }
-    catch (err) {
-      this.options.logger.settingEvaluationError("getAllVariationIdsAsync", defaultReturnValue, err);
-      evaluationDetailsArray ??= [];
-      result = [];
-    }
-
-    for (const evaluationDetail of evaluationDetailsArray) {
-      this.options.hooks.emit("flagEvaluated", evaluationDetail);
-    }
-
-    return result;
-  }
-
-  getKeyAndValue(variationId: string, callback: (settingkeyAndValue: SettingKeyValue | null) => void): void {
-    this.options.logger.logDebug("getKeyAndValue() called.");
-    this.getKeyAndValueAsync(variationId).then(callback);
   }
 
   async getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null> {
@@ -514,11 +374,6 @@ export class ConfigCatClient implements IConfigCatClient {
     return null;
   }
 
-  getAllValues(callback: (result: SettingKeyValue[]) => void, user?: User): void {
-    this.options.logger.logDebug("getAllValues() called.");
-    this.getAllValuesAsync(user).then(callback);
-  }
-
   async getAllValuesAsync(user?: User): Promise<SettingKeyValue[]> {
     this.options.logger.logDebug("getAllValuesAsync() called.");
 
@@ -545,11 +400,6 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     return result;
-  }
-
-  getAllValueDetails(callback: (result: IEvaluationDetails[]) => void, user?: User): void {
-    this.options.logger.logDebug("getAllValueDetails() called.");
-    this.getAllValueDetailsAsync(user).then(callback);
   }
 
   async getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]> {

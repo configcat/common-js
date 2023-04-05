@@ -55,31 +55,6 @@ export interface IConfigCatLogger {
   readonly level?: LogLevel;
 
   /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  debug?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  log?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  info?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  warn?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  error?(message: string): void;
-
-  /**
    * Writes a message into the log.
    * @param level Level (event severity).
    * @param eventId Event identifier.
@@ -87,7 +62,7 @@ export interface IConfigCatLogger {
    * @param exception The exception object related to the message (if any).
    * @remarks Later, when the deprecated methods are removed, this method will be changed to required and will be renamed to 'log'.
    */
-  logEvent?(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void;
+  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void;
 }
 
 export class LoggerWrapper implements IConfigCatLogger {
@@ -100,20 +75,6 @@ export class LoggerWrapper implements IConfigCatLogger {
     private readonly hooks?: Hooks) {
   }
 
-  debug: (message: string) => void = this.logDebug;
-
-  info(message: string): void {
-    this.logEvent(LogLevel.Info, 0, message);
-  }
-
-  warn(message: string): void {
-    this.logEvent(LogLevel.Warn, 0, message);
-  }
-
-  error(message: string, err?: any): void {
-    this.logEvent(LogLevel.Error, 0, message, err);
-  }
-
   private isLogLevelEnabled(logLevel: LogLevel): boolean {
     return this.level >= logLevel;
   }
@@ -121,27 +82,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   /** @inheritdoc */
   logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): LogMessage {
     if (this.isLogLevelEnabled(level)) {
-      if (this.logger.logEvent) {
-        this.logger.logEvent(level, eventId, message, exception);
-      }
-      else {
-        switch (level) {
-          case LogLevel.Error:
-            this.logger.error?.(message.toString());
-            break;
-          case LogLevel.Warn:
-            this.logger.warn?.(message.toString());
-            break;
-          case LogLevel.Info:
-            this.logger.info?.(message.toString());
-            break;
-          case LogLevel.Debug:
-            this.logger.debug?.(message.toString());
-            break;
-          default:
-            break;
-        }
-      }
+      this.logger.logEvent(level, eventId, message, exception);
     }
 
     if (level === LogLevel.Error) {
@@ -364,31 +305,6 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
    * Create an instance of ConfigCatConsoleLogger
    */
   constructor(public level = LogLevel.Warn) {
-  }
-
-  /** @inheritdoc */
-  log(message: string): void {
-    this.info(message);
-  }
-
-  /** @inheritdoc */
-  debug(message: string): void {
-    this.logEvent(LogLevel.Debug, 0, message);
-  }
-
-  /** @inheritdoc */
-  info(message: string): void {
-    this.logEvent(LogLevel.Info, 0, message);
-  }
-
-  /** @inheritdoc */
-  warn(message: string): void {
-    this.logEvent(LogLevel.Warn, 0, message);
-  }
-
-  /** @inheritdoc */
-  error(message: string): void {
-    this.logEvent(LogLevel.Error, 0, message);
   }
 
   /** @inheritdoc */
