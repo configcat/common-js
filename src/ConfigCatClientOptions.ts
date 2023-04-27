@@ -73,7 +73,7 @@ export interface IManualPollOptions extends IOptions {
 export interface ILazyLoadingOptions extends IOptions {
   /**
     * Cache time to live value.
-    * (Default value is 60 seconds. Minimum value is 1 second.)
+    * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483647 seconds.)
    */
   cacheTimeToLiveSeconds?: number;
 }
@@ -83,10 +83,6 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
   TMode extends PollingMode.ManualPoll ? IManualPollOptions :
   TMode extends PollingMode.LazyLoad ? ILazyLoadingOptions :
   never;
-
-// https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#maximum_delay_value
-// https://stackoverflow.com/a/3468650/8656352
-const maxSetTimeoutIntervalSecs = 2147483.647;
 
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 
@@ -229,11 +225,15 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
       }
     }
 
+    // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#maximum_delay_value
+    // https://stackoverflow.com/a/3468650/8656352
+    const maxSetTimeoutIntervalSecs = 2147483.647;
+
     if (!(typeof this.pollIntervalSeconds === "number" && 1 <= this.pollIntervalSeconds && this.pollIntervalSeconds <= maxSetTimeoutIntervalSecs)) {
       throw new Error("Invalid 'pollIntervalSeconds' value");
     }
 
-    if (!(typeof this.maxInitWaitTimeSeconds === "number" && this.pollIntervalSeconds <= maxSetTimeoutIntervalSecs)) {
+    if (!(typeof this.maxInitWaitTimeSeconds === "number" && this.maxInitWaitTimeSeconds <= maxSetTimeoutIntervalSecs)) {
       throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
     }
   }
@@ -259,7 +259,7 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
       }
     }
 
-    if (!(typeof this.cacheTimeToLiveSeconds === "number" && 1 <= this.cacheTimeToLiveSeconds)) {
+    if (!(typeof this.cacheTimeToLiveSeconds === "number" && 1 <= this.cacheTimeToLiveSeconds && this.cacheTimeToLiveSeconds <= 2147483647)) {
       throw new Error("Invalid 'cacheTimeToLiveSeconds' value");
     }
   }
