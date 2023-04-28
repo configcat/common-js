@@ -52,8 +52,16 @@ export interface IOptions {
 }
 
 export interface IAutoPollOptions extends IOptions {
+  /**
+   * Configuration refresh period.
+   * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483 seconds.)
+   */
   pollIntervalSeconds?: number;
 
+  /**
+    * Maximum waiting time between initialization and the first config acquisition.
+    * (Default value is 5 seconds. Maximum value is 2147483 seconds. Negative values mean infinite waiting.)
+   */
   maxInitWaitTimeSeconds?: number;
 
   configChanged?: () => void;
@@ -63,6 +71,10 @@ export interface IManualPollOptions extends IOptions {
 }
 
 export interface ILazyLoadingOptions extends IOptions {
+  /**
+    * Cache time to live value.
+    * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483647 seconds.)
+   */
   cacheTimeToLiveSeconds?: number;
 }
 
@@ -185,7 +197,6 @@ export abstract class OptionsBase implements IOptions {
 
 export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
-  /** The client's poll interval in seconds. Default: 60 seconds. */
   pollIntervalSeconds: number = 60;
 
   /** You can subscribe to configuration changes with this callback.
@@ -193,7 +204,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
    */
   configChanged: () => void = () => { };
 
-  /** Maximum waiting time between the client initialization and the first config acquisition in seconds. */
   maxInitWaitTimeSeconds: number = 5;
 
   constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
@@ -215,11 +225,15 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
       }
     }
 
-    if (!(this.pollIntervalSeconds >= 1 && (typeof this.pollIntervalSeconds === "number"))) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#maximum_delay_value
+    // https://stackoverflow.com/a/3468650/8656352
+    const maxSetTimeoutIntervalSecs = 2147483;
+
+    if (!(typeof this.pollIntervalSeconds === "number" && 1 <= this.pollIntervalSeconds && this.pollIntervalSeconds <= maxSetTimeoutIntervalSecs)) {
       throw new Error("Invalid 'pollIntervalSeconds' value");
     }
 
-    if (!(this.maxInitWaitTimeSeconds >= 0 && (typeof this.maxInitWaitTimeSeconds === "number"))) {
+    if (!(typeof this.maxInitWaitTimeSeconds === "number" && this.maxInitWaitTimeSeconds <= maxSetTimeoutIntervalSecs)) {
       throw new Error("Invalid 'maxInitWaitTimeSeconds' value");
     }
   }
@@ -233,7 +247,6 @@ export class ManualPollOptions extends OptionsBase implements IManualPollOptions
 
 export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions {
 
-  /** The cache TTL. */
   cacheTimeToLiveSeconds: number = 60;
 
   constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
@@ -241,13 +254,13 @@ export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions 
     super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCache, eventEmitterFactory);
 
     if (options) {
-      if (options.cacheTimeToLiveSeconds) {
+      if (options.cacheTimeToLiveSeconds !== void 0 && options.cacheTimeToLiveSeconds !== null) {
         this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
       }
     }
 
-    if (!this.cacheTimeToLiveSeconds || this.cacheTimeToLiveSeconds < 1) {
-      throw new Error("Invalid 'cacheTimeToLiveSeconds' value. Value must be greater than zero.");
+    if (!(typeof this.cacheTimeToLiveSeconds === "number" && 1 <= this.cacheTimeToLiveSeconds && this.cacheTimeToLiveSeconds <= 2147483647)) {
+      throw new Error("Invalid 'cacheTimeToLiveSeconds' value");
     }
   }
 }
