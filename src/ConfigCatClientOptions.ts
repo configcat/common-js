@@ -54,13 +54,13 @@ export interface IOptions {
 export interface IAutoPollOptions extends IOptions {
   /**
    * Configuration refresh period.
-   * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483.647 seconds.)
+   * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483 seconds.)
    */
   pollIntervalSeconds?: number;
 
   /**
     * Maximum waiting time between initialization and the first config acquisition.
-    * (Default value is 5 seconds. Maximum value is 2147483.647 seconds. Negative values mean infinite waiting.)
+    * (Default value is 5 seconds. Maximum value is 2147483 seconds. Negative values mean infinite waiting.)
    */
   maxInitWaitTimeSeconds?: number;
 
@@ -227,7 +227,7 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
     // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#maximum_delay_value
     // https://stackoverflow.com/a/3468650/8656352
-    const maxSetTimeoutIntervalSecs = 2147483.647;
+    const maxSetTimeoutIntervalSecs = 2147483;
 
     if (!(typeof this.pollIntervalSeconds === "number" && 1 <= this.pollIntervalSeconds && this.pollIntervalSeconds <= maxSetTimeoutIntervalSecs)) {
       throw new Error("Invalid 'pollIntervalSeconds' value");
