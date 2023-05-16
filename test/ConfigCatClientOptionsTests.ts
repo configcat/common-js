@@ -159,12 +159,6 @@ describe("Options", () => {
     assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
   });
 
-  it("AutoPollOptions initialization With -1 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
-    expect(() => {
-      new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: -1 }, null);
-    }).to.throw("Invalid 'maxInitWaitTimeSeconds' value");
-  });
-
   it("AutoPollOptions initialization With NaN 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
     const myConfig = new Map();
     myConfig.set("maxInitWaitTimeSeconds", NaN);
@@ -317,6 +311,90 @@ describe("Options", () => {
     const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", {}, null);
     assert.equal("common/m-1.0.0", options.clientVersion);
   });
+
+  for (const [pollIntervalSecs, isValid] of [
+    [-Infinity, false],
+    [-1, false],
+    [0, false],
+    [0.999, false],
+    [1, true],
+    [2 ** 31 / 1000 - 1, true],
+    [2 ** 31 / 1000, false],
+    [Infinity, false],
+    [NaN, false],
+    ["1", false],
+  ]) {
+    it(`AutoPollOptions initialization - pollIntervalSeconds range validation works - ${pollIntervalSecs} (${typeof pollIntervalSecs})`, () => {
+      const action = () => new AutoPollOptions("SDKKEY", "SDKTYPE", "SDKVERSION", {
+        pollIntervalSeconds: pollIntervalSecs as unknown as number
+      });
+
+      if (isValid) {
+        action();
+      }
+      else {
+        let ex: any;
+        try { action(); }
+        catch (err) { ex = err; }
+        assert.instanceOf(ex, Error);
+      }
+    });
+  }
+
+  for (const [maxInitWaitTimeSecs, isValid] of [
+    [-Infinity, true],
+    [-1, true],
+    [2 ** 31 / 1000 - 1, true],
+    [2 ** 31 / 1000, false],
+    [Infinity, false],
+    [NaN, false],
+    ["1", false],
+  ]) {
+    it(`AutoPollOptions initialization - maxInitWaitTimeSeconds range validation works - ${maxInitWaitTimeSecs} (${typeof maxInitWaitTimeSecs})`, () => {
+      const action = () => new AutoPollOptions("SDKKEY", "SDKTYPE", "SDKVERSION", {
+        maxInitWaitTimeSeconds: maxInitWaitTimeSecs as unknown as number
+      });
+
+      if (isValid) {
+        action();
+      }
+      else {
+        let ex: any;
+        try { action(); }
+        catch (err) { ex = err; }
+        assert.instanceOf(ex, Error);
+      }
+    });
+  }
+
+  for (const [cacheTimeToLiveSecs, isValid] of [
+    [-Infinity, false],
+    [-1, false],
+    [0, false],
+    [0.999, false],
+    [1, true],
+    [2 ** 31 - 1, true],
+    [2 ** 31, false],
+    [Infinity, false],
+    [NaN, false],
+    ["1", false],
+  ]) {
+    it(`LazyLoadOptions initialization - cacheTimeToLiveSeconds range validation works - ${cacheTimeToLiveSecs} (${typeof cacheTimeToLiveSecs})`, () => {
+      const action = () => new LazyLoadOptions("SDKKEY", "SDKTYPE", "SDKVERSION", {
+        cacheTimeToLiveSeconds: cacheTimeToLiveSecs as unknown as number
+      });
+
+      if (isValid) {
+        action();
+      }
+      else {
+        let ex: any;
+        try { action(); }
+        catch (err) { ex = err; }
+        assert.instanceOf(ex, Error);
+      }
+    });
+  }
 });
 
 class FakeOptionsBase extends OptionsBase { }

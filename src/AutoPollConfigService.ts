@@ -10,20 +10,20 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
   private initialized: boolean;
   private readonly initialization: Promise<void>;
-  private signalInitialization: () => void = (void 0)!; // the initial value is only for keeping the TS compiler happy
+  private signalInitialization: () => void = () => { /* Intentional no-op. */ };
   private timerId?: ReturnType<typeof setTimeout>;
 
   constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
 
     super(configFetcher, options);
 
-    if (options.maxInitWaitTimeSeconds > 0) {
+    if (options.maxInitWaitTimeSeconds !== 0) {
       this.initialized = false;
 
       // This promise will be resolved when
       // 1. the cache contains a valid config at startup (see startRefreshWorker) or
       // 2. config.json is downloaded the first time (see onConfigUpdated) or
-      // 3. maxInitWaitTimeSeconds has passed (see the setTimeout call below).
+      // 3. maxInitWaitTimeSeconds > 0 and maxInitWaitTimeSeconds has passed (see the setTimeout call below).
       this.initialization = new Promise(resolve => this.signalInitialization = () => {
         this.initialized = true;
         resolve();
@@ -31,7 +31,9 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
       this.initialization.then(() => !this.disposed && options.hooks.emit("clientReady"));
 
-      setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
+      if (options.maxInitWaitTimeSeconds > 0) {
+        setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
+      }
     }
     else {
       this.initialized = true;
@@ -40,11 +42,16 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
 
     if (!options.offline) {
-      this.startRefreshWorker(options.pollIntervalSeconds * 1000);
+      this.startRefreshWorker();
     }
   }
 
   private async waitForInitializationAsync(): Promise<boolean> {
+    if (this.options.maxInitWaitTimeSeconds < 0) {
+      await this.initialization;
+      return true;
+    }
+
     let cancelDelay: () => void;
     // Simply awaiting the initialization promise would also work but we limit waiting to maxInitWaitTimeSeconds for maximum safety.
     const result = await Promise.race([
@@ -104,15 +111,17 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   }
 
   protected setOnlineCore(): void {
-    this.startRefreshWorker(this.options.pollIntervalSeconds * 1000);
+    this.startRefreshWorker();
   }
 
   protected setOfflineCore(): void {
     this.stopRefreshWorker();
   }
 
-  private async startRefreshWorker(delayMs: number) {
+  private async startRefreshWorker() {
     this.options.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
+
+    const delayMs = this.options.pollIntervalSeconds * 1000;
 
     const latestConfig = await this.options.cache.get(this.options.getCacheKey());
     if (ProjectConfig.isExpired(latestConfig, this.options.pollIntervalSeconds * 1000)) {
