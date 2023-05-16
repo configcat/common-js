@@ -17,14 +17,8 @@ export type SettingTypeOf<T> =
 
 export type VariationIdValue = string | null | undefined;
 
-export type VariationIdTypeOf<T> =
-  T extends string ? string :
-  T extends null ? string | null :
-  T extends undefined ? string | undefined :
-  any;
-
 export interface IRolloutEvaluator {
-  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: VariationIdValue): IEvaluationDetails;
+  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails;
 }
 
 export interface IEvaluationDetails<TValue = SettingValue> {
@@ -92,7 +86,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
-    this.logger.logDebug("RolloutEvaluator.Evaluate() called.");
+    this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
     const eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -150,7 +144,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
   private evaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
 
-    this.logger.logDebug("RolloutEvaluator.EvaluateRules() called.");
+    this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
 
     if (rolloutRules && rolloutRules.length > 0) {
 
@@ -329,7 +323,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
-    this.logger.logDebug("RolloutEvaluator.EvaluateVariations() called.");
+    this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
       const hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
@@ -355,7 +349,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluateNumber(v1: string, v2: string, comparator: number): boolean {
-    this.logger.logDebug("RolloutEvaluator.EvaluateNumber() called.");
+    this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
 
     let n1: number, n2: number;
 
@@ -394,7 +388,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 
   private evaluateSemver(v1: string, v2: string, comparator: number): boolean {
-    this.logger.logDebug("RolloutEvaluator.EvaluateSemver() called.");
+    this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
     if (semver.valid(v1) == null || v2 === void 0) {
       return false;
     }
@@ -585,19 +579,6 @@ export function evaluationDetailsFromDefaultValue<T extends SettingValue>(key: s
   };
 }
 
-export function evaluationDetailsFromDefaultVariationId(key: string, defaultVariationId: VariationIdValue, fetchTime?: Date, user?: User, errorMessage?: string, errorException?: any): IEvaluationDetails {
-  return {
-    key,
-    value: null,
-    variationId: defaultVariationId,
-    fetchTime,
-    user,
-    isDefaultValue: true,
-    errorMessage,
-    errorException
-  };
-}
-
 export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: T,
   user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails<SettingTypeOf<T>> {
 
@@ -624,27 +605,8 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
   return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
 }
 
-export function evaluateVariationId(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultVariationId: VariationIdValue,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails {
-
-  let errorMessage: string;
-  if (!settings) {
-    errorMessage = logger.configJsonIsNotPresentSingle(key, "defaultVariationId", defaultVariationId).toString();
-    return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
-  }
-
-  const setting = settings[key];
-  if (!setting) {
-    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultVariationId", defaultVariationId, keysToString(settings)).toString();
-    return evaluationDetailsFromDefaultVariationId(key, defaultVariationId, getTimestampAsDate(remoteConfig), user, errorMessage);
-  }
-
-  return evaluator.evaluate(setting, key, null, user, remoteConfig, defaultVariationId);
-}
-
-function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string,
-  getDetailsForError: (key: string, fetchTime: Date | undefined, user: User | undefined, err: any) => IEvaluationDetails): [IEvaluationDetails[], any[] | undefined] {
+export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
+  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
 
   let errors: any[] | undefined;
 
@@ -654,7 +616,6 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
 
   const evaluationDetailsArray: IEvaluationDetails[] = [];
 
-  let index = 0;
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
@@ -663,27 +624,13 @@ function evaluateAllCore(evaluator: IRolloutEvaluator, settings: { [name: string
     catch (err) {
       errors ??= [];
       errors.push(err);
-      evaluationDetails = getDetailsForError(key, getTimestampAsDate(remoteConfig), user, err);
+      evaluationDetails = evaluationDetailsFromDefaultValue(key, null, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
     }
 
-    evaluationDetailsArray[index++] = evaluationDetails;
+    evaluationDetailsArray.push(evaluationDetails);
   }
 
   return [evaluationDetailsArray, errors];
-}
-
-export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
-
-  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger, defaultReturnValue,
-    (key, fetchTime, user, err) => evaluationDetailsFromDefaultValue(key, null, fetchTime, user, errorToString(err), err));
-}
-
-export function evaluateAllVariationIds(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
-  user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
-
-  return evaluateAllCore(evaluator, settings, user, remoteConfig, logger, defaultReturnValue,
-    (key, fetchTime, user, err) => evaluationDetailsFromDefaultVariationId(key, null, fetchTime, user, errorToString(err), err));
 }
 
 export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, defaultReturnValue: string): settings is { [name: string]: Setting } {

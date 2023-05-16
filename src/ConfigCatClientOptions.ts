@@ -63,8 +63,6 @@ export interface IAutoPollOptions extends IOptions {
     * (Default value is 5 seconds. Maximum value is 2147483 seconds. Negative values mean infinite waiting.)
    */
   maxInitWaitTimeSeconds?: number;
-
-  configChanged?: () => void;
 }
 
 export interface IManualPollOptions extends IOptions {
@@ -199,11 +197,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
   pollIntervalSeconds: number = 60;
 
-  /** You can subscribe to configuration changes with this callback.
-   * @deprecated This property is obsolete and will be removed from the public API in a future major version. Please use the 'options.setupHooks = hooks => hooks.on("configChanged", ...)' format instead.
-   */
-  configChanged: () => void = () => { };
-
   maxInitWaitTimeSeconds: number = 5;
 
   constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
@@ -214,10 +207,6 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
 
       if (options.pollIntervalSeconds !== void 0 && options.pollIntervalSeconds !== null) {
         this.pollIntervalSeconds = options.pollIntervalSeconds;
-      }
-
-      if (options.configChanged) {
-        this.configChanged = options.configChanged;
       }
 
       if (options.maxInitWaitTimeSeconds !== void 0 && options.maxInitWaitTimeSeconds !== null) {

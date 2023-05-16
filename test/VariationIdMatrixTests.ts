@@ -42,7 +42,7 @@ describe("MatrixTests", () => {
 
           const key: string = header[i];
           const expected = splittedLine[i];
-          const actual = await client.getVariationIdAsync(key, null, user);
+          const actual = (await client.getValueDetailsAsync(key, null, user)).variationId;
 
           if (actual !== expected) {
 

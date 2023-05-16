@@ -55,39 +55,13 @@ export interface IConfigCatLogger {
   readonly level?: LogLevel;
 
   /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  debug?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  log?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  info?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  warn?(message: string): void;
-
-  /**
-   * @deprecated This method is obsolete and will be removed from the public API in a future major version. Please implement the logEvent() method instead.
-   */
-  error?(message: string): void;
-
-  /**
    * Writes a message into the log.
    * @param level Level (event severity).
    * @param eventId Event identifier.
    * @param message Message.
    * @param exception The exception object related to the message (if any).
-   * @remarks Later, when the deprecated methods are removed, this method will be changed to required and will be renamed to 'log'.
    */
-  logEvent?(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void;
+  log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void;
 }
 
 export class LoggerWrapper implements IConfigCatLogger {
@@ -100,48 +74,14 @@ export class LoggerWrapper implements IConfigCatLogger {
     private readonly hooks?: Hooks) {
   }
 
-  debug: (message: string) => void = this.logDebug;
-
-  info(message: string): void {
-    this.logEvent(LogLevel.Info, 0, message);
-  }
-
-  warn(message: string): void {
-    this.logEvent(LogLevel.Warn, 0, message);
-  }
-
-  error(message: string, err?: any): void {
-    this.logEvent(LogLevel.Error, 0, message, err);
-  }
-
   private isLogLevelEnabled(logLevel: LogLevel): boolean {
     return this.level >= logLevel;
   }
 
   /** @inheritdoc */
-  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): LogMessage {
+  log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): LogMessage {
     if (this.isLogLevelEnabled(level)) {
-      if (this.logger.logEvent) {
-        this.logger.logEvent(level, eventId, message, exception);
-      }
-      else {
-        switch (level) {
-          case LogLevel.Error:
-            this.logger.error?.(message.toString());
-            break;
-          case LogLevel.Warn:
-            this.logger.warn?.(message.toString());
-            break;
-          case LogLevel.Info:
-            this.logger.info?.(message.toString());
-            break;
-          case LogLevel.Debug:
-            this.logger.debug?.(message.toString());
-            break;
-          default:
-            break;
-        }
-      }
+      this.logger.log(level, eventId, message, exception);
     }
 
     if (level === LogLevel.Error) {
@@ -154,21 +94,21 @@ export class LoggerWrapper implements IConfigCatLogger {
   /**
    * Shorthand method for `logger.logEvent(LogLevel.Debug, 0, message);`
    * */
-  logDebug(message: string): void {
-    this.logEvent(LogLevel.Debug, 0, message);
+  debug(message: string): void {
+    this.log(LogLevel.Debug, 0, message);
   }
 
   /* Common error messages (1000-1999) */
 
   configJsonIsNotPresent(defaultReturnValue: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1000,
       `Config JSON is not present. Returning ${defaultReturnValue}.`
     );
   }
 
   configJsonIsNotPresentSingle(key: string, defaultParamName: string, defaultParamValue: unknown): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1000,
       FormattableLogMessage.from(
         "KEY", "DEFAULT_PARAM_NAME", "DEFAULT_PARAM_VALUE"
@@ -177,7 +117,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   settingEvaluationFailedDueToMissingKey(key: string, defaultParamName: string, defaultParamValue: unknown, availableKeys: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1001,
       FormattableLogMessage.from(
         "KEY", "DEFAULT_PARAM_NAME", "DEFAULT_PARAM_VALUE", "AVAILABLE_KEYS"
@@ -186,7 +126,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   settingEvaluationError(methodName: string, defaultReturnValue: string, ex: any): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1002,
       new FormattableLogMessage(["Error occurred in the `", `\` method. Returning ${defaultReturnValue}.`], ["METHOD_NAME"], [methodName]),
       ex
@@ -194,7 +134,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   settingEvaluationErrorSingle(methodName: string, key: string, defaultParamName: string, defaultParamValue: unknown, ex: any): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1002,
       FormattableLogMessage.from(
         "METHOD_NAME", "KEY", "DEFAULT_PARAM_NAME", "DEFAULT_PARAM_VALUE",
@@ -204,7 +144,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   forceRefreshError(methodName: string, ex: any): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1003,
       FormattableLogMessage.from(
         "METHOD_NAME"
@@ -214,14 +154,14 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   fetchFailedDueToInvalidSdkKey(): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1100,
       "Your SDK Key seems to be wrong. You can find the valid SDK Key at https://app.configcat.com/sdkkey"
     );
   }
 
   fetchFailedDueToUnexpectedHttpResponse(statusCode: number, reasonPhrase: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1101,
       FormattableLogMessage.from(
         "STATUS_CODE", "REASON_PHRASE"
@@ -230,7 +170,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   fetchFailedDueToRequestTimeout(timeoutMs: number, ex: any): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1102,
       FormattableLogMessage.from(
         "TIMEOUT"
@@ -239,7 +179,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   fetchFailedDueToUnexpectedError(ex: any): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1103,
       "Unexpected error occurred while trying to fetch config JSON.",
       ex
@@ -247,21 +187,21 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   fetchFailedDueToRedirectLoop(): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1104,
       "Redirection loop encountered while trying to fetch config JSON. Please contact us at https://configcat.com/support/"
     );
   }
 
   fetchReceived200WithInvalidBody(): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1105,
       "Fetching config JSON was successful but the HTTP response content was invalid."
     );
   }
 
   fetchReceived304WhenLocalCacheIsEmpty(statusCode: number, reasonPhrase: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 1106,
       FormattableLogMessage.from(
         "STATUS_CODE", "REASON_PHRASE"
@@ -272,7 +212,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   /* SDK-specific error messages (2000-2999) */
 
   settingForVariationIdIsNotPresent(variationId: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Error, 2011,
       FormattableLogMessage.from(
         "VARIATION_ID"
@@ -283,7 +223,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   /* Common warning messages (3000-3999) */
 
   clientIsAlreadyCreated(sdkKey: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Warn, 3000,
       FormattableLogMessage.from(
         "SDK_KEY"
@@ -292,7 +232,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   targetingIsNotPossible(key: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Warn, 3001,
       FormattableLogMessage.from(
         "KEY"
@@ -301,21 +241,21 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   dataGovernanceIsOutOfSync(): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Warn, 3002,
       "The `dataGovernance` parameter specified at the client initialization is not in sync with the preferences on the ConfigCat Dashboard. Read more: https://configcat.com/docs/advanced/data-governance/"
     );
   }
 
   configServiceCannotInitiateHttpCalls(): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Warn, 3200,
       "Client is in offline mode, it cannot initiate HTTP calls."
     );
   }
 
   configServiceMethodHasNoEffectDueToDisposedClient(methodName: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Warn, 3201,
       FormattableLogMessage.from(
         "METHOD_NAME"
@@ -324,7 +264,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   configServiceMethodHasNoEffectDueToOverrideBehavior(overrideBehavior: string, methodName: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Warn, 3202,
       FormattableLogMessage.from(
         "OVERRIDE_BEHAVIOR", "METHOD_NAME"
@@ -337,7 +277,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   /* Common info messages (5000-5999) */
 
   settingEvaluated(evaluateLog: object): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Info, 5000,
       FormattableLogMessage.from(
         "EVALUATE_LOG"
@@ -345,7 +285,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   configServiceStatusChanged(status: string): LogMessage {
-    return this.logEvent(
+    return this.log(
       LogLevel.Info, 5200,
       FormattableLogMessage.from(
         "MODE"
@@ -367,32 +307,7 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
   }
 
   /** @inheritdoc */
-  log(message: string): void {
-    this.info(message);
-  }
-
-  /** @inheritdoc */
-  debug(message: string): void {
-    this.logEvent(LogLevel.Debug, 0, message);
-  }
-
-  /** @inheritdoc */
-  info(message: string): void {
-    this.logEvent(LogLevel.Info, 0, message);
-  }
-
-  /** @inheritdoc */
-  warn(message: string): void {
-    this.logEvent(LogLevel.Warn, 0, message);
-  }
-
-  /** @inheritdoc */
-  error(message: string): void {
-    this.logEvent(LogLevel.Error, 0, message);
-  }
-
-  /** @inheritdoc */
-  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
+  log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
     const [logMethod, levelString] =
       level === LogLevel.Debug ? [console.info, "DEBUG"] :
       level === LogLevel.Info ? [console.info, "INFO"] :

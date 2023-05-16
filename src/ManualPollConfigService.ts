@@ -15,12 +15,12 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
 
   async getConfig(): Promise<ProjectConfig | null> {
 
-    this.options.logger.logDebug("ManualPollService.getConfig() called.");
+    this.options.logger.debug("ManualPollService.getConfig() called.");
     return await this.options.cache.get(this.options.getCacheKey());
   }
 
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
-    this.options.logger.logDebug("ManualPollService.refreshConfigAsync() called.");
+    this.options.logger.debug("ManualPollService.refreshConfigAsync() called.");
     return super.refreshConfigAsync();
   }
 }

@@ -79,12 +79,10 @@ describe("Options", () => {
   it("AutoPollOptions initialization With parameters works", () => {
     const fakeLogger: FakeLogger = new FakeLogger();
 
-    const configChanged = function() { };
     const options: AutoPollOptions = new AutoPollOptions(
       "APIKEY", "common", "1.0.0",
       {
         logger: fakeLogger,
-        configChanged: configChanged,
         pollIntervalSeconds: 59,
         requestTimeoutMs: 20,
         proxy: "http://fake-proxy.com:8080"
@@ -97,7 +95,6 @@ describe("Options", () => {
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(59, options.pollIntervalSeconds);
     assert.equal(20, options.requestTimeoutMs);
-    assert.equal(configChanged, options.configChanged);
     assert.equal("http://fake-proxy.com:8080", options.proxy);
   });
 
@@ -414,27 +411,7 @@ class FakeCache implements ICache {
 export class FakeLogger implements IConfigCatLogger {
   level?: LogLevel | undefined;
 
-  debug(message: string): void {
-    /* Intentionally empty. */
-  }
-
-  info(message: string): void {
-    /* Intentionally empty. */
-  }
-
-  warn(message: string): void {
-    /* Intentionally empty. */
-  }
-
-  log(message: string): void {
-    /* Intentionally empty. */
-  }
-
-  error(message: string): void {
-    /* Intentionally empty. */
-  }
-
-  logEvent(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
+  log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {
     /* Intentionally empty. */
   }
 }

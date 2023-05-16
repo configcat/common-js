@@ -2,10 +2,10 @@ import { assert } from "chai";
 import * as fs from "fs";
 import "mocha";
 import { EOL } from "os";
-import { createClientWithManualPoll } from "../src";
 import { ConfigCatConsoleLogger, LogLevel } from "../src/ConfigCatLogger";
 import { User } from "../src/RolloutEvaluator";
 import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
+import { createClientWithManualPoll } from "./helpers/utils";
 
 describe("MatrixTests", () => {
 
