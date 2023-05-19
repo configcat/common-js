@@ -1,6 +1,6 @@
 import { assert, expect } from "chai";
 import "mocha";
-import { ICache, InMemoryCache } from "../src/Cache";
+import { ExternalConfigCache, IConfigCache, IConfigCatCache, InMemoryConfigCache } from "../src/ConfigCatCache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { ConfigCatConsoleLogger, IConfigCatLogger, LogEventId, LogLevel, LogMessage, LoggerWrapper } from "../src/ConfigCatLogger";
 import { ProjectConfig } from "../src/ProjectConfig";
@@ -17,7 +17,7 @@ describe("Options", () => {
     const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
 
     assert.isNotNull(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache);
+    assert.instanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("ManualPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
@@ -147,7 +147,7 @@ describe("Options", () => {
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
 
     assert.isNotNull(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache);
+    assert.instanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("AutoPollOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
@@ -253,7 +253,7 @@ describe("Options", () => {
     const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {}, null);
 
     assert.isNotNull(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache);
+    assert.instanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("LazyLoadOptions initialization With 'baseUrl' Should create an instance with custom baseUrl", () => {
@@ -267,18 +267,18 @@ describe("Options", () => {
 
   it("Options initialization With 'defaultCache' Should set option cache to passed instance", () => {
 
-    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, new FakeCache());
+    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, () => new FakeCache());
 
     assert.instanceOf(options.cache, FakeCache);
-    assert.notInstanceOf(options.cache, InMemoryCache);
+    assert.notInstanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("Options initialization With 'options.cache' Should overwrite defaultCache", () => {
 
-    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: new FakeCache() }, new InMemoryCache());
+    const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: new FakeExternalCache() }, () => new InMemoryConfigCache());
 
-    assert.instanceOf(options.cache, FakeCache);
-    assert.notInstanceOf(options.cache, InMemoryCache);
+    assert.instanceOf(options.cache, ExternalConfigCache);
+    assert.notInstanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("Options initialization With NULL 'cache' Should set InMemoryCache", () => {
@@ -286,7 +286,7 @@ describe("Options", () => {
     const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", {}, null);
 
     assert.isDefined(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache);
+    assert.instanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("Options initialization With NULL 'options.cache' Should set InMemoryCache", () => {
@@ -294,7 +294,7 @@ describe("Options", () => {
     const options: OptionsBase = new FakeOptionsBase("APIKEY", "1.0", { cache: null }, null);
 
     assert.isDefined(options.cache);
-    assert.instanceOf(options.cache, InMemoryCache);
+    assert.instanceOf(options.cache, InMemoryConfigCache);
   });
 
   it("AutoPollOptions initialization - sdkVersion works", () => {
@@ -399,11 +399,22 @@ describe("Options", () => {
 
 class FakeOptionsBase extends OptionsBase { }
 
-class FakeCache implements ICache {
+class FakeCache implements IConfigCache {
+  get localCachedConfig(): ProjectConfig { throw new Error("Property not implemented."); }
+
   set(key: string, config: ProjectConfig): void {
     throw new Error("Method not implemented.");
   }
   get(key: string): ProjectConfig {
+    throw new Error("Method not implemented.");
+  }
+}
+
+class FakeExternalCache implements IConfigCatCache {
+  set(key: string, value: string): void | Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  get(key: string): string | Promise<string | null | undefined> | null | undefined {
     throw new Error("Method not implemented.");
   }
 }

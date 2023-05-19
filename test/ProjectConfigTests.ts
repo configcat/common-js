@@ -3,94 +3,58 @@ import "mocha";
 import { ProjectConfig } from "../src/ProjectConfig";
 
 describe("ProjectConfig", () => {
-  it("Equals - Same etag values - Should equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
+  it("isEmpty - empty instance should be empty", () => {
+    assert.isTrue(ProjectConfig.empty.isEmpty);
   });
 
-  it("Equals - Different etag values - Should not equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "different-etag");
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
+  it("isEmpty - empty instance with increased timestamp should be empty", () => {
+    assert.isTrue(ProjectConfig.empty.with(1000).isEmpty);
   });
 
-  it("Equals - Actual etag is week - Should equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", "W/\"etag\"");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "\"etag\"");
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
+  it("isEmpty - instance with config should not be empty", () => {
+    assert.isFalse(new ProjectConfig("{}", {}, 1000, "\"eTag\"").isEmpty);
   });
 
-  it("Equals - Both tags are weak - Should equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", "W/\"etag\"");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "W/\"etag\"");
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
+  it("with - returned instance should contain the same data except for timestamp - empty", () => {
+    const timestamp = 1000;
+    const returnedPc = ProjectConfig.empty.with(timestamp);
+    assert.isUndefined(returnedPc.config);
+    assert.isUndefined(returnedPc.configJson);
+    assert.isUndefined(returnedPc.httpETag);
+    assert.equal(returnedPc.timestamp, timestamp);
   });
 
-  it("Equals - One of the tags is 'undefined' and json strings are equal - Should equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "W/\"etag\"");
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
+  it("with - returned instance should contain the same data except for timestamp - non-empty", () => {
+    const timestamp = 2000;
+    const pc = new ProjectConfig("{}", {}, 1000, "\"eTag\"");
+    const returnedPc = pc.with(timestamp);
+    assert.equal(returnedPc.config, pc.config);
+    assert.equal(returnedPc.configJson, pc.configJson);
+    assert.equal(returnedPc.httpETag, pc.httpETag);
+    assert.equal(returnedPc.timestamp, timestamp);
   });
 
-  it("Equals - Both tags are 'undefined' and json strings are equal - Should equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}");
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
+  it("isExpired - empty instance is expired", () => {
+    assert.isTrue(ProjectConfig.empty.isExpired(1000));
   });
 
-  it("Equals - One of the tags is 'undefined' and json strings are not equal - Should not equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{\"f\": {}}", "W/\"etag\"");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}");
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
+  it("isExpired - empty instance with increased timestamp is expired when timestamp is too old", () => {
+    const timestamp = ProjectConfig.generateTimestamp() - 2000;
+    assert.isTrue(ProjectConfig.empty.with(timestamp).isExpired(1000));
   });
 
-  it("Equals - Both tags are 'undefined' and json strings are not equal - Should not equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{\"f\": {}}");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}");
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
+  it("isExpired - empty instance with increased timestamp is not expired when timestamp is not old enough", () => {
+    const timestamp = ProjectConfig.generateTimestamp();
+    assert.isFalse(ProjectConfig.empty.with(timestamp).isExpired(1000));
   });
 
-  it("Equals - Both tags are 'undefined' - Should equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}");
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
+  it("isExpired - instance with config is expired when timestamp is too old", () => {
+    const timestamp = ProjectConfig.generateTimestamp() - 2000;
+    assert.isTrue(new ProjectConfig("{}", {}, timestamp, "\"eTag\"").isExpired(1000));
   });
 
-  it("Equals - Actual is null - Should not equal", () => {
-    const actual: ProjectConfig | null = null;
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
-  });
-
-  it("Equals - Expected is null - Should not equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-    const expected: ProjectConfig | null = null;
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
-  });
-
-  it("Equals - Both actual and expected are null - Should equal", () => {
-    const actual: ProjectConfig | null = null;
-    const expected: ProjectConfig | null = null;
-
-    assert.isTrue(ProjectConfig.equals(actual, expected));
-  });
-
-  it("Equals - Case-sensitive equals - Should not equal", () => {
-    const actual: ProjectConfig = new ProjectConfig(1, "{}", "etag");
-    const expected: ProjectConfig = new ProjectConfig(1, "{}", "ETAG");
-
-    assert.isFalse(ProjectConfig.equals(actual, expected));
+  it("isExpired - instance with config is not expired when timestamp is not old enough", () => {
+    const timestamp = ProjectConfig.generateTimestamp();
+    assert.isFalse(new ProjectConfig("{}", {}, timestamp, "\"eTag\"").isExpired(1000));
   });
 });
