@@ -5,7 +5,7 @@
     "src/": "../../src/",
     "../../src/index": "../../src/index.ts",
     "../../src/AutoPollConfigService": "../../src/AutoPollConfigService.ts",
-    "../../src/Cache": "../../src/Cache.ts",
+    "../../src/ConfigCatCache": "../../src/ConfigCatCache.ts",
     "../../src/ConfigCatClient": "../../src/ConfigCatClient.ts",
     "../../src/ConfigCatClientOptions": "../../src/ConfigCatClientOptions.ts",
     "../../src/ConfigCatLogger": "../../src/ConfigCatLogger.ts",

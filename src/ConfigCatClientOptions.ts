@@ -1,5 +1,5 @@
-import type { ICache } from "./Cache";
-import { InMemoryCache } from "./Cache";
+import type { IConfigCache, IConfigCatCache } from "./ConfigCatCache";
+import { ExternalConfigCache, InMemoryConfigCache } from "./ConfigCatCache";
 import type { IConfigCatLogger } from "./ConfigCatLogger";
 import { ConfigCatConsoleLogger, LoggerWrapper } from "./ConfigCatLogger";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
@@ -34,9 +34,11 @@ export interface IOptions {
    */
   dataGovernance?: DataGovernance | null;
   /**
-   * ICache instance for cache the config.
+   * The cache implementation to use for storing and retrieving downloaded config data.
+   * If not set, a default implementation will be used (depending on the platform).
+   * If you want to use custom caching instead, you can provide an implementation of `IConfigCatCache`.
    */
-  cache?: ICache | null;
+  cache?: IConfigCatCache | null;
   flagOverrides?: FlagOverrides | null;
   /**
    * The default user, used as fallback when there's no user parameter is passed to the
@@ -84,7 +86,7 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
 
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 
-export abstract class OptionsBase implements IOptions {
+export abstract class OptionsBase {
 
   private readonly configFileName = "config_v5";
 
@@ -104,7 +106,7 @@ export abstract class OptionsBase implements IOptions {
 
   dataGovernance: DataGovernance;
 
-  cache: ICache;
+  cache: IConfigCache;
 
   flagOverrides?: FlagOverrides;
 
@@ -114,19 +116,17 @@ export abstract class OptionsBase implements IOptions {
 
   hooks: Hooks;
 
-  constructor(apiKey: string, clientVersion: string, options?: IOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
+  constructor(apiKey: string, clientVersion: string, options?: IOptions | null,
+    defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
+    eventEmitterFactory?: (() => IEventEmitter) | null) {
+
     if (!apiKey) {
       throw new Error("Invalid 'apiKey' value");
-    }
-
-    if (!defaultCache) {
-      defaultCache = new InMemoryCache();
     }
 
     this.apiKey = apiKey;
     this.clientVersion = clientVersion;
     this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
-    this.cache = defaultCache;
 
     switch (this.dataGovernance) {
       case DataGovernance.EuOnly:
@@ -141,9 +141,11 @@ export abstract class OptionsBase implements IOptions {
     this.hooks = new Hooks(eventEmitter);
 
     let logger: IConfigCatLogger | null | undefined;
+    let cache: IConfigCatCache | null | undefined;
 
     if (options) {
       logger = options.logger;
+      cache = options.cache;
 
       if (options.requestTimeoutMs) {
         if (options.requestTimeoutMs < 0) {
@@ -162,10 +164,6 @@ export abstract class OptionsBase implements IOptions {
         this.proxy = options.proxy;
       }
 
-      if (options.cache) {
-        this.cache = options.cache;
-      }
-
       if (options.flagOverrides) {
         this.flagOverrides = options.flagOverrides;
       }
@@ -182,6 +180,10 @@ export abstract class OptionsBase implements IOptions {
     }
 
     this.logger = new LoggerWrapper(logger ?? new ConfigCatConsoleLogger(), this.hooks);
+
+    this.cache = cache
+      ? new ExternalConfigCache(cache, this.logger)
+      : (defaultCacheFactory ? defaultCacheFactory(this) : new InMemoryConfigCache());
   }
 
   getUrl(): string {
@@ -193,15 +195,17 @@ export abstract class OptionsBase implements IOptions {
   }
 }
 
-export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
+export class AutoPollOptions extends OptionsBase {
 
   pollIntervalSeconds: number = 60;
 
   maxInitWaitTimeSeconds: number = 5;
 
-  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
+  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null,
+    defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
+    eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-    super(apiKey, sdkType + "/a-" + sdkVersion, options, defaultCache, eventEmitterFactory);
+    super(apiKey, sdkType + "/a-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
 
     if (options) {
 
@@ -228,19 +232,24 @@ export class AutoPollOptions extends OptionsBase implements IAutoPollOptions {
   }
 }
 
-export class ManualPollOptions extends OptionsBase implements IManualPollOptions {
-  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
-    super(apiKey, sdkType + "/m-" + sdkVersion, options, defaultCache, eventEmitterFactory);
+export class ManualPollOptions extends OptionsBase {
+  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null,
+    defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
+    eventEmitterFactory?: (() => IEventEmitter) | null) {
+
+    super(apiKey, sdkType + "/m-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
   }
 }
 
-export class LazyLoadOptions extends OptionsBase implements ILazyLoadingOptions {
+export class LazyLoadOptions extends OptionsBase {
 
   cacheTimeToLiveSeconds: number = 60;
 
-  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null, defaultCache?: ICache | null, eventEmitterFactory?: (() => IEventEmitter) | null) {
+  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null,
+    defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
+    eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-    super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCache, eventEmitterFactory);
+    super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
 
     if (options) {
       if (options.cacheTimeToLiveSeconds !== void 0 && options.cacheTimeToLiveSeconds !== null) {

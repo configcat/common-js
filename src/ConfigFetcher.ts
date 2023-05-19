@@ -1,4 +1,5 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
+import type { ProjectConfig } from "./ProjectConfig";
 
 export enum FetchStatus {
   Fetched = 0,
@@ -9,22 +10,21 @@ export enum FetchStatus {
 export class FetchResult {
   private constructor(
     public status: FetchStatus,
-    public responseBody: string,
-    public eTag?: string,
+    public config: ProjectConfig,
     public errorMessage?: string,
     public errorException?: any) {
   }
 
-  static success(responseBody: string, eTag: string): FetchResult {
-    return new FetchResult(FetchStatus.Fetched, responseBody, eTag);
+  static success(config: ProjectConfig): FetchResult {
+    return new FetchResult(FetchStatus.Fetched, config);
   }
 
-  static notModified(): FetchResult {
-    return new FetchResult(FetchStatus.NotModified, "");
+  static notModified(config: ProjectConfig): FetchResult {
+    return new FetchResult(FetchStatus.NotModified, config);
   }
 
-  static error(errorMessage?: string, errorException?: any): FetchResult {
-    return new FetchResult(FetchStatus.Errored, "", void 0, errorMessage ?? "Unknown error.", errorException);
+  static error(config: ProjectConfig, errorMessage?: string, errorException?: any): FetchResult {
+    return new FetchResult(FetchStatus.Errored, config, errorMessage ?? "Unknown error.", errorException);
   }
 }
 

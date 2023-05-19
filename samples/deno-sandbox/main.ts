@@ -1,4 +1,3 @@
-import { InMemoryCache } from "src/Cache.ts";
 import { LogLevel, PollingMode, User, createConsoleLogger, getClient } from "src/index.ts";
 import * as path from "std/path/mod.ts";
 import { FakeConfigFetcher } from "./fake-config-fetcher.ts";
@@ -22,7 +21,6 @@ const client = getClient(
   },
   {
     configFetcher,
-    cache: new InMemoryCache(),
     sdkType: "ConfigCat-Deno",
     sdkVersion: "0.0.0-sample"
   });

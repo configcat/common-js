@@ -1,5 +1,5 @@
 import { AutoPollConfigService } from "./AutoPollConfigService";
-import type { ICache } from "./Cache";
+import type { IConfigCache } from "./ConfigCatCache";
 import type { ConfigCatClientOptions, OptionsBase, OptionsForPollingMode } from "./ConfigCatClientOptions";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from "./ConfigCatClientOptions";
 import type { LoggerWrapper } from "./ConfigCatLogger";
@@ -63,12 +63,9 @@ export interface IConfigCatClient extends IProvidesHooks {
 
 export interface IConfigCatKernel {
   configFetcher: IConfigFetcher;
-  /**
-   * Default ICache implementation.
-   */
-  cache?: ICache;
   sdkType: string;
   sdkVersion: string;
+  defaultCacheFactory?: (options: OptionsBase) => IConfigCache;
   eventEmitterFactory?: () => IEventEmitter;
 }
 
@@ -145,7 +142,7 @@ export class ConfigCatClient implements IConfigCatClient {
       pollingMode === PollingMode.LazyLoad ? LazyLoadOptions :
       (() => { throw new Error("Invalid 'pollingMode' value"); })();
 
-    const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.cache, configCatKernel.eventEmitterFactory);
+    const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.defaultCacheFactory, configCatKernel.eventEmitterFactory);
 
     const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
 
@@ -457,10 +454,11 @@ export class ConfigCatClient implements IConfigCatClient {
     this.options.logger.debug("getSettingsAsync() called.");
 
     const getRemoteConfigAsync: () => Promise<SettingsWithRemoteConfig> = async () => {
-      const config = await this.configService?.getConfig();
-      const json = config?.ConfigJSON;
-      const settings = json?.[ConfigFile.FeatureFlags] ? getSettingsFromConfig(json) : null;
-      return [settings, config ?? null];
+      const config = await this.configService!.getConfig();
+      const settings = !config.isEmpty
+        ? ((config.config as any)[ConfigFile.FeatureFlags] ? getSettingsFromConfig(config.config) : {})
+        : null;
+      return [settings, config];
     };
 
     const flagOverrides = this.options?.flagOverrides;

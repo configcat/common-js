@@ -18,31 +18,31 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
     options.hooks.emit("clientReady");
   }
 
-  async getConfig(): Promise<ProjectConfig | null> {
+  async getConfig(): Promise<ProjectConfig> {
     this.options.logger.debug("LazyLoadConfigService.getConfig() called.");
 
     function logExpired(logger: LoggerWrapper, appendix = "") {
       logger.debug(`LazyLoadConfigService.getConfig(): cache is empty or expired${appendix}.`);
     }
 
-    let config = await this.options.cache.get(this.options.getCacheKey());
+    let cachedConfig = await this.options.cache.get(this.options.getCacheKey());
 
-    if (ProjectConfig.isExpired(config, this.cacheTimeToLiveSeconds * 1000)) {
+    if (cachedConfig.isExpired(this.cacheTimeToLiveSeconds * 1000)) {
       if (!this.isOffline) {
         logExpired(this.options.logger, ", calling refreshConfigCoreAsync()");
-        [, config] = await this.refreshConfigCoreAsync(config);
+        [, cachedConfig] = await this.refreshConfigCoreAsync(cachedConfig);
       }
       else {
         logExpired(this.options.logger);
       }
-      return config;
+      return cachedConfig;
     }
 
     this.options.logger.debug("LazyLoadConfigService.getConfig(): cache is valid, returning from cache.");
-    return config;
+    return cachedConfig;
   }
 
-  refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
+  refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
     this.options.logger.debug("LazyLoadConfigService.refreshConfigAsync() called.");
     return super.refreshConfigAsync();
   }

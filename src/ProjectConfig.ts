@@ -1,64 +1,37 @@
-// NOTE: No instance methods should be added to this class!
-// Flawed ICache implementations may erase the prototype information (when serialization is involved),
-// which would lead to "... is not a function" errors in the case of instance methods.
-// (As a matter of fact, this type should have been defined as an interface to prevent such complications but
-// we can't really change this any more because this would be a too dangerous breaking change at this point.)
 export class ProjectConfig {
-  /* eslint-disable @typescript-eslint/naming-convention */
+  static readonly empty = new ProjectConfig(void 0, void 0, 0, void 0);
 
-  /** Entity identifier */
-  HttpETag?: string;
-  /** ConfigCat config */
-  ConfigJSON: any;
-  /** Timestamp of last successful download (regardless of whether the config has changed or not) in milliseconds */
-  Timestamp: number;
-
-  /* eslint-enable @typescript-eslint/naming-convention */
-
-  constructor(timeStamp: number, jsonConfig: string | object, httpETag?: string) {
-    this.Timestamp = timeStamp;
-    this.ConfigJSON = typeof jsonConfig === "string" ? JSON.parse(jsonConfig) : jsonConfig;
-    this.HttpETag = httpETag;
+  constructor(
+    readonly configJson: string | undefined,
+    readonly config: object | undefined,
+    readonly timestamp: number,
+    readonly httpETag: string | undefined) {
   }
 
-  /**
-   * Determines whether the specified ProjectConfig instances are considered equal.
-   */
-  static equals(projectConfig1: ProjectConfig | null, projectConfig2: ProjectConfig | null): boolean {
-    if (!projectConfig1) {
-      // If both configs are null, we consider them equal.
-      return !projectConfig2;
-    }
+  with(timestamp: number): ProjectConfig { return new ProjectConfig(this.configJson, this.config, timestamp, this.httpETag); }
 
-    if (!projectConfig2) {
-      return false;
-    }
+  get isEmpty(): boolean { return !this.config; }
 
-    // When both ETags are available, we don't need to check the JSON content
-    // (because of how HTTP ETags work - see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag).
-    return !!projectConfig1.HttpETag && !!projectConfig2.HttpETag
-      ? this.compareEtags(projectConfig1.HttpETag, projectConfig2.HttpETag)
-      : JSON.stringify(projectConfig1.ConfigJSON) === JSON.stringify(projectConfig2.ConfigJSON);
+  isExpired(expirationMs: number): boolean {
+    return this === ProjectConfig.empty || this.timestamp + expirationMs < ProjectConfig.generateTimestamp();
   }
 
-  static compareEtags(etag1?: string, etag2?: string): boolean {
-    return this.ensureStrictEtag(etag1) === this.ensureStrictEtag(etag2);
+  static generateTimestamp(): number {
+    const time = new Date().getTime();
+    // Remove the sub-second part as we need second precision only.
+    return Math.floor(time / 1000) * 1000;
   }
 
-  private static ensureStrictEtag(etag?: string): string {
-    if (!etag) {
-      return "";
-    }
-
-    if (etag.length > 2 && etag.substr(0, 2).toLocaleUpperCase() === "W/") {
-      return etag.substring(2);
-    }
-
-    return etag;
+  static serialize(config: ProjectConfig): string {
+    // TODO: use standardized format
+    return JSON.stringify(config);
   }
 
-  static isExpired(projectConfig: ProjectConfig | null, expirationMs: number): boolean {
-    return !projectConfig || projectConfig.Timestamp + expirationMs < new Date().getTime();
+  static deserialize(value: string): ProjectConfig {
+    // TODO: use standardized format
+    const config = JSON.parse(value);
+    (Object.setPrototypeOf || ((o, proto) => o["__proto__"] = proto))(config, ProjectConfig.prototype);
+    return config;
   }
 }
 

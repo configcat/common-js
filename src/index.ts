@@ -49,9 +49,13 @@ export { FetchStatus, FetchResult, FetchError } from "./ConfigFetcher";
 
 export { OptionsBase } from "./ConfigCatClientOptions";
 
-export { InMemoryCache } from "./Cache";
+export type { IConfigCache } from "./ConfigCatCache";
+
+export { InMemoryConfigCache, ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
+
+export { ProjectConfig } from "./ProjectConfig";
 
 /* Public types for end users */
 
@@ -74,9 +78,9 @@ export { LogLevel };
 
 export { FormattableLogMessage } from "./ConfigCatLogger";
 
-export type { ICache } from "./Cache";
+export type { IConfigCatCache } from "./ConfigCatCache";
 
-export { ProjectConfig, RolloutRule, RolloutPercentageItem, Setting } from "./ProjectConfig";
+export { RolloutRule, RolloutPercentageItem, Setting } from "./ProjectConfig";
 
 export type { IConfigCatClient };
 

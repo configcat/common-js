@@ -50,7 +50,7 @@ export class FormattableLogMessage {
 
 export type LogMessage = string | FormattableLogMessage;
 
-/** Defines the interface for the ConfigCat SDK to perform logging. */
+/** Defines the interface used by the ConfigCat SDK to perform logging. */
 export interface IConfigCatLogger {
   readonly level?: LogLevel;
 
@@ -218,6 +218,20 @@ export class LoggerWrapper implements IConfigCatLogger {
         "VARIATION_ID"
       )`Could not find the setting for the specified variation ID: '${variationId}'.`
     );
+  }
+
+  configServiceCacheReadError(ex: any): LogMessage {
+    return this.log(
+      LogLevel.Error, 2200,
+      "Error occurred while reading the cache.",
+      ex);
+  }
+
+  configServiceCacheWriteError(ex: any): LogMessage {
+    return this.log(
+      LogLevel.Error, 2201,
+      "Error occurred while writing the cache.",
+      ex);
   }
 
   /* Common warning messages (3000-3999) */
