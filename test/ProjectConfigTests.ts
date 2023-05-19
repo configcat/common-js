@@ -57,4 +57,30 @@ describe("ProjectConfig", () => {
     const timestamp = ProjectConfig.generateTimestamp();
     assert.isFalse(new ProjectConfig("{}", {}, timestamp, "\"eTag\"").isExpired(1000));
   });
+
+  it("serialization works - empty", () => {
+    const pc = ProjectConfig.empty;
+
+    const serializedPc = ProjectConfig.serialize(pc);
+    const deserializedPc = ProjectConfig.deserialize(serializedPc);
+
+    assert.isUndefined(deserializedPc.config);
+    assert.isUndefined(deserializedPc.configJson);
+    assert.isUndefined(deserializedPc.httpETag);
+    assert.equal(deserializedPc.timestamp, pc.timestamp);
+    assert.isTrue(deserializedPc.isEmpty);
+  });
+
+  it("serialization works - non-empty", () => {
+    const pc = new ProjectConfig("{}", {}, 1000, "\"eTag\"");
+
+    const serializedPc = ProjectConfig.serialize(pc);
+    const deserializedPc = ProjectConfig.deserialize(serializedPc);
+
+    assert.isObject(deserializedPc.config);
+    assert.equal(deserializedPc.configJson, pc.configJson);
+    assert.equal(deserializedPc.httpETag, pc.httpETag);
+    assert.equal(deserializedPc.timestamp, pc.timestamp);
+    assert.isFalse(deserializedPc.isEmpty);
+  });
 });

@@ -52,9 +52,13 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   private pendingFetch: Promise<FetchResult> | null = null;
 
+  protected readonly cacheKey: string;
+
   constructor(
     protected readonly configFetcher: IConfigFetcher,
     protected readonly options: TOptions) {
+
+    this.cacheKey = options.getCacheKey();
 
     this.configFetcher = configFetcher;
     this.options = options;
@@ -72,7 +76,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   abstract getConfig(): Promise<ProjectConfig>;
 
   async refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
-    const latestConfig = await this.options.cache.get(this.options.getCacheKey());
+    const latestConfig = await this.options.cache.get(this.cacheKey);
     if (!this.isOffline) {
       const [fetchResult, config] = await this.refreshConfigCoreAsync(latestConfig);
       return [RefreshResult.from(fetchResult), config];
@@ -92,7 +96,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
       latestConfig = fetchResult.config;
 
-      await this.options.cache.set(this.options.getCacheKey(), latestConfig);
+      await this.options.cache.set(this.cacheKey, latestConfig);
 
       this.onConfigUpdated(latestConfig);
 

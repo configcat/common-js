@@ -1,4 +1,6 @@
 export class ProjectConfig {
+  static readonly serializationFormatVersion = "v1";
+
   static readonly empty = new ProjectConfig(void 0, void 0, 0, void 0);
 
   constructor(
@@ -23,15 +25,53 @@ export class ProjectConfig {
   }
 
   static serialize(config: ProjectConfig): string {
-    // TODO: use standardized format
-    return JSON.stringify(config);
+    return Math.floor(config.timestamp / 1000) + "\n"
+      + (config.httpETag ?? "") + "\n"
+      + (config.configJson ?? "");
   }
 
   static deserialize(value: string): ProjectConfig {
-    // TODO: use standardized format
-    const config = JSON.parse(value);
-    (Object.setPrototypeOf || ((o, proto) => o["__proto__"] = proto))(config, ProjectConfig.prototype);
-    return config;
+    const separatorIndices = Array<number>(2);
+    let index = 0;
+    for (let i = 0; i < separatorIndices.length; i++) {
+      index = value.indexOf("\n", index);
+      if (index < 0) {
+        throw new Error("Number of values is fewer than expected.");
+      }
+
+      separatorIndices[i] = index++;
+    }
+
+    let endIndex = separatorIndices[0];
+    let slice = value.substring(0, endIndex);
+
+    const fetchTime = parseInt(slice) * 1000;
+    if (isNaN(fetchTime)) {
+      throw new Error("Invalid fetch time: " + slice);
+    }
+
+    index = endIndex + 1;
+    endIndex = separatorIndices[1];
+    slice = value.substring(index, endIndex);
+
+    const httpETag = slice.length > 0 ? slice : void 0;
+
+    index = endIndex + 1;
+    slice = value.substring(index);
+
+    let config: object | undefined;
+    let configJson: string | undefined;
+    if (slice.length > 0) {
+      try {
+        config = JSON.parse(slice);
+      }
+      catch {
+        throw new Error("Invalid config JSON content: " + slice);
+      }
+      configJson = slice;
+    }
+
+    return new ProjectConfig(configJson, config, fetchTime, httpETag);
   }
 }
 

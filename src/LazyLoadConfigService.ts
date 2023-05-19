@@ -25,7 +25,7 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
       logger.debug(`LazyLoadConfigService.getConfig(): cache is empty or expired${appendix}.`);
     }
 
-    let cachedConfig = await this.options.cache.get(this.options.getCacheKey());
+    let cachedConfig = await this.options.cache.get(this.cacheKey);
 
     if (cachedConfig.isExpired(this.cacheTimeToLiveSeconds * 1000)) {
       if (!this.isOffline) {

@@ -7,7 +7,9 @@ import type { IEventEmitter } from "./EventEmitter";
 import type { FlagOverrides } from "./FlagOverrides";
 import type { IProvidesHooks } from "./Hooks";
 import { Hooks } from "./Hooks";
+import { ProjectConfig } from "./ProjectConfig";
 import type { User } from "./RolloutEvaluator";
+import { sha1 } from "./Sha1";
 
 export enum PollingMode {
   AutoPoll = 0,
@@ -88,7 +90,7 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
 
 export abstract class OptionsBase {
 
-  private readonly configFileName = "config_v5";
+  private static readonly configFileName = "config_v5.json";
 
   logger: LoggerWrapper;
 
@@ -187,11 +189,11 @@ export abstract class OptionsBase {
   }
 
   getUrl(): string {
-    return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + this.configFileName + ".json" + "?sdk=" + this.clientVersion;
+    return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + OptionsBase.configFileName + "?sdk=" + this.clientVersion;
   }
 
   getCacheKey(): string {
-    return "js_" + this.configFileName + "_" + this.apiKey;
+    return sha1(`${this.apiKey}_${OptionsBase.configFileName}_${ProjectConfig.serializationFormatVersion}`);
   }
 }
 
