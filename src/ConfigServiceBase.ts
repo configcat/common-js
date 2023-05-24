@@ -1,7 +1,7 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
-import { ConfigFile, Preferences, ProjectConfig } from "./ProjectConfig";
+import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
 
 export class RefreshResult {
   constructor(
@@ -112,7 +112,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   protected onConfigChanged(newConfig: ProjectConfig): void {
     this.options.logger.debug("config changed");
-    this.options.hooks.emit("configChanged", newConfig);
+    this.options.hooks.emit("configChanged", newConfig.config ?? new Config({}));
   }
 
   private fetchAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
@@ -132,18 +132,18 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
     let errorMessage: string;
     try {
-      const [response, configJson] = await this.fetchRequestAsync(lastConfig.httpETag ?? null);
+      const [response, config] = await this.fetchRequestAsync(lastConfig.httpETag ?? null);
 
       switch (response.statusCode) {
         case 200: // OK
-          if (!configJson) {
+          if (!config) {
             errorMessage = options.logger.fetchReceived200WithInvalidBody().toString();
             options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
             return FetchResult.error(lastConfig, errorMessage);
           }
 
           options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was successful. Returning new config.");
-          return FetchResult.success(new ProjectConfig(response.body, configJson, ProjectConfig.generateTimestamp(), response.eTag));
+          return FetchResult.success(new ProjectConfig(response.body, config, ProjectConfig.generateTimestamp(), response.eTag));
 
         case 304: // Not Modified
           if (!lastConfig) {
@@ -177,7 +177,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  private async fetchRequestAsync(lastETag: string | null, maxRetryCount = 2): Promise<[IFetchResponse, any?]> {
+  private async fetchRequestAsync(lastETag: string | null, maxRetryCount = 2): Promise<[IFetchResponse, Config?]> {
     const options = this.options;
     options.logger.debug("ConfigServiceBase.fetchRequestAsync() - called.");
 
@@ -194,51 +194,51 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         return [response];
       }
 
-      let configJSON: any;
+      let config: Config;
       try {
-        configJSON = JSON.parse(response.body);
+        config = new Config(JSON.parse(response.body));
       }
       catch {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): invalid response body.");
         return [response];
       }
 
-      const preferences = configJSON[ConfigFile.Preferences];
+      const preferences = config.preferences;
       if (!preferences) {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): preferences is empty.");
-        return [response, configJSON];
+        return [response, config];
       }
 
-      const baseUrl = preferences[Preferences.BaseUrl];
+      const baseUrl = preferences.baseUrl;
 
       // If the base_url is the same as the last called one, just return the response.
       if (!baseUrl || baseUrl === options.baseUrl) {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): baseUrl OK.");
-        return [response, configJSON];
+        return [response, config];
       }
 
-      const redirect = preferences[Preferences.Redirect];
+      const redirect = preferences.redirectMode;
 
       // If the base_url is overridden, and the redirect parameter is not 2 (force),
       // the SDK should not redirect the calls and it just have to return the response.
-      if (options.baseUrlOverriden && redirect !== 2) {
+      if (options.baseUrlOverriden && redirect !== RedirectMode.Force) {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): options.baseUrlOverriden && redirect !== 2.");
-        return [response, configJSON];
+        return [response, config];
       }
 
       options.baseUrl = baseUrl;
 
-      if (redirect === 0) {
-        return [response, configJSON];
+      if (redirect === RedirectMode.No) {
+        return [response, config];
       }
 
-      if (redirect === 1) {
+      if (redirect === RedirectMode.Should) {
         options.logger.dataGovernanceIsOutOfSync();
       }
 
       if (retryNumber >= maxRetryCount) {
         options.logger.fetchFailedDueToRedirectLoop();
-        return [response, configJSON];
+        return [response, config];
       }
     }
   }

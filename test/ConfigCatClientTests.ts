@@ -10,7 +10,7 @@ import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigS
 import { IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { ProjectConfig, Setting } from "../src/ProjectConfig";
+import { Config, IConfig, ProjectConfig, Setting } from "../src/ProjectConfig";
 import { IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
@@ -149,7 +149,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -190,7 +190,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -231,7 +231,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithRules;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -275,7 +275,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithPercantageRules;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -318,7 +318,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -371,7 +371,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -421,7 +421,7 @@ describe("ConfigCatClient", () => {
     const timestamp = new Date().getTime();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
-    const cachedPc = new ProjectConfig(configFetcherClass.configJson, JSON.parse(configFetcherClass.configJson), timestamp, "etag");
+    const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
     const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
@@ -665,7 +665,7 @@ describe("ConfigCatClient", () => {
 
     const configFetcher = new FakeConfigFetcher(500);
     const configJson = "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
-    const configCache = new FakeCache(new ProjectConfig(configJson, JSON.parse(configJson), new Date().getTime() - 10000000, "etag2"));
+    const configCache = new FakeCache(new ProjectConfig(configJson, new Config(JSON.parse(configJson)), new Date().getTime() - 10000000, "etag2"));
     const configCatKernel: FakeConfigCatKernel = { configFetcher, defaultCacheFactory: () => configCache, sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 10 });
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -679,7 +679,7 @@ describe("ConfigCatClient", () => {
 
     const configFetcher = new FakeConfigFetcher(500);
     const configJson = "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
-    const configCache = new FakeCache(new ProjectConfig(configJson, JSON.parse(configJson), new Date().getTime() - 10000000, "etag2"));
+    const configCache = new FakeCache(new ProjectConfig(configJson, new Config(JSON.parse(configJson)), new Date().getTime() - 10000000, "etag2"));
     const configCatKernel: FakeConfigCatKernel = { configFetcher, defaultCacheFactory: () => configCache, sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 10 });
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -1029,12 +1029,12 @@ describe("ConfigCatClient", () => {
   for (const addListenersViaOptions of [false, true]) {
     it(`ConfigCatClient should emit events, which listeners added ${addListenersViaOptions ? "via options" : "directly on the client"} should get notified of.`, async () => {
       let clientReadyEventCount = 0;
-      const configChangedEvents: ProjectConfig[] = [];
+      const configChangedEvents: IConfig[] = [];
       const flagEvaluatedEvents: IEvaluationDetails[] = [];
       const errorEvents: [string, any][] = [];
 
       const handleClientReady = () => clientReadyEventCount++;
-      const handleConfigChanged = (pc: ProjectConfig) => configChangedEvents.push(pc);
+      const handleConfigChanged = (pc: IConfig) => configChangedEvents.push(pc);
       const handleFlagEvaluated = (ed: IEvaluationDetails) => flagEvaluatedEvents.push(ed);
       const handleClientError = (msg: string, err: any) => errorEvents.push([msg, err]);
 
@@ -1090,10 +1090,10 @@ describe("ConfigCatClient", () => {
       client["configService"] = originalConfigService;
 
       await client.forceRefreshAsync();
-      const cachedPc = configCache.get("");
+      const cachedPc = await configCache.get("");
 
       assert.equal(1, configChangedEvents.length);
-      assert.strictEqual(cachedPc, configChangedEvents[0]);
+      assert.strictEqual(cachedPc.config, configChangedEvents[0]);
 
       // 4. All flags are evaluated
       const keys = await client.getAllKeysAsync();

@@ -80,13 +80,15 @@ export { FormattableLogMessage } from "./ConfigCatLogger";
 
 export type { IConfigCatCache } from "./ConfigCatCache";
 
-export { RolloutRule, RolloutPercentageItem, Setting } from "./ProjectConfig";
+export type { IConfig, ISetting, ITargetingRule, IPercentageOption, SettingValue, VariationIdValue } from "./ProjectConfig";
+
+export { SettingType, Comparator } from "./ProjectConfig";
 
 export type { IConfigCatClient };
 
 export { SettingKeyValue } from "./ConfigCatClient";
 
-export type { IEvaluationDetails, SettingTypeOf, SettingValue, VariationIdValue } from "./RolloutEvaluator";
+export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
 
 export { User } from "./RolloutEvaluator";
 

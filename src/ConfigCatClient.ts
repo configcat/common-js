@@ -11,11 +11,10 @@ import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
-import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting } from "./ProjectConfig";
-import { ConfigFile } from "./ProjectConfig";
-import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, SettingValue, User } from "./RolloutEvaluator";
+import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
+import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluationDetailsFromDefaultValue } from "./RolloutEvaluator";
-import { errorToString, getSettingsFromConfig, getTimestampAsDate } from "./Utils";
+import { errorToString, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {
 
@@ -377,7 +376,7 @@ export class ConfigCatClient implements IConfigCatClient {
           return new SettingKeyValue(settingKey, setting.value);
         }
 
-        const rolloutRules = settings[settingKey].rolloutRules;
+        const rolloutRules = settings[settingKey].targetingRules;
         if (rolloutRules && rolloutRules.length > 0) {
           for (let i = 0; i < rolloutRules.length; i++) {
             const rolloutRule: RolloutRule = rolloutRules[i];
@@ -387,7 +386,7 @@ export class ConfigCatClient implements IConfigCatClient {
           }
         }
 
-        const percentageItems = settings[settingKey].rolloutPercentageItems;
+        const percentageItems = settings[settingKey].percentageOptions;
         if (percentageItems && percentageItems.length > 0) {
           for (let i = 0; i < percentageItems.length; i++) {
             const percentageItem: RolloutPercentageItem = percentageItems[i];
@@ -455,9 +454,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     const getRemoteConfigAsync: () => Promise<SettingsWithRemoteConfig> = async () => {
       const config = await this.configService!.getConfig();
-      const settings = !config.isEmpty
-        ? ((config.config as any)[ConfigFile.FeatureFlags] ? getSettingsFromConfig(config.config) : {})
-        : null;
+      const settings = !config.isEmpty ? config.config!.settings : null;
       return [settings, config];
     };
 

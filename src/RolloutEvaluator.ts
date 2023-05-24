@@ -1,11 +1,9 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
-import type { ProjectConfig, Setting } from "./ProjectConfig";
-import { RolloutPercentageItem, RolloutRule } from "./ProjectConfig";
+import type { IPercentageOption, ITargetingRule, ProjectConfig, Setting, SettingValue, VariationIdValue } from "./ProjectConfig";
+import { Comparator, RolloutPercentageItem, RolloutRule } from "./ProjectConfig";
 import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
 import { errorToString, getTimestampAsDate } from "./Utils";
-
-export type SettingValue = boolean | number | string | null | undefined;
 
 export type SettingTypeOf<T> =
   T extends boolean ? boolean :
@@ -14,8 +12,6 @@ export type SettingTypeOf<T> =
   T extends null ? boolean | number | string | null :
   T extends undefined ? boolean | number | string | undefined :
   any;
-
-export type VariationIdValue = string | null | undefined;
 
 export interface IRolloutEvaluator {
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails;
@@ -47,10 +43,10 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   errorException?: any;
 
   /** The comparison-based targeting rule which was used to select the evaluated value (if any). */
-  matchedEvaluationRule?: RolloutRule;
+  matchedEvaluationRule?: ITargetingRule;
 
   /** The percentage-based targeting rule which was used to select the evaluated value (if any). */
-  matchedEvaluationPercentageRule?: RolloutPercentageItem;
+  matchedEvaluationPercentageRule?: IPercentageOption;
 }
 
 /** Object for variation evaluation */
@@ -100,7 +96,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       if (user) {
         // evaluate comparison-based rules
 
-        result = this.evaluateRules(setting.rolloutRules, user, eLog);
+        result = this.evaluateRules(setting.targetingRules, user, eLog);
         if (result !== null) {
           eLog.returnValue = result.value;
 
@@ -109,9 +105,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         // evaluate percentage-based rules
 
-        result = this.evaluatePercentageRules(setting.rolloutPercentageItems, key, user);
+        result = this.evaluatePercentageRules(setting.percentageOptions, key, user);
 
-        if (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0) {
+        if (setting.percentageOptions && setting.percentageOptions.length > 0) {
           eLog.opAppendLine("Evaluating % options => " + (!result ? "user not targeted" : "user targeted"));
         }
 
@@ -122,8 +118,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         }
       }
       else {
-        if ((setting.rolloutRules && setting.rolloutRules.length > 0)
-            || (setting.rolloutPercentageItems && setting.rolloutPercentageItems.length > 0)) {
+        if ((setting.targetingRules && setting.targetingRules.length > 0)
+            || (setting.percentageOptions && setting.percentageOptions.length > 0)) {
           this.logger.targetingIsNotPossible(key);
         }
       }
@@ -142,7 +138,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
   }
 
-  private evaluateRules(rolloutRules: RolloutRule[], user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
+  private evaluateRules(rolloutRules: ReadonlyArray<RolloutRule>, user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
 
     this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
 
@@ -173,7 +169,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         };
 
         switch (comparator) {
-          case 0: // is one of
+          case Comparator.In:
 
             const cvs: string[] = comparisonValue.split(",");
 
@@ -191,7 +187,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             break;
 
-          case 1: // is not one of
+          case Comparator.NotIn:
 
             if (!comparisonValue.split(",").some(e => {
               if (e.trim() === comparisonAttribute) {
@@ -210,7 +206,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             break;
 
-          case 2: // contains
+          case Comparator.Contains:
 
             if (comparisonAttribute.indexOf(comparisonValue) !== -1) {
               log += "MATCH";
@@ -223,7 +219,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             break;
 
-          case 3: // not contains
+          case Comparator.NotContains:
 
             if (comparisonAttribute.indexOf(comparisonValue) === -1) {
               log += "MATCH";
@@ -236,12 +232,12 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             break;
 
-          case 4:
-          case 5:
-          case 6:
-          case 7:
-          case 8:
-          case 9:
+          case Comparator.SemVerIn:
+          case Comparator.SemVerNotIn:
+          case Comparator.SemVerLessThan:
+          case Comparator.SemVerLessThanEqual:
+          case Comparator.SemVerGreaterThan:
+          case Comparator.SemVerGreaterThanEqual:
 
             if (this.evaluateSemver(comparisonAttribute, comparisonValue, comparator)) {
               log += "MATCH";
@@ -254,12 +250,12 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
             break;
 
-          case 10:
-          case 11:
-          case 12:
-          case 13:
-          case 14:
-          case 15:
+          case Comparator.NumberEqual:
+          case Comparator.NumberNotEqual:
+          case Comparator.NumberLessThan:
+          case Comparator.NumberLessThanEqual:
+          case Comparator.NumberGreaterThan:
+          case Comparator.NumberGreaterThanEqual:
 
             if (this.evaluateNumber(comparisonAttribute, comparisonValue, comparator)) {
               log += "MATCH";
@@ -271,7 +267,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             log += "no match";
 
             break;
-          case 16: { // is one of (sensitive)
+          case Comparator.SensitiveOneOf: {
             const values: string[] = comparisonValue.split(",");
             const hashedComparisonAttribute: string = sha1(comparisonAttribute);
 
@@ -290,7 +286,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
             break;
           }
 
-          case 17: { // is not one of (sensitive)
+          case Comparator.SensitiveNotOneOf: {
             const hashedComparisonAttribute: string = sha1(comparisonAttribute);
 
             if (!comparisonValue.split(",").some(e => {
@@ -322,7 +318,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return null;
   }
 
-  private evaluatePercentageRules(rolloutPercentageItems: RolloutPercentageItem[], key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
+  private evaluatePercentageRules(rolloutPercentageItems: ReadonlyArray<RolloutPercentageItem>, key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
     this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
@@ -348,7 +344,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return null;
   }
 
-  private evaluateNumber(v1: string, v2: string, comparator: number): boolean {
+  private evaluateNumber(v1: string, v2: string, comparator: Comparator): boolean {
     this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
 
     let n1: number, n2: number;
@@ -368,17 +364,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     switch (comparator) {
-      case 10:
+      case Comparator.NumberEqual:
         return n1 === n2;
-      case 11:
+      case Comparator.NumberNotEqual:
         return n1 !== n2;
-      case 12:
+      case Comparator.NumberLessThan:
         return n1 < n2;
-      case 13:
+      case Comparator.NumberLessThanEqual:
         return n1 <= n2;
-      case 14:
+      case Comparator.NumberGreaterThan:
         return n1 > n2;
-      case 15:
+      case Comparator.NumberGreaterThanEqual:
         return n1 >= n2;
       default:
         break;
@@ -387,7 +383,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return false;
   }
 
-  private evaluateSemver(v1: string, v2: string, comparator: number): boolean {
+  private evaluateSemver(v1: string, v2: string, comparator: Comparator): boolean {
     this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
     if (semver.valid(v1) == null || v2 === void 0) {
       return false;
@@ -396,8 +392,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     v2 = v2.trim();
 
     switch (comparator) {
-      case 4:
-        // in
+      case Comparator.SemVerIn:
         const sv: string[] = v2.split(",");
         let found = false;
         for (let ci = 0; ci < sv.length; ci++) {
@@ -417,8 +412,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         return found;
 
-      case 5:
-        // not in
+      case Comparator.SemVerNotIn:
         return !v2.split(",").some(e => {
 
           if (!e || e.trim() === "") {
@@ -434,28 +428,28 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           return semver.eq(v1, e);
         });
 
-      case 6:
+      case Comparator.SemVerLessThan:
 
         if (semver.valid(v2) == null) {
           return false;
         }
 
         return semver.lt(v1, v2);
-      case 7:
+      case Comparator.SemVerLessThanEqual:
 
         if (semver.valid(v2) == null) {
           return false;
         }
 
         return semver.lte(v1, v2);
-      case 8:
+      case Comparator.SemVerGreaterThan:
 
         if (semver.valid(v2) == null) {
           return false;
         }
 
         return semver.gt(v1, v2);
-      case 9:
+      case Comparator.SemVerGreaterThanEqual:
 
         if (semver.valid(v2) == null) {
           return false;
@@ -481,53 +475,53 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
   }
 
-  private ruleToString(rule: number): string {
+  private ruleToString(rule: Comparator): string {
     switch (rule) {
-      case 0:
+      case Comparator.In:
         return "IS ONE OF";
-      case 1:
+      case Comparator.NotIn:
         return "IS NOT ONE OF";
-      case 2:
+      case Comparator.Contains:
         return "CONTAINS";
-      case 3:
+      case Comparator.NotContains:
         return "DOES NOT CONTAIN";
-      case 4:
+      case Comparator.SemVerIn:
         return "IS ONE OF (SemVer)";
-      case 5:
+      case Comparator.SemVerNotIn:
         return "IS NOT ONE OF (SemVer)";
-      case 6:
+      case Comparator.SemVerLessThan:
         return "< (SemVer)";
-      case 7:
+      case Comparator.SemVerLessThanEqual:
         return "<= (SemVer)";
-      case 8:
+      case Comparator.SemVerGreaterThan:
         return "> (SemVer)";
-      case 9:
+      case Comparator.SemVerGreaterThanEqual:
         return ">= (SemVer)";
-      case 10:
+      case Comparator.NumberEqual:
         return "= (Number)";
-      case 11:
+      case Comparator.NumberNotEqual:
         return "!= (Number)";
-      case 12:
+      case Comparator.NumberLessThan:
         return "< (Number)";
-      case 13:
+      case Comparator.NumberLessThanEqual:
         return "<= (Number)";
-      case 14:
+      case Comparator.NumberGreaterThan:
         return "> (Number)";
-      case 15:
+      case Comparator.NumberGreaterThanEqual:
         return ">= (Number)";
-      case 16:
+      case Comparator.SensitiveOneOf:
         return "IS ONE OF (Sensitive)";
-      case 17:
+      case Comparator.SensitiveNotOneOf:
         return "IS NOT ONE OF (Sensitive)";
       default:
-        return <string><any>rule;
+        return rule + "";
     }
   }
 }
 
 interface IEvaluateResult<TRule> {
   value: SettingValue;
-  variationId: string;
+  variationId?: string;
   matchedRule?: TRule;
 }
 

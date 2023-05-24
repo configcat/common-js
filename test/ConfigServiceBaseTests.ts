@@ -8,7 +8,7 @@ import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { ManualPollConfigService } from "../src/ManualPollConfigService";
-import { ProjectConfig } from "../src/ProjectConfig";
+import { Config, ProjectConfig } from "../src/ProjectConfig";
 import { delay } from "../src/Utils";
 import { FakeCache } from "./helpers/fakes";
 
@@ -743,7 +743,7 @@ function createProjectConfig(eTag = "etag"): ProjectConfig {
   const configJson = "{\"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
   return new ProjectConfig(
     configJson,
-    JSON.parse(configJson),
+    new Config(JSON.parse(configJson)),
     1,
     eTag);
 }
