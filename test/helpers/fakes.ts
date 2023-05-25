@@ -1,3 +1,4 @@
+import { LogEventId } from "../../lib";
 import { IConfigCache } from "../../src/ConfigCatCache";
 import { IConfigCatKernel } from "../../src/ConfigCatClient";
 import { OptionsBase } from "../../src/ConfigCatClientOptions";
@@ -7,14 +8,14 @@ import { ProjectConfig } from "../../src/ProjectConfig";
 import { delay } from "../../src/Utils";
 
 export class FakeLogger implements IConfigCatLogger {
-  messages: [LogLevel, string][] = [];
+  messages: [LogLevel, LogEventId, string, any?][] = [];
 
   constructor(public level = LogLevel.Info) { }
 
   reset(): void { this.messages.splice(0); }
 
-  log(level: LogLevel, _eventId: number, message: LogMessage, _exception?: any): void {
-    this.messages.push([level, message.toString()]);
+  log(level: LogLevel, eventId: number, message: LogMessage, exception?: any): void {
+    this.messages.push([level, eventId, message.toString(), exception]);
   }
 }
 

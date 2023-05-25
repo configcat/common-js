@@ -731,13 +731,13 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, instanceCount);
       assert.strictEqual(client1, client2);
-      assert.isEmpty(messages1.filter(([, msg]) => msg.indexOf("the specified options are ignored") >= 0));
+      assert.isEmpty(messages1.filter(([, , msg]) => msg.indexOf("the specified options are ignored") >= 0));
 
       if (passOptionsToSecondGet) {
-        assert.isNotEmpty(messages2.filter(([, msg]) => msg.indexOf("the specified options are ignored") >= 0));
+        assert.isNotEmpty(messages2.filter(([, , msg]) => msg.indexOf("the specified options are ignored") >= 0));
       }
       else {
-        assert.isEmpty(messages2.filter(([, msg]) => msg.indexOf("the specified options are ignored") >= 0));
+        assert.isEmpty(messages2.filter(([, , msg]) => msg.indexOf("the specified options are ignored") >= 0));
       }
 
       done();
@@ -879,7 +879,7 @@ describe("ConfigCatClient", () => {
     assert.equal(0, instanceCount2);
 
     if (isFinalizationRegistryAvailable) {
-      assert.equal(2, logger.messages.filter(([, msg]) => msg.indexOf("finalize() called") >= 0).length);
+      assert.equal(2, logger.messages.filter(([, , msg]) => msg.indexOf("finalize() called") >= 0).length);
     }
   });
 
