@@ -47,15 +47,13 @@ export type { IConfigFetcher, IFetchResponse, FetchErrorCauses } from "./ConfigF
 
 export { FetchStatus, FetchResult, FetchError } from "./ConfigFetcher";
 
-export { OptionsBase } from "./ConfigCatClientOptions";
+export type { OptionsBase } from "./ConfigCatClientOptions";
 
 export type { IConfigCache } from "./ConfigCatCache";
 
 export { InMemoryConfigCache, ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
-
-export { ProjectConfig } from "./ProjectConfig";
 
 /* Public types for end users */
 
