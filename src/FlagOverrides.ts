@@ -2,7 +2,7 @@ import type { SettingValue } from "./ProjectConfig";
 import { Setting } from "./ProjectConfig";
 
 /**
- * Describes how the overrides should behave.
+ * Specifies the behaviours for flag overrides.
  */
 export enum OverrideBehaviour {
   /**
@@ -24,9 +24,6 @@ export enum OverrideBehaviour {
   RemoteOverLocal = 2,
 }
 
-/**
- * Describes feature flag and setting override data source.
- */
 export interface IOverrideDataSource {
   getOverrides(): Promise<{ [name: string]: Setting }>;
 }
@@ -45,9 +42,6 @@ export class MapOverrideDataSource implements IOverrideDataSource {
   }
 }
 
-/**
- * Describes feature flag and setting overrides.
- */
 export class FlagOverrides {
   constructor(
     public dataSource: IOverrideDataSource,

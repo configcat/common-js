@@ -128,7 +128,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:
       // ```
-      // client.getValue("SOME_KEY", false, value => { /* ... */ }, user);
+      // client.getValueAsync("SOME_KEY", false).then(value => { /* ... */ }, user);
       // client.dispose();
       // ```
       if (!this.isOfflineExactly) {

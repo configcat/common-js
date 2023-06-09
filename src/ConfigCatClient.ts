@@ -17,47 +17,101 @@ import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from 
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, isAllowedValue } from "./RolloutEvaluator";
 import { errorToString, getTimestampAsDate } from "./Utils";
 
+/** ConfigCat SDK client. */
 export interface IConfigCatClient extends IProvidesHooks {
 
-  /** Returns the value of a feature flag or setting based on it's key */
+  /**
+   * Returns the value of a feature flag or setting identified by `key`.
+   * @remarks
+   * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
+   * Please refer to {@link https://configcat.com/docs/sdk-reference/js/#setting-type-mapping | this table} for the corresponding types.
+   * @param key Key of the feature flag or setting.
+   * @param defaultValue In case of failure, this value will be returned. Only the following types are allowed: `string`, `boolean`, `number`, `null` and `undefined`.
+   * @param user The User Object to use for evaluating targeting rules and percentage options.
+   * @returns A promise that fulfills with the value of the feature flag or setting.
+   * @throws {Error} `key` is empty.
+   * @throws {TypeError} `defaultValue` is not an allowed type.
+   */
   getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>>;
 
-  /** Returns the value along with evaluation details of a feature flag or setting based on it's key */
+  /**
+   * Returns the value along with evaluation details of a feature flag or setting identified by `key`.
+   * @remarks
+   * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
+   * Please refer to {@link https://configcat.com/docs/sdk-reference/js/#setting-type-mapping | this table} for the corresponding types.
+   * @param key Key of the feature flag or setting.
+   * @param defaultValue In case of failure, this value will be returned. Only the following types are allowed: `string`, `boolean`, `number`, `null` and `undefined`.
+   * @param user The User Object to use for evaluating targeting rules and percentage options.
+   * @returns A promise that fulfills with the value along with the details of evaluation of the feature flag or setting.
+   * @throws {Error} `key` is empty.
+   * @throws {TypeError} `defaultValue` is not an allowed type.
+   */
   getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>>;
 
-  /** Gets a list of keys for all your feature flags and settings */
+  /**
+   * Returns all setting keys.
+   * @returns A promise that fulfills with the array of keys.
+   */
   getAllKeysAsync(): Promise<string[]>;
 
-  /** Returns the values of all feature flags or settings */
+  /**
+   * Returns the keys and values of all feature flags and settings.
+   * @param user The User Object to use for evaluating targeting rules and percentage options.
+   * @returns A promise that fulfills with the array of key-value pairs.
+   */
   getAllValuesAsync(user?: User): Promise<SettingKeyValue[]>;
 
-  /** Returns the values along with evaluation details of all feature flags or settings */
+  /**
+   * Returns the values along with evaluation details of all feature flags and settings.
+   * @param user The User Object to use for evaluating targeting rules and percentage options.
+   * @returns A promise that fulfills with the array of values along with evaluation details.
+   */
   getAllValueDetailsAsync(user?: User): Promise<IEvaluationDetails[]>;
 
   /** Returns the key of a setting and it's value identified by the given Variation ID (analytics) */
+
+  /**
+   * Returns the key of a setting and its value identified by the specified `variationId`.
+   * @param variationId Variation ID (analytics).
+   * @returns A promise that fulfills with the key-value pair.
+   */
   getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
 
-  /** Downloads the latest feature flag and configuration values */
+  /**
+   * Refreshes the locally cached config by fetching the latest version from the remote server.
+   * @returns A promise that fulfills with the refresh result.
+   */
   forceRefreshAsync(): Promise<RefreshResult>;
 
-  /** Sets the default user for feature flag evaluations.
-   * In case the getValue function isn't called with a UserObject, this default user will be used instead.
+  /**
+   * Sets the default user.
+   * @param defaultUser The default User Object to use for evaluating targeting rules and percentage options.
    */
   setDefaultUser(defaultUser: User): void;
 
-  /** Clears the default user. */
+  /**
+   * Clears the default user.
+   */
   clearDefaultUser(): void;
 
-  /** True when the client is configured not to initiate HTTP requests, otherwise false. */
+  /**
+   * Returns `true` when the client is configured not to initiate HTTP requests, otherwise `false`.
+   */
   get isOffline(): boolean;
 
-  /** Configures the client to allow HTTP requests. */
+  /**
+   * Configures the client to allow HTTP requests.
+   */
   setOnline(): void;
 
-  /** Configures the client to not initiate HTTP requests and work only from its cache. */
+  /**
+   * Configures the client to not initiate HTTP requests and work using the locally cached config only.
+   */
   setOffline(): void;
 
-  /** Releases all resources used by IConfigCatClient */
+  /**
+   * Releases all resources used by the client.
+   */
   dispose(): void;
 }
 
@@ -530,6 +584,7 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 }
 
+/** Setting key-value pair. */
 export class SettingKeyValue<TValue = SettingValue> {
   constructor(
     public settingKey: string,

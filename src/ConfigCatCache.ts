@@ -52,8 +52,8 @@ export class ExternalConfigCache implements IConfigCache {
         this.cachedConfig = config;
       }
       else {
-        // We may have empty entries with Timestamp > 0 (see the flooding prevention logic in HttpConfigFetcher).
-        // In such cases we want to preserve the Timestamp locally but don't want to store those entries into the external cache.
+        // We may have empty entries with timestamp > 0 (see the flooding prevention logic in ConfigServiceBase.fetchLogicAsync).
+        // In such cases we want to preserve the timestamp locally but don't want to store those entries into the external cache.
         this.cachedSerializedConfig = void 0;
         this.cachedConfig = config;
         return;
