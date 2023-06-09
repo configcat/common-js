@@ -103,7 +103,9 @@ export class LoggerWrapper implements IConfigCatLogger {
   configJsonIsNotPresent(defaultReturnValue: string): LogMessage {
     return this.log(
       LogLevel.Error, 1000,
-      `Config JSON is not present. Returning ${defaultReturnValue}.`
+      FormattableLogMessage.from(
+        "DEFAULT_RETURN_VALUE"
+      )`Config JSON is not present. Returning ${defaultReturnValue}.`
     );
   }
 
@@ -128,7 +130,9 @@ export class LoggerWrapper implements IConfigCatLogger {
   settingEvaluationError(methodName: string, defaultReturnValue: string, ex: any): LogMessage {
     return this.log(
       LogLevel.Error, 1002,
-      new FormattableLogMessage(["Error occurred in the `", `\` method. Returning ${defaultReturnValue}.`], ["METHOD_NAME"], [methodName]),
+      FormattableLogMessage.from(
+        "METHOD_NAME", "DEFAULT_RETURN_VALUE",
+      )`Error occurred in the \`${methodName}\` method. Returning ${defaultReturnValue}.`,
       ex
     );
   }
