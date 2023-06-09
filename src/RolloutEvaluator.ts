@@ -84,6 +84,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
     this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
+    // A negative setting type indicates a flag override (see also Setting.fromValue)
+    if (setting.type < 0 && !isAllowedValue(setting.value)) {
+      throw new Error(
+        setting.value === null ? "Setting value is null." :
+        setting.value === void 0 ? "Setting value is undefined." :
+        `Setting value '${setting.value}' is of an unsupported type (${typeof setting.value}).`);
+    }
+
     const eLog: EvaluateLogger = new EvaluateLogger();
 
     eLog.user = user;
@@ -588,8 +596,6 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  ensureAllowedDefaultValue(defaultValue);
-
   const evaluationDetails = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
 
   if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
@@ -636,17 +642,12 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
   return true;
 }
 
-export function ensureAllowedDefaultValue(value: SettingValue): void {
-  if (value === null || value === void 0) {
-    return;
-  }
-
-  const type = typeof value;
-  if (type === "boolean" || type === "number" || type === "string") {
-    return;
-  }
-
-  throw new Error("The default value must be boolean, number, string, null or undefined.");
+export function isAllowedValue(value: SettingValue): boolean {
+  return value === null
+    || value === void 0
+    || typeof value === "boolean"
+    || typeof value === "number"
+    || typeof value === "string";
 }
 
 function keysToString(settings: { [name: string]: Setting }) {

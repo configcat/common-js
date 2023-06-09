@@ -1,3 +1,4 @@
+import type { SettingValue } from "./ProjectConfig";
 import { Setting } from "./ProjectConfig";
 
 /**
@@ -33,7 +34,7 @@ export interface IOverrideDataSource {
 export class MapOverrideDataSource implements IOverrideDataSource {
   private readonly map: { [name: string]: Setting } = {};
 
-  constructor(map: { [name: string]: any }) {
+  constructor(map: { [name: string]: NonNullable<SettingValue> }) {
     this.map = Object.fromEntries(Object.entries(map).map(([key, value]) => {
       return [key, Setting.fromValue(value)];
     }));

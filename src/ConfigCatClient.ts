@@ -14,7 +14,7 @@ import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
 import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
-import { RolloutEvaluator, checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluationDetailsFromDefaultValue } from "./RolloutEvaluator";
+import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, isAllowedValue } from "./RolloutEvaluator";
 import { errorToString, getTimestampAsDate } from "./Utils";
 
 export interface IConfigCatClient extends IProvidesHooks {
@@ -536,9 +536,15 @@ export class SettingKeyValue<TValue = SettingValue> {
     public settingValue: TValue) { }
 }
 
-function validateKey(key: string) {
+function validateKey(key: string): void {
   if (!key) {
     throw new Error("Invalid 'key' value");
+  }
+}
+
+function ensureAllowedDefaultValue(value: SettingValue): void {
+  if (!isAllowedValue(value)) {
+    throw new Error("The default value must be boolean, number, string, null or undefined.");
   }
 }
 
