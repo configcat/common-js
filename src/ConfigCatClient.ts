@@ -544,7 +544,7 @@ function validateKey(key: string): void {
 
 function ensureAllowedDefaultValue(value: SettingValue): void {
   if (!isAllowedValue(value)) {
-    throw new Error("The default value must be boolean, number, string, null or undefined.");
+    throw new TypeError("The default value must be boolean, number, string, null or undefined.");
   }
 }
 

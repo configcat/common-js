@@ -50,7 +50,7 @@ export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [Propert
     }
   }
   else {
-    throw new Error("Object.fromEntries() requires a single iterable argument");
+    throw new TypeError("Object.fromEntries() requires a single iterable argument");
   }
   return result;
 }

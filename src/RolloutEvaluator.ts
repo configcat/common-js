@@ -86,7 +86,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     // A negative setting type indicates a flag override (see also Setting.fromValue)
     if (setting.type < 0 && !isAllowedValue(setting.value)) {
-      throw new Error(
+      throw new TypeError(
         setting.value === null ? "Setting value is null." :
         setting.value === void 0 ? "Setting value is undefined." :
         `Setting value '${setting.value}' is of an unsupported type (${typeof setting.value}).`);
@@ -599,7 +599,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
   const evaluationDetails = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
 
   if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
-    throw new Error(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
+    throw new TypeError(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
   }
 
   return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
