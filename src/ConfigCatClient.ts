@@ -11,6 +11,7 @@ import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
+import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
 import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, ensureAllowedDefaultValue, evaluate, evaluateAll, evaluationDetailsFromDefaultValue } from "./RolloutEvaluator";
@@ -85,7 +86,8 @@ export class ConfigCatClientCache {
 
     const token = {};
     instance = new ConfigCatClient(options, configCatKernel, token);
-    this.instances[options.apiKey] = [new WeakRef(instance), token];
+    const weakRefCtor = isWeakRefAvailable() ? WeakRef : getWeakRefStub();
+    this.instances[options.apiKey] = [new weakRefCtor(instance), token];
     return [instance, false];
   }
 
