@@ -51,7 +51,7 @@ export type { OptionsBase } from "./ConfigCatClientOptions";
 
 export type { IConfigCache } from "./ConfigCatCache";
 
-export { InMemoryConfigCache, ExternalConfigCache } from "./ConfigCatCache";
+export { ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
 

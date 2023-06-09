@@ -1,8 +1,8 @@
 import { assert } from "chai";
 import "mocha";
-import { ExternalConfigCache, IConfigCatCache, InMemoryConfigCache, LogLevel } from "../src";
-import { IConfigCache } from "../src/ConfigCatCache";
-import { LoggerWrapper } from "../src/ConfigCatLogger";
+import { } from "../src";
+import { ExternalConfigCache, IConfigCache, IConfigCatCache, InMemoryConfigCache, } from "../src/ConfigCatCache";
+import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
 import { FakeLogger } from "./helpers/fakes";
 
