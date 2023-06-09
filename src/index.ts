@@ -55,6 +55,10 @@ export { ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
 
+export type { IOverrideDataSource } from "./FlagOverrides";
+
+export { FlagOverrides, MapOverrideDataSource } from "./FlagOverrides";
+
 /* Public types for end users */
 
 // List types here which are part of the public API of platform-specific SDKs, thus, should be exposed to end users.
@@ -90,9 +94,7 @@ export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
 
 export { User } from "./RolloutEvaluator";
 
-export type { IOverrideDataSource } from "./FlagOverrides";
-
-export { FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";
+export { OverrideBehaviour } from "./FlagOverrides";
 
 export { RefreshResult } from "./ConfigServiceBase";
 
