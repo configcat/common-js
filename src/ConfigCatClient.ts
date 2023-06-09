@@ -249,11 +249,13 @@ export class ConfigCatClient implements IConfigCatClient {
   async getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>> {
     this.options.logger.debug("getValueAsync() called.");
 
+    validateKey(key);
+    ensureAllowedDefaultValue(defaultValue);
+
     let value: SettingTypeOf<T>, evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
     let remoteConfig: ProjectConfig | null = null;
     user ??= this.defaultUser;
     try {
-      ensureAllowedDefaultValue(defaultValue);
       let settings: { [name: string]: Setting } | null;
       [settings, remoteConfig] = await this.getSettingsAsync();
       evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
@@ -272,11 +274,13 @@ export class ConfigCatClient implements IConfigCatClient {
   async getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>> {
     this.options.logger.debug("getValueDetailsAsync() called.");
 
+    validateKey(key);
+    ensureAllowedDefaultValue(defaultValue);
+
     let evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
     let remoteConfig: ProjectConfig | null = null;
     user ??= this.defaultUser;
     try {
-      ensureAllowedDefaultValue(defaultValue);
       let settings: { [name: string]: Setting } | null;
       [settings, remoteConfig] = await this.getSettingsAsync();
       evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
@@ -528,6 +532,12 @@ export class SettingKeyValue<TValue = SettingValue> {
   constructor(
     public settingKey: string,
     public settingValue: TValue) { }
+}
+
+function validateKey(key: string) {
+  if (!key) {
+    throw new Error("Invalid 'key' value");
+  }
 }
 
 /* GC finalization support */
