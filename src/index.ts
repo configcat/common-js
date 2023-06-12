@@ -47,9 +47,11 @@ export type { IConfigFetcher, IFetchResponse, FetchErrorCauses } from "./ConfigF
 
 export { FetchStatus, FetchResult, FetchError } from "./ConfigFetcher";
 
-export { OptionsBase } from "./ConfigCatClientOptions";
+export type { OptionsBase } from "./ConfigCatClientOptions";
 
-export { InMemoryCache } from "./Cache";
+export type { IConfigCache } from "./ConfigCatCache";
+
+export { InMemoryConfigCache, ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
 
@@ -74,15 +76,17 @@ export { LogLevel };
 
 export { FormattableLogMessage } from "./ConfigCatLogger";
 
-export type { ICache } from "./Cache";
+export type { IConfigCatCache } from "./ConfigCatCache";
 
-export { ProjectConfig, RolloutRule, RolloutPercentageItem, Setting } from "./ProjectConfig";
+export type { IConfig, ISetting, ITargetingRule, IPercentageOption, SettingValue, VariationIdValue } from "./ProjectConfig";
+
+export { SettingType, Comparator } from "./ProjectConfig";
 
 export type { IConfigCatClient };
 
 export { SettingKeyValue } from "./ConfigCatClient";
 
-export type { IEvaluationDetails, SettingTypeOf, SettingValue, VariationIdValue } from "./RolloutEvaluator";
+export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
 
 export { User } from "./RolloutEvaluator";
 

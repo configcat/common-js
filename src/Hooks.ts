@@ -1,12 +1,12 @@
 import type { IEventEmitter, IEventProvider } from "./EventEmitter";
 import { NullEventEmitter } from "./EventEmitter";
-import type { ProjectConfig } from "./ProjectConfig";
+import type { IConfig } from "./ProjectConfig";
 import type { IEvaluationDetails } from "./RolloutEvaluator";
 
 export type HookEvents = {
   clientReady: [];
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
-  configChanged: [newConfig: ProjectConfig];
+  configChanged: [newConfig: IConfig];
   clientError: [message: string, exception?: any];
 };
 

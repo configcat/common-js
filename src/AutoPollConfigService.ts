@@ -3,7 +3,7 @@ import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ConfigServiceBase } from "./ConfigServiceBase";
-import { ProjectConfig } from "./ProjectConfig";
+import type { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
@@ -62,37 +62,37 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     return !!result;
   }
 
-  async getConfig(): Promise<ProjectConfig | null> {
+  async getConfig(): Promise<ProjectConfig> {
     this.options.logger.debug("AutoPollConfigService.getConfig() called.");
 
     function logSuccess(logger: LoggerWrapper) {
       logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
     }
 
-    let cacheConfig: ProjectConfig | null = null;
+    let cachedConfig: ProjectConfig;
     if (!this.isOffline && !this.initialized) {
-      cacheConfig = await this.options.cache.get(this.options.getCacheKey());
-      if (!ProjectConfig.isExpired(cacheConfig, this.options.pollIntervalSeconds * 1000)) {
+      cachedConfig = await this.options.cache.get(this.cacheKey);
+      if (!cachedConfig.isExpired(this.options.pollIntervalSeconds * 1000)) {
         logSuccess(this.options.logger);
-        return cacheConfig;
+        return cachedConfig;
       }
 
       this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired, waiting for initialization.");
       await this.waitForInitializationAsync();
     }
 
-    cacheConfig = await this.options.cache.get(this.options.getCacheKey());
-    if (!ProjectConfig.isExpired(cacheConfig, this.options.pollIntervalSeconds * 1000)) {
+    cachedConfig = await this.options.cache.get(this.cacheKey);
+    if (!cachedConfig.isExpired(this.options.pollIntervalSeconds * 1000)) {
       logSuccess(this.options.logger);
     }
     else {
       this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired.");
     }
 
-    return cacheConfig;
+    return cachedConfig;
   }
 
-  refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig | null]> {
+  refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
     this.options.logger.debug("AutoPollConfigService.refreshConfigAsync() called.");
     return super.refreshConfigAsync();
   }
@@ -123,8 +123,8 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
     const delayMs = this.options.pollIntervalSeconds * 1000;
 
-    const latestConfig = await this.options.cache.get(this.options.getCacheKey());
-    if (ProjectConfig.isExpired(latestConfig, this.options.pollIntervalSeconds * 1000)) {
+    const latestConfig = await this.options.cache.get(this.cacheKey);
+    if (latestConfig.isExpired(this.options.pollIntervalSeconds * 1000)) {
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:
       // ```
@@ -157,7 +157,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
     if (!this.isOffline) {
-      const latestConfig = await this.options.cache.get(this.options.getCacheKey());
+      const latestConfig = await this.options.cache.get(this.cacheKey);
       await this.refreshConfigCoreAsync(latestConfig);
     }
 

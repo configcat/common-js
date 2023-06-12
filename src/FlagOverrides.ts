@@ -1,4 +1,4 @@
-import type { Setting } from "./ProjectConfig";
+import { Setting } from "./ProjectConfig";
 
 /**
  * Describes how the overrides should behave.
@@ -35,12 +35,7 @@ export class MapOverrideDataSource implements IOverrideDataSource {
 
   constructor(map: { [name: string]: any }) {
     this.map = Object.fromEntries(Object.entries(map).map(([key, value]) => {
-      return [key, {
-        value: value,
-        variationId: "",
-        rolloutRules: [],
-        rolloutPercentageItems: []
-      }];
+      return [key, Setting.fromValue(value)];
     }));
   }
 

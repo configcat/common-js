@@ -1,4 +1,5 @@
-import { ICache } from "../../src/Cache";
+import { LogEventId } from "../../lib";
+import { IConfigCache } from "../../src/ConfigCatCache";
 import { IConfigCatKernel } from "../../src/ConfigCatClient";
 import { OptionsBase } from "../../src/ConfigCatClientOptions";
 import { IConfigCatLogger, LogLevel, LogMessage } from "../../src/ConfigCatLogger";
@@ -7,33 +8,38 @@ import { ProjectConfig } from "../../src/ProjectConfig";
 import { delay } from "../../src/Utils";
 
 export class FakeLogger implements IConfigCatLogger {
-  messages: [LogLevel, string][] = [];
+  messages: [LogLevel, LogEventId, string, any?][] = [];
 
   constructor(public level = LogLevel.Info) { }
 
   reset(): void { this.messages.splice(0); }
 
-  log(level: LogLevel, _eventId: number, message: LogMessage, _exception?: any): void {
-    this.messages.push([level, message.toString()]);
+  log(level: LogLevel, eventId: number, message: LogMessage, exception?: any): void {
+    this.messages.push([level, eventId, message.toString(), exception]);
   }
 }
 
 export class FakeConfigCatKernel implements IConfigCatKernel {
-  cache?: ICache;
   configFetcher!: IConfigFetcher;
   sdkType = "common";
   sdkVersion = "1.0.0";
+  defaultCacheFactory?: (options: OptionsBase) => IConfigCache;
 }
 
-export class FakeCache implements ICache {
-  cached: ProjectConfig | null;
+export class FakeCache implements IConfigCache {
+  cached: ProjectConfig;
+
   constructor(cached: ProjectConfig | null = null) {
-    this.cached = cached;
+    this.cached = cached ?? ProjectConfig.empty;
   }
-  set(key: string, config: ProjectConfig): Promise<void> | void {
+
+  get localCachedConfig(): ProjectConfig { return this.cached; }
+
+  set(_key: string, config: ProjectConfig): Promise<void> | void {
     this.cached = config;
   }
-  get(key: string): Promise<ProjectConfig | null> | ProjectConfig | null {
+
+  get(_key: string): Promise<ProjectConfig> | ProjectConfig {
     return this.cached;
   }
 }
