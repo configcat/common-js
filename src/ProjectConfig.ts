@@ -1,5 +1,5 @@
 export class ProjectConfig {
-  static readonly serializationFormatVersion = "v1";
+  static readonly serializationFormatVersion = "v2";
 
   static readonly empty = new ProjectConfig(void 0, void 0, 0, void 0);
 
@@ -19,13 +19,11 @@ export class ProjectConfig {
   }
 
   static generateTimestamp(): number {
-    const time = new Date().getTime();
-    // Remove the sub-second part as we need second precision only.
-    return Math.floor(time / 1000) * 1000;
+    return new Date().getTime();
   }
 
   static serialize(config: ProjectConfig): string {
-    return Math.floor(config.timestamp / 1000) + "\n"
+    return config.timestamp + "\n"
       + (config.httpETag ?? "") + "\n"
       + (config.configJson ?? "");
   }
@@ -45,7 +43,7 @@ export class ProjectConfig {
     let endIndex = separatorIndices[0];
     let slice = value.substring(0, endIndex);
 
-    const fetchTime = parseInt(slice) * 1000;
+    const fetchTime = parseInt(slice);
     if (isNaN(fetchTime)) {
       throw new Error("Invalid fetch time: " + slice);
     }
