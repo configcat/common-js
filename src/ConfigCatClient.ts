@@ -30,7 +30,7 @@ export interface IConfigCatClient extends IProvidesHooks {
    * @param user The User Object to use for evaluating targeting rules and percentage options.
    * @returns A promise that fulfills with the value of the feature flag or setting.
    * @throws {Error} `key` is empty.
-   * @throws {TypeError} `defaultValue` is not an allowed type.
+   * @throws {TypeError} `defaultValue` is not of an allowed type.
    */
   getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>>;
 
@@ -44,7 +44,7 @@ export interface IConfigCatClient extends IProvidesHooks {
    * @param user The User Object to use for evaluating targeting rules and percentage options.
    * @returns A promise that fulfills with the value along with the details of evaluation of the feature flag or setting.
    * @throws {Error} `key` is empty.
-   * @throws {TypeError} `defaultValue` is not an allowed type.
+   * @throws {TypeError} `defaultValue` is not of an allowed type.
    */
   getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>>;
 
