@@ -155,7 +155,7 @@ export class Setting implements ISetting {
 
   static fromValue(value: NonNullable<SettingValue>): Setting {
     return new Setting({
-      t: -1, // this value is not used by the library currently and this object won't be exposed to the consumer either
+      t: -1, // this is not a defined SettingType value, we only use it internally (will never exposed it to the consumer)
       v: value,
     });
   }

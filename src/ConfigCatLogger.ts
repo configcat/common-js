@@ -1,17 +1,26 @@
 import type { Hooks } from "./Hooks";
 import { errorToString } from "./Utils";
 
+/**
+ * Specifies event severity levels for the `IConfigCatLogger` interface.
+ * The levels are interpreted as minimum levels in the case of event filtering.
+*/
 export enum LogLevel {
+  /** All events are logged. */
   Debug = 4,
+  /** Info, Warn and Error are logged. Debug events are discarded. */
   Info = 3,
+  /** Warn and Error events are logged. Info and Debug events are discarded. */
   Warn = 2,
+  /** Error events are logged. All other events are discarded. */
   Error = 1,
+  /** No events are logged. */
   Off = -1
 }
 
 export type LogEventId = number;
 
-/** Represents a log message with names arguments. */
+/** Represents a log message format with names arguments. */
 export class FormattableLogMessage {
   static from(...argNames: string[]): (strings: TemplateStringsArray, ...argValues: unknown[]) => FormattableLogMessage {
     return (strings: TemplateStringsArray, ...argValues: unknown[]) =>
@@ -52,11 +61,12 @@ export type LogMessage = string | FormattableLogMessage;
 
 /** Defines the interface used by the ConfigCat SDK to perform logging. */
 export interface IConfigCatLogger {
+  /** Gets the log level (the minimum level to use for filtering log events). */
   readonly level?: LogLevel;
 
   /**
-   * Writes a message into the log.
-   * @param level Level (event severity).
+   * Writes an event into the log.
+   * @param level Event severity level.
    * @param eventId Event identifier.
    * @param message Message.
    * @param exception The exception object related to the message (if any).
@@ -93,7 +103,7 @@ export class LoggerWrapper implements IConfigCatLogger {
 
   /**
    * Shorthand method for `logger.logEvent(LogLevel.Debug, 0, message);`
-   * */
+   */
   debug(message: string): void {
     this.log(LogLevel.Debug, 0, message);
   }
@@ -103,7 +113,9 @@ export class LoggerWrapper implements IConfigCatLogger {
   configJsonIsNotPresent(defaultReturnValue: string): LogMessage {
     return this.log(
       LogLevel.Error, 1000,
-      `Config JSON is not present. Returning ${defaultReturnValue}.`
+      FormattableLogMessage.from(
+        "DEFAULT_RETURN_VALUE"
+      )`Config JSON is not present. Returning ${defaultReturnValue}.`
     );
   }
 
@@ -128,7 +140,9 @@ export class LoggerWrapper implements IConfigCatLogger {
   settingEvaluationError(methodName: string, defaultReturnValue: string, ex: any): LogMessage {
     return this.log(
       LogLevel.Error, 1002,
-      new FormattableLogMessage(["Error occurred in the `", `\` method. Returning ${defaultReturnValue}.`], ["METHOD_NAME"], [methodName]),
+      FormattableLogMessage.from(
+        "METHOD_NAME", "DEFAULT_RETURN_VALUE",
+      )`Error occurred in the \`${methodName}\` method. Returning ${defaultReturnValue}.`,
       ex
     );
   }

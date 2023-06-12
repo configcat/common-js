@@ -3,13 +3,17 @@ import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigF
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
 import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
 
+/** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
 export class RefreshResult {
   constructor(
+    /** Error message in case the operation failed, otherwise `null`. */
     public errorMessage: string | null,
+    /** The exception object related to the error in case the operation failed (if any). */
     public errorException?: any
   ) {
   }
 
+  /** Indicates whether the operation was successful or not. */
   get isSuccess(): boolean { return this.errorMessage === null; }
 
   static from(fetchResult: FetchResult): RefreshResult {
@@ -18,10 +22,12 @@ export class RefreshResult {
       : RefreshResult.failure(fetchResult.errorMessage!, fetchResult.errorException);
   }
 
+  /** Creates an instance of the `RefreshResult` class which indicates that the operation was successful. */
   static success(): RefreshResult {
     return new RefreshResult(null);
   }
 
+  /** Creates an instance of the `RefreshResult` class which indicates that the operation failed. */
   static failure(errorMessage: string, errorException?: any): RefreshResult {
     return new RefreshResult(errorMessage, errorException);
   }

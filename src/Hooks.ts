@@ -3,10 +3,15 @@ import { NullEventEmitter } from "./EventEmitter";
 import type { IConfig } from "./ProjectConfig";
 import type { IEvaluationDetails } from "./RolloutEvaluator";
 
+/** Hooks (events) that can be emitted by `ConfigCatClient`. */
 export type HookEvents = {
+  /** Occurs when the client is ready to provide the actual value of feature flags or settings. */
   clientReady: [];
+  /** Occurs after the value of a feature flag of setting has been evaluated. */
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
+  /** Occurs after the locally cached config has been updated. */
   configChanged: [newConfig: IConfig];
+  /** Occurs in the case of a failure in the client. */
   clientError: [message: string, exception?: any];
 };
 

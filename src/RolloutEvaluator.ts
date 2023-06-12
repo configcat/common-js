@@ -17,8 +17,9 @@ export interface IRolloutEvaluator {
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails;
 }
 
+/** The evaluated value and additional information about the evaluation of a feature flag or setting. */
 export interface IEvaluationDetails<TValue = SettingValue> {
-  /** Key of the feature or setting flag. */
+  /** Key of the feature flag or setting. */
   key: string;
 
   /** Evaluated value of the feature or setting flag. */
@@ -27,13 +28,16 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   /** Variation ID of the feature or setting flag (if available). */
   variationId?: VariationIdValue;
 
-  /** Time of last successful download of config.json (if there has been a successful download already). */
+  /** Time of last successful config download (if there has been a successful download already). */
   fetchTime?: Date;
 
   /** The User object used for the evaluation (if available). */
   user?: User;
 
-  /** Indicates whether the default value passed to IConfigCatClient.getValue or IConfigCatClient.getValueAsync is used as the result of the evaluation. */
+  /**
+   * Indicates whether the default value passed to the setting evaluation methods like `IConfigCatClient.getValueAsync`, `IConfigCatClient.getValueDetailsAsync`, etc.
+   * is used as the result of the evaluation.
+   */
   isDefaultValue: boolean;
 
   /** Error message in case evaluation failed. */
@@ -42,14 +46,14 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   /** The exception object related to the error in case evaluation failed (if any). */
   errorException?: any;
 
-  /** The comparison-based targeting rule which was used to select the evaluated value (if any). */
+  /** The targeting rule which was used to select the evaluated value (if any). */
   matchedEvaluationRule?: ITargetingRule;
 
-  /** The percentage-based targeting rule which was used to select the evaluated value (if any). */
+  /** The percentage option which was used to select the evaluated value (if any). */
   matchedEvaluationPercentageRule?: IPercentageOption;
 }
 
-/** Object for variation evaluation */
+/** User Object. Contains user attributes which are used for evaluating targeting rules and percentage options. */
 export class User {
 
   constructor(identifier: string, email?: string, country?: string, custom?: { [key: string]: string }) {
@@ -59,16 +63,16 @@ export class User {
     this.custom = custom || {};
   }
 
-  /** Unique identifier for the User or Session. e.g. Email address, Primary key, Session Id */
+  /** The unique identifier of the user or session (e.g. email address, primary key, session ID, etc.) */
   identifier: string;
 
-  /** Optional parameter for easier targeting rule definitions */
+  /** Email address of the user. */
   email?: string;
 
-  /** Optional parameter for easier targeting rule definitions */
+  /** Country of the user. */
   country?: string;
 
-  /** Optional dictionary for custom attributes of the User for advanced targeting rule definitions. e.g. User role, Subscription type */
+  /** Custom attributes of the user for advanced targeting rule definitions (e.g. user role, subscription type, etc.) */
   custom?: { [key: string]: string } = {};
 }
 
@@ -83,6 +87,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
   evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
     this.logger.debug("RolloutEvaluator.Evaluate() called.");
+
+    // A negative setting type indicates a flag override (see also Setting.fromValue)
+    if (setting.type < 0 && !isAllowedValue(setting.value)) {
+      throw new TypeError(
+        setting.value === null ? "Setting value is null." :
+        setting.value === void 0 ? "Setting value is undefined." :
+        `Setting value '${setting.value}' is of an unsupported type (${typeof setting.value}).`);
+    }
 
     const eLog: EvaluateLogger = new EvaluateLogger();
 
@@ -588,12 +600,10 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  ensureAllowedDefaultValue(defaultValue);
-
   const evaluationDetails = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
 
   if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
-    throw new Error(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
+    throw new TypeError(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
   }
 
   return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
@@ -636,17 +646,12 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
   return true;
 }
 
-export function ensureAllowedDefaultValue(value: SettingValue): void {
-  if (value === null || value === void 0) {
-    return;
-  }
-
-  const type = typeof value;
-  if (type === "boolean" || type === "number" || type === "string") {
-    return;
-  }
-
-  throw new Error("The default value must be boolean, number, string, null or undefined.");
+export function isAllowedValue(value: SettingValue): boolean {
+  return value === null
+    || value === void 0
+    || typeof value === "boolean"
+    || typeof value === "number"
+    || typeof value === "string";
 }
 
 function keysToString(settings: { [name: string]: Setting }) {

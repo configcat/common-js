@@ -1,24 +1,3 @@
-const getGlobalObject = (() => {
-  let value: typeof globalThis | undefined;
-
-  return () => {
-    if (!value) {
-      value =
-        typeof globalThis === "object" && globalThis ? globalThis :
-        typeof self === "object" && self ? self :
-        typeof window === "object" && window ? window :
-        typeof global === "object" && global ? global :
-        typeof Function === "function" ? (Function("return this")()) :
-        null;
-
-      if (!value) {
-        throw new Error("Global object could not be determined.");
-      }
-    }
-    return value;
-  };
-})();
-
 export function setupPolyfills(): void {
   // Object.values
   if (typeof Object.values === "undefined") {
@@ -33,13 +12,6 @@ export function setupPolyfills(): void {
   // Object.fromEntries
   if (typeof Object.fromEntries === "undefined") {
     Object.fromEntries = ObjectFromEntriesPolyfill;
-  }
-
-  // WeakRef
-  if (typeof WeakRef === "undefined") {
-    // There's no way to correctly polyfill WeakRef (https://stackoverflow.com/a/69971312/8656352),
-    // so we just polyfill its API (which means falling back on strong references in this case).
-    getGlobalObject().WeakRef = getWeakRefStub();
   }
 }
 
@@ -78,7 +50,7 @@ export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [Propert
     }
   }
   else {
-    throw new Error("Object.fromEntries() requires a single iterable argument");
+    throw new TypeError("Object.fromEntries() requires a single iterable argument");
   }
   return result;
 }
@@ -100,4 +72,4 @@ export function getWeakRefStub<T extends object>(): WeakRefConstructor {
   return WeakRef;
 }
 
-export const isWeakRefAvailable = (): boolean => typeof WeakRef === "function" && !Object.prototype.hasOwnProperty.call(WeakRef, "isFallback");
+export const isWeakRefAvailable = (): boolean => typeof WeakRef === "function";

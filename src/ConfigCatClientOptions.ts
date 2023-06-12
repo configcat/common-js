@@ -11,71 +11,109 @@ import { ProjectConfig } from "./ProjectConfig";
 import type { User } from "./RolloutEvaluator";
 import { sha1 } from "./Sha1";
 
+/** Specifies the supported polling modes. */
 export enum PollingMode {
+  /** The ConfigCat SDK downloads the latest values automatically and stores them in the local cache. */
   AutoPoll = 0,
+  /** The ConfigCat SDK downloads the latest setting values only if they are not present in the local cache, or if the cache entry has expired. */
   LazyLoad = 1,
+  /** The ConfigCat SDK will not download the config JSON automatically. You need to update the cache manually, by calling `forceRefresh()`. */
   ManualPoll = 2
 }
 
-/** Control the location of the config.json files containing your feature flags and settings within the ConfigCat CDN. */
+/** Controls the location of the config JSON files containing your feature flags and settings within the ConfigCat CDN. */
 export enum DataGovernance {
-  /** Select this if your feature flags are published to all global CDN nodes. */
+  /** Choose this option if your config JSON files are published to all global CDN nodes. */
   Global = 0,
-  /** Select this if your feature flags are published to CDN nodes only in the EU. */
+  /** Choose this option if your config JSON files are published to CDN nodes only in the EU. */
   EuOnly = 1
 }
 
+/** Options used to configure the ConfigCat SDK. */
 export interface IOptions {
+  /**
+   * The logger implementation to use for performing logging.
+   *
+   * If not set, `ConfigCatConsoleLogger` with `LogLevel.Warn` will be used by default.
+   * If you want to use custom logging instead, you can provide an implementation of `IConfigCatLogger`.
+   */
   logger?: IConfigCatLogger | null;
+
+  /** Timeout (in milliseconds) for underlying HTTP calls. Defaults to 30 seconds. */
   requestTimeoutMs?: number | null;
+
+  /**
+   * The base URL of the remote server providing the latest version of the config.
+   * Defaults to the URL of the ConfigCat CDN.
+   *
+   * If you want to use a proxy server between your application and ConfigCat, you need to set this property to the proxy URL.
+   */
   baseUrl?: string | null;
-  /** You can set a base_url if you want to use a proxy server between your application and ConfigCat */
+
+  /** Proxy settings (supported only in the Node SDK currently). */
   proxy?: string | null;
-  /** Default: Global. Set this parameter to be in sync with the Data Governance preference on the Dashboard:
-   * https://app.configcat.com/organization/data-governance (Only Organization Admins have access)
+
+  /**
+   * Set this property to be in sync with the Data Governance preference on the Dashboard:
+   * https://app.configcat.com/organization/data-governance (only Organization Admins have access).
+   * Defaults to `DataGovernance.Global`.
    */
   dataGovernance?: DataGovernance | null;
+
   /**
    * The cache implementation to use for storing and retrieving downloaded config data.
+   *
    * If not set, a default implementation will be used (depending on the platform).
    * If you want to use custom caching instead, you can provide an implementation of `IConfigCatCache`.
    */
   cache?: IConfigCatCache | null;
+
+  /** The flag override to use. If not set, no flag override will be used. */
   flagOverrides?: FlagOverrides | null;
+
   /**
-   * The default user, used as fallback when there's no user parameter is passed to the
-   * ConfigCatClient.getValue, ConfigCatClient.getValueAsync, getVariationId, getVariationIdAsync, getAllValues, getAllValuesAsync, etc. methods.
+   * The default user, used as fallback when there's no user parameter is passed to the setting evaluation methods like
+   * `IConfigCatClient.getValueAsync`, `ConfigCatClient.getValueAsync`, etc.
    */
   defaultUser?: User | null;
+
   /**
-   * Indicates whether the client should be initialized to offline mode or not. Defaults to false.
+   * Indicates whether the client should be initialized to offline mode or not. Defaults to `false`.
    */
   offline?: boolean | null;
+
   /** Provides an opportunity to add listeners to client hooks (events) at client initalization time. */
   setupHooks?: (hooks: IProvidesHooks) => void;
 }
 
+/** Options used to configure the ConfigCat SDK in the case of Auto Polling mode. */
 export interface IAutoPollOptions extends IOptions {
   /**
-   * Configuration refresh period.
-   * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483 seconds.)
+   * Config refresh interval.
+   * Specifies how frequently the locally cached config will be refreshed by fetching the latest version from the remote server.
+   *
+   * Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483 seconds.
    */
   pollIntervalSeconds?: number;
 
   /**
-    * Maximum waiting time between initialization and the first config acquisition.
-    * (Default value is 5 seconds. Maximum value is 2147483 seconds. Negative values mean infinite waiting.)
+   * Maximum waiting time between initialization and the first config acquisition.
+   *
+   * Default value is 5 seconds. Maximum value is 2147483 seconds. Negative values mean infinite waiting.
    */
   maxInitWaitTimeSeconds?: number;
 }
 
+/** Options used to configure the ConfigCat SDK in the case of Manual Polling mode. */
 export interface IManualPollOptions extends IOptions {
 }
 
+/** Options used to configure the ConfigCat SDK in the case of Lazy Loading mode. */
 export interface ILazyLoadingOptions extends IOptions {
   /**
-    * Cache time to live value.
-    * (Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483647 seconds.)
+   * Cache time to live value. Specifies how long the locally cached config can be used before refreshing it again by fetching the latest version from the remote server.
+   *
+   * Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483647 seconds.
    */
   cacheTimeToLiveSeconds?: number;
 }

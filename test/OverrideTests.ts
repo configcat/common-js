@@ -1,9 +1,10 @@
 import { assert, expect } from "chai";
 import "mocha";
-import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
+import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
-import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
+import { SettingValue } from "../src/ProjectConfig";
+import { FakeConfigCatKernel, FakeConfigFetcherBase, FakeConfigFetcherWithNullNewConfig } from "./helpers/fakes";
 
 describe("Local Overrides", () => {
   it("Values from map - LocalOnly", async () => {
@@ -151,4 +152,49 @@ describe("Local Overrides", () => {
     expect(refreshResult.errorMessage).to.contain("LocalOnly");
     assert.isUndefined(refreshResult.errorException);
   });
+
+  for (const [overrideValue, defaultValue, expectedEvaluatedValue] of [
+    [true, false, true],
+    [true, "", ""],
+    [true, 0, 0],
+    ["text", false, false],
+    ["text", "", "text"],
+    ["text", 0, 0],
+    [42, false, false],
+    [42, "", ""],
+    [42, 0, 42],
+    [3.14, false, false],
+    [3.14, "", ""],
+    [3.14, 0, 3.14],
+    [null, false, false],
+    [void 0, false, false],
+    [{}, false, false],
+    [[], false, false],
+    [function() {}, false, false],
+  ]) {
+    it(`Override value type mismatch should be handled correctly (${overrideValue}, ${defaultValue})`, async () => {
+      const key = "flag";
+
+      const map = { [key]: overrideValue as NonNullable<SettingValue> };
+
+      const configCatKernel: IConfigCatKernel = {
+        configFetcher: new FakeConfigFetcherWithNullNewConfig(),
+        sdkType: "common",
+        sdkVersion: "1.0.0"
+      };
+
+      const options: ManualPollOptions = new ManualPollOptions("localhost", configCatKernel.sdkType, configCatKernel.sdkVersion, {
+        flagOverrides: {
+          dataSource: new MapOverrideDataSource(map),
+          behaviour: OverrideBehaviour.LocalOnly
+        }
+      }, null);
+
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+      const actualEvaluatedValue = await client.getValueAsync(key, defaultValue as SettingValue);
+
+      assert.strictEqual(expectedEvaluatedValue, actualEvaluatedValue);
+    });
+  }
 });

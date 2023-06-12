@@ -9,29 +9,29 @@ import { setupPolyfills } from "./Polyfills";
 setupPolyfills();
 
 /**
- * Returns an instance of ConfigCatClient for the specified SDK Key.
+ * Returns an instance of `ConfigCatClient` for the specified SDK Key.
  * @remarks This method returns a single, shared instance per each distinct SDK Key.
  * That is, a new client object is created only when there is none available for the specified SDK Key.
- * Otherwise, the already created instance is returned (in which case the 'pollingMode', 'options' and 'configCatKernel' arguments are ignored).
+ * Otherwise, the already created instance is returned (in which case the `pollingMode`, `options` and `configCatKernel` arguments are ignored).
  * So, please keep in mind that when you make multiple calls to this method using the same SDK Key, you may end up with multiple references to the same client object.
- * @param sdkKey SDK Key (a.k.a ApiKey) to access configuration
- * @param pollingMode The polling mode to use
- * @param options Options for the specified polling mode
+ * @param sdkKey SDK Key (a.k.a ApiKey) to access the ConfigCat config.
+ * @param pollingMode The polling mode to use.
+ * @param options Options for the specified polling mode.
  */
 export function getClient<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
   return ConfigCatClient.get(sdkKey, pollingMode, options, configCatKernel);
 }
 
 /**
- * Disposes all existing ConfigCatClient instances.
+ * Disposes all existing `ConfigCatClient` instances.
  */
 export function disposeAllClients(): void {
   ConfigCatClient.disposeAll();
 }
 
 /**
- * Create an instance of ConfigCatConsoleLogger
- * @param {LogLevel} logLevel - Specifies message's filtering to output for the ConfigCatConsoleLogger.
+ * Creates an instance of `ConfigCatConsoleLogger`.
+ * @param logLevel - Log level (the minimum level to use for filtering log events).
  */
 export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
   return new ConfigCatConsoleLogger(logLevel);
@@ -51,9 +51,13 @@ export type { OptionsBase } from "./ConfigCatClientOptions";
 
 export type { IConfigCache } from "./ConfigCatCache";
 
-export { InMemoryConfigCache, ExternalConfigCache } from "./ConfigCatCache";
+export { ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
+
+export type { IOverrideDataSource } from "./FlagOverrides";
+
+export { FlagOverrides, MapOverrideDataSource } from "./FlagOverrides";
 
 /* Public types for end users */
 
@@ -90,9 +94,7 @@ export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
 
 export { User } from "./RolloutEvaluator";
 
-export type { IOverrideDataSource } from "./FlagOverrides";
-
-export { FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";
+export { OverrideBehaviour } from "./FlagOverrides";
 
 export { RefreshResult } from "./ConfigServiceBase";
 
