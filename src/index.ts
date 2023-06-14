@@ -14,7 +14,7 @@ setupPolyfills();
  * That is, a new client object is created only when there is none available for the specified SDK Key.
  * Otherwise, the already created instance is returned (in which case the `pollingMode`, `options` and `configCatKernel` arguments are ignored).
  * So, please keep in mind that when you make multiple calls to this method using the same SDK Key, you may end up with multiple references to the same client object.
- * @param sdkKey SDK Key (a.k.a ApiKey) to access the ConfigCat config.
+ * @param sdkKey SDK Key to access the ConfigCat config.
  * @param pollingMode The polling mode to use.
  * @param options Options for the specified polling mode.
  */
@@ -31,7 +31,7 @@ export function disposeAllClients(): void {
 
 /**
  * Creates an instance of `ConfigCatConsoleLogger`.
- * @param logLevel - Log level (the minimum level to use for filtering log events).
+ * @param logLevel Log level (the minimum level to use for filtering log events).
  */
 export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
   return new ConfigCatConsoleLogger(logLevel);
