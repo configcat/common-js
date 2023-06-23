@@ -12,10 +12,13 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   private readonly initialization: Promise<void>;
   private signalInitialization: () => void = () => { /* Intentional no-op. */ };
   private timerId?: ReturnType<typeof setTimeout>;
+  private readonly pollIntervalMs: number;
 
   constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
 
     super(configFetcher, options);
+
+    this.pollIntervalMs = options.pollIntervalSeconds * 1000;
 
     if (options.maxInitWaitTimeSeconds !== 0) {
       this.initialized = false;
@@ -72,7 +75,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     let cachedConfig: ProjectConfig;
     if (!this.isOffline && !this.initialized) {
       cachedConfig = await this.options.cache.get(this.cacheKey);
-      if (!cachedConfig.isExpired(this.options.pollIntervalSeconds * 1000)) {
+      if (!cachedConfig.isExpired(this.pollIntervalMs)) {
         logSuccess(this.options.logger);
         return cachedConfig;
       }
@@ -82,7 +85,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
 
     cachedConfig = await this.options.cache.get(this.cacheKey);
-    if (!cachedConfig.isExpired(this.options.pollIntervalSeconds * 1000)) {
+    if (!cachedConfig.isExpired(this.pollIntervalMs)) {
       logSuccess(this.options.logger);
     }
     else {
@@ -121,10 +124,10 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   private async startRefreshWorker() {
     this.options.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
 
-    const delayMs = this.options.pollIntervalSeconds * 1000;
+    const delayMs = this.pollIntervalMs;
 
     const latestConfig = await this.options.cache.get(this.cacheKey);
-    if (latestConfig.isExpired(this.options.pollIntervalSeconds * 1000)) {
+    if (latestConfig.isExpired(this.pollIntervalMs)) {
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:
       // ```
