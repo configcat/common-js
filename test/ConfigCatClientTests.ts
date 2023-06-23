@@ -502,9 +502,9 @@ describe("ConfigCatClient", () => {
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(500), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
-    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     const startDate: number = new Date().getTime();
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
     const ellapsedMilliseconds: number = new Date().getTime() - startDate;
 
@@ -519,9 +519,9 @@ describe("ConfigCatClient", () => {
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
-    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     const startDate: number = new Date().getTime();
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
     const ellapsedMilliseconds: number = new Date().getTime() - startDate;
 
