@@ -7,13 +7,13 @@ import type { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
 
-  private readonly cacheTimeToLiveSeconds: number;
+  private readonly cacheTimeToLiveMs: number;
 
   constructor(configFetcher: IConfigFetcher, options: LazyLoadOptions) {
 
     super(configFetcher, options);
 
-    this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
+    this.cacheTimeToLiveMs = options.cacheTimeToLiveSeconds * 1000;
 
     options.hooks.emit("clientReady");
   }
@@ -27,7 +27,7 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
 
     let cachedConfig = await this.options.cache.get(this.cacheKey);
 
-    if (cachedConfig.isExpired(this.cacheTimeToLiveSeconds * 1000)) {
+    if (cachedConfig.isExpired(this.cacheTimeToLiveMs)) {
       if (!this.isOffline) {
         logExpired(this.options.logger, ", calling refreshConfigCoreAsync()");
         [, cachedConfig] = await this.refreshConfigCoreAsync(cachedConfig);

@@ -1,5 +1,6 @@
 import { assert, expect } from "chai";
 import "mocha";
+import { SettingKeyValue } from "../lib";
 import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
@@ -170,7 +171,7 @@ describe("Local Overrides", () => {
     [void 0, false, false],
     [{}, false, false],
     [[], false, false],
-    [function() {}, false, false],
+    [function() { }, false, false],
   ]) {
     it(`Override value type mismatch should be handled correctly (${overrideValue}, ${defaultValue})`, async () => {
       const key = "flag";
@@ -193,8 +194,17 @@ describe("Local Overrides", () => {
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
       const actualEvaluatedValue = await client.getValueAsync(key, defaultValue as SettingValue);
+      const actualEvaluatedValues = await client.getAllValuesAsync();
 
       assert.strictEqual(expectedEvaluatedValue, actualEvaluatedValue);
+
+      const expectedEvaluatedValues: SettingKeyValue[] = [{
+        settingKey: key,
+        settingValue: typeof overrideValue === "boolean" || typeof overrideValue === "string" || typeof overrideValue === "number" || overrideValue === null || overrideValue === void 0
+          ? overrideValue
+          : null
+      }];
+      assert.deepEqual(expectedEvaluatedValues, actualEvaluatedValues);
     });
   }
 });

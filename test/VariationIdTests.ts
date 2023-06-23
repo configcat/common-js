@@ -2,8 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import { ConfigCatClient, IConfigCatClient } from "../src/ConfigCatClient";
 import { AutoPollOptions } from "../src/ConfigCatClientOptions";
-import { IEvaluationDetails } from "../src/RolloutEvaluator";
-import { FakeConfigCatKernel, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules } from "./helpers/fakes";
+import { FakeConfigCatKernel, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithTwoKeysAndRules } from "./helpers/fakes";
 
 describe("ConfigCatClient", () => {
   it("getKeyAndValueAsync() works with default", async () => {

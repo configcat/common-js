@@ -11,7 +11,7 @@ import { IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import { Config, IConfig, ProjectConfig, Setting } from "../src/ProjectConfig";
-import { IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
+import { IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
 import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
@@ -326,7 +326,7 @@ describe("ConfigCatClient", () => {
 
     const err = new Error("Something went wrong.");
     client["evaluator"] = new class implements IRolloutEvaluator {
-      evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+      evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluateResult {
         throw err;
       }
     };
@@ -429,7 +429,7 @@ describe("ConfigCatClient", () => {
 
     const err = new Error("Something went wrong.");
     client["evaluator"] = new class implements IRolloutEvaluator {
-      evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluationDetails {
+      evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluateResult {
         throw err;
       }
     };
@@ -502,9 +502,9 @@ describe("ConfigCatClient", () => {
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(500), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
-    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     const startDate: number = new Date().getTime();
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
     const ellapsedMilliseconds: number = new Date().getTime() - startDate;
 
@@ -519,9 +519,9 @@ describe("ConfigCatClient", () => {
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
-    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
     const startDate: number = new Date().getTime();
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
     const ellapsedMilliseconds: number = new Date().getTime() - startDate;
 

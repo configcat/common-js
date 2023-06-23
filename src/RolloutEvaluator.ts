@@ -1,9 +1,9 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
-import type { IPercentageOption, ITargetingRule, ProjectConfig, Setting, SettingValue, VariationIdValue } from "./ProjectConfig";
-import { Comparator, RolloutPercentageItem, RolloutRule } from "./ProjectConfig";
+import type { IPercentageOption, ITargetingRule, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue, VariationIdValue } from "./ProjectConfig";
+import { Comparator } from "./ProjectConfig";
 import * as semver from "./Semver";
 import { sha1 } from "./Sha1";
-import { errorToString, getTimestampAsDate } from "./Utils";
+import { errorToString } from "./Utils";
 
 export type SettingTypeOf<T> =
   T extends boolean ? boolean :
@@ -14,7 +14,7 @@ export type SettingTypeOf<T> =
   any;
 
 export interface IRolloutEvaluator {
-  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails;
+  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluateResult;
 }
 
 /** The evaluated value and additional information about the evaluation of a feature flag or setting. */
@@ -85,7 +85,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     this.logger = logger;
   }
 
-  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluationDetails {
+  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluateResult {
     this.logger.debug("RolloutEvaluator.Evaluate() called.");
 
     // A negative setting type indicates a flag override (see also Setting.fromValue)
@@ -102,7 +102,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     eLog.keyName = key;
     eLog.returnValue = defaultValue;
 
-    let result: IEvaluateResult<object | undefined> | null;
+    let result: IEvaluateResult | null;
 
     try {
       if (user) {
@@ -112,7 +112,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         if (result !== null) {
           eLog.returnValue = result.value;
 
-          return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
+          return result;
         }
 
         // evaluate percentage-based rules
@@ -126,7 +126,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         if (result !== null) {
           eLog.returnValue = result.value;
 
-          return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
+          return result;
         }
       }
       else {
@@ -143,14 +143,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       };
       eLog.returnValue = result.value;
 
-      return evaluationDetailsFromEvaluateResult(key, result, getTimestampAsDate(remoteConfig), user);
+      return result;
     }
     finally {
       this.logger.settingEvaluated(eLog);
     }
   }
 
-  private evaluateRules(rolloutRules: ReadonlyArray<RolloutRule>, user: User, eLog: EvaluateLogger): IEvaluateResult<RolloutRule> | null {
+  private evaluateRules(rolloutRules: ReadonlyArray<RolloutRule>, user: User, eLog: EvaluateLogger): IEvaluateResult | null {
 
     this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
 
@@ -174,10 +174,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           continue;
         }
 
-        const result: IEvaluateResult<RolloutRule> = {
+        const result: IEvaluateResult = {
           value: rule.value,
           variationId: rule.variationId,
-          matchedRule: rule
+          matchedTargetingRule: rule
         };
 
         switch (comparator) {
@@ -330,7 +330,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return null;
   }
 
-  private evaluatePercentageRules(rolloutPercentageItems: ReadonlyArray<RolloutPercentageItem>, key: string, user: User): IEvaluateResult<RolloutPercentageItem> | null {
+  private evaluatePercentageRules(rolloutPercentageItems: ReadonlyArray<RolloutPercentageItem>, key: string, user: User): IEvaluateResult | null {
     this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
@@ -347,7 +347,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           return {
             value: percentageRule.value,
             variationId: percentageRule.variationId,
-            matchedRule: percentageRule
+            matchedPercentageOption: percentageRule
           };
         }
       }
@@ -531,10 +531,11 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   }
 }
 
-interface IEvaluateResult<TRule> {
+export interface IEvaluateResult {
   value: SettingValue;
   variationId?: string;
-  matchedRule?: TRule;
+  matchedTargetingRule?: RolloutRule;
+  matchedPercentageOption?: RolloutPercentageItem;
 }
 
 class EvaluateLogger {
@@ -560,16 +561,16 @@ class EvaluateLogger {
 
 /* Helper functions */
 
-function evaluationDetailsFromEvaluateResult(key: string, evaluateResult: IEvaluateResult<object | undefined>, fetchTime?: Date, user?: User): IEvaluationDetails {
+function evaluationDetailsFromEvaluateResult<T extends SettingValue>(key: string, evaluateResult: IEvaluateResult, fetchTime?: Date, user?: User): IEvaluationDetails<SettingTypeOf<T>> {
   return {
     key,
-    value: evaluateResult.value,
+    value: evaluateResult.value as SettingTypeOf<T>,
     variationId: evaluateResult.variationId,
     fetchTime,
     user,
     isDefaultValue: false,
-    matchedEvaluationRule: evaluateResult.matchedRule instanceof RolloutRule ? evaluateResult.matchedRule : void 0,
-    matchedEvaluationPercentageRule: evaluateResult.matchedRule instanceof RolloutPercentageItem ? evaluateResult.matchedRule : void 0,
+    matchedEvaluationRule: evaluateResult.matchedTargetingRule,
+    matchedEvaluationPercentageRule: evaluateResult.matchedPercentageOption,
   };
 }
 
@@ -600,13 +601,13 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  const evaluationDetails = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
+  const evaluateResult = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
 
-  if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluationDetails.value) {
-    throw new TypeError(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluationDetails.value}.\nPlease pass a corresponding default value type.`);
+  if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluateResult.value) {
+    throw new TypeError(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluateResult.value}.\nPlease pass a corresponding default value type.`);
   }
 
-  return evaluationDetails as IEvaluationDetails<SettingTypeOf<T>>;
+  return evaluationDetailsFromEvaluateResult<T>(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
 }
 
 export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
@@ -623,7 +624,8 @@ export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: str
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
-      evaluationDetails = evaluator.evaluate(setting, key, null, user, remoteConfig);
+      const evaluateResult = evaluator.evaluate(setting, key, null, user, remoteConfig);
+      evaluationDetails = evaluationDetailsFromEvaluateResult(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
     }
     catch (err) {
       errors ??= [];
@@ -652,6 +654,10 @@ export function isAllowedValue(value: SettingValue): boolean {
     || typeof value === "boolean"
     || typeof value === "number"
     || typeof value === "string";
+}
+
+export function getTimestampAsDate(projectConfig: ProjectConfig | null): Date | undefined {
+  return projectConfig ? new Date(projectConfig.timestamp) : void 0;
 }
 
 function keysToString(settings: { [name: string]: Setting }) {
