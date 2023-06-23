@@ -371,7 +371,7 @@ export class ConfigCatClient implements IConfigCatClient {
     this.options.logger.debug("getAllValuesAsync() called.");
 
     const defaultReturnValue = "empty array";
-    let result: SettingKeyValue[], evaluationDetailsArray: IEvaluationDetails[];
+    let evaluationDetailsArray: IEvaluationDetails[];
     user ??= this.defaultUser;
     try {
       const [settings, remoteConfig] = await this.getSettingsAsync();
@@ -380,13 +380,13 @@ export class ConfigCatClient implements IConfigCatClient {
       if (errors?.length) {
         throw typeof AggregateError !== "undefined" ? new AggregateError(errors) : errors.pop();
       }
-      result = evaluationDetailsArray.map(details => new SettingKeyValue(details.key, details.value));
     }
     catch (err) {
       this.options.logger.settingEvaluationError("getAllValuesAsync", defaultReturnValue, err);
       evaluationDetailsArray ??= [];
-      result = [];
     }
+
+    const result = evaluationDetailsArray.map(details => new SettingKeyValue(details.key, details.value));
 
     for (const evaluationDetail of evaluationDetailsArray) {
       this.options.hooks.emit("flagEvaluated", evaluationDetail);
