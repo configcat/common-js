@@ -496,6 +496,24 @@ describe("ConfigCatClient", () => {
     assert.equal(configChangedEventCount, 3);
   });
 
+  it("Initialization With AutoPollOptions - config doesn't change - should fire configChanged only once", async () => {
+
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+    let configChangedEventCount = 0;
+    const pollIntervalSeconds = 1;
+    const userOptions: IAutoPollOptions = {
+      logger: null,
+      pollIntervalSeconds,
+      setupHooks: hooks => hooks.on("configChanged", () => configChangedEventCount++)
+    };
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", userOptions, null);
+    new ConfigCatClient(options, configCatKernel);
+
+    await delay(2.5 * pollIntervalSeconds * 1000);
+
+    assert.equal(configChangedEventCount, 1);
+  });
+
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait", async () => {
 
     const maxInitWaitTimeSeconds = 2;
