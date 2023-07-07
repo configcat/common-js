@@ -99,16 +99,15 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     const success = fetchResult.status === FetchStatus.Fetched;
     if (success
         || fetchResult.config.timestamp > latestConfig.timestamp && (!fetchResult.config.isEmpty || latestConfig.isEmpty)) {
+      await this.options.cache.set(this.cacheKey, fetchResult.config);
+
+      this.onConfigUpdated(fetchResult.config);
+
+      if (success && fetchResult.config.configJson != latestConfig.configJson) {
+        this.onConfigChanged(fetchResult.config);
+      }
 
       latestConfig = fetchResult.config;
-
-      await this.options.cache.set(this.cacheKey, latestConfig);
-
-      this.onConfigUpdated(latestConfig);
-
-      if (success) {
-        this.onConfigChanged(latestConfig);
-      }
     }
 
     return [fetchResult, latestConfig];
