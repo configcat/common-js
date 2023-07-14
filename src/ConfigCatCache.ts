@@ -22,6 +22,8 @@ export interface IConfigCache {
   set(key: string, config: ProjectConfig): Promise<void> | void;
 
   get(key: string): Promise<ProjectConfig> | ProjectConfig;
+
+  getInMemory(): ProjectConfig
 }
 
 export class InMemoryConfigCache implements IConfigCache {
@@ -32,6 +34,10 @@ export class InMemoryConfigCache implements IConfigCache {
   }
 
   get(_key: string): ProjectConfig {
+    return this.cachedConfig;
+  }
+
+  getInMemory(): ProjectConfig {
     return this.cachedConfig;
   }
 }
@@ -81,6 +87,10 @@ export class ExternalConfigCache implements IConfigCache {
       this.logger.configServiceCacheReadError(err);
     }
 
+    return this.cachedConfig;
+  }
+
+  getInMemory(): ProjectConfig {
     return this.cachedConfig;
   }
 }

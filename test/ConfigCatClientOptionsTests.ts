@@ -408,6 +408,9 @@ class FakeCache implements IConfigCache {
   get(key: string): ProjectConfig {
     throw new Error("Method not implemented.");
   }
+  getInMemory(): ProjectConfig {
+    throw new Error("Method not implemented.");    
+  }
 }
 
 class FakeExternalCache implements IConfigCatCache {

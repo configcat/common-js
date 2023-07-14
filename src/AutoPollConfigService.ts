@@ -3,7 +3,8 @@ import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ConfigServiceBase } from "./ConfigServiceBase";
-import type { ProjectConfig } from "./ProjectConfig";
+import { ClientReadyState } from "./Hooks";
+import { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
@@ -32,7 +33,12 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         resolve();
       });
 
-      this.initialization.then(() => !this.disposed && options.hooks.emit("clientReady"));
+      this.initialization.then(() => {
+        if (!this.disposed) {
+          options.hooks.emit("clientReady");
+          options.hooks.emit("clientReadyWithState", this.getReadyState());
+        }
+      });
 
       if (options.maxInitWaitTimeSeconds > 0) {
         setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
@@ -42,6 +48,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       this.initialized = true;
       this.initialization = Promise.resolve();
       options.hooks.emit("clientReady");
+      options.hooks.emit("clientReadyWithState", this.getReadyState())
     }
 
     if (!options.offline) {
@@ -166,5 +173,19 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
     this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
+  }
+
+  private getReadyState(): ClientReadyState {
+    const flagData = this.options.cache.getInMemory();
+
+    if (flagData.isEmpty) {
+      return ClientReadyState.NoFlagData;
+    }
+    
+    if (flagData.isExpired(this.pollIntervalMs)) {
+      return ClientReadyState.HasCachedFlagDataOnly;
+    }
+
+    return ClientReadyState.HasUpToDateFlagData;
   }
 }

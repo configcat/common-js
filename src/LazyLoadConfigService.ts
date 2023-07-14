@@ -3,6 +3,7 @@ import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ConfigServiceBase } from "./ConfigServiceBase";
+import { ClientReadyState } from "./Hooks";
 import type { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
@@ -16,6 +17,8 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
     this.cacheTimeToLiveMs = options.cacheTimeToLiveSeconds * 1000;
 
     options.hooks.emit("clientReady");
+    // lazy load gets the flag data at the first getValue() call.
+    options.hooks.emit("clientReadyWithState", ClientReadyState.NoFlagData);
   }
 
   async getConfig(): Promise<ProjectConfig> {

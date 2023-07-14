@@ -26,6 +26,8 @@ export enum OverrideBehaviour {
 
 export interface IOverrideDataSource {
   getOverrides(): Promise<{ [name: string]: Setting }>;
+
+  getOverridesSync(): { [name: string]: Setting };
 }
 
 export class MapOverrideDataSource implements IOverrideDataSource {
@@ -39,6 +41,10 @@ export class MapOverrideDataSource implements IOverrideDataSource {
 
   getOverrides(): Promise<{ [name: string]: Setting }> {
     return Promise.resolve(this.map);
+  }
+
+  getOverridesSync(): { [name: string]: Setting } {
+    return this.map;
   }
 }
 

@@ -7,14 +7,14 @@ import { AutoPollOptions, IAutoPollOptions, IManualPollOptions, LazyLoadOptions,
 import { LogLevel } from "../src/ConfigCatLogger";
 import { IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
-import { IProvidesHooks } from "../src/Hooks";
+import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import { Config, IConfig, ProjectConfig, Setting } from "../src/ProjectConfig";
 import { IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClient", () => {
@@ -546,6 +546,78 @@ describe("ConfigCatClient", () => {
     assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
     assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
     assert.equal(actualValue, false);
+  });
+
+  describe("Initialization With AutoPollOptions - with waitForReady", async () => {
+
+    const maxInitWaitTimeSeconds = 1;
+      const configFetcher = new FakeConfigFetcherBase("{}", 0, (lastConfig, lastETag) => ({
+        statusCode: 500,
+        reasonPhrase: "",
+        eTag: (lastETag as any | 0) + 1 + "",
+        body: lastConfig
+      } as IFetchResponse));
+  
+
+    it("should wait", async () => {
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { }, null);
+
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+
+      assert.equal(state, ClientReadyState.HasUpToDateFlagData);
+      assert.equal(client.getValue("debug", false), true);
+    });
+
+    it("should wait for maxInitWaitTimeSeconds", async () => {
+
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+  
+      const startDate: number = new Date().getTime();
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+      const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+  
+      assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
+      assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+  
+      assert.equal(state, ClientReadyState.NoFlagData);
+      assert.equal(client.getValue("debug", false), false);
+    });
+  
+    it("should wait for maxInitWaitTimeSeconds and return cached", async () => {
+  
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { 
+        maxInitWaitTimeSeconds: maxInitWaitTimeSeconds, 
+        cache: new FakeExternalCacheWithInitialData(120_000) 
+      }, null);
+  
+      const startDate: number = new Date().getTime();
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+      const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+  
+      assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
+      assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+  
+      assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
+      assert.equal(client.getValue("debug", false), true);
+    });
+  
+    it("should wait and return cached - expired", async () => {
+  
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { cache: new FakeExternalCacheWithInitialData(120_000) }, null);
+  
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+  
+      assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
+      assert.equal(client.getValue("debug", false), true);
+    });    
   });
 
   it("getValueAsync - User.Identifier is an empty string - should return evaluated value", async () => {
