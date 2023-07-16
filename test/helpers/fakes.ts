@@ -113,7 +113,7 @@ export class FakeConfigFetcherWithTwoKeysAndRules extends FakeConfigFetcher {
 
 export class FakeConfigFetcherWithRules extends FakeConfigFetcher {
   static get configJson(): string {
-    return '{"f": { "debug": { "v": "defaultValue", "i": "defaultVariationId", "t": 0, "p": [], "r": [{ "o":0, "a":"eyeColor", "t":0, "c":"red", "v":"redValue", "i":"redVariationId"}, { "o":1, "a":"eyeColor", "t":0, "c":"blue", "v":"blueValue", "i":"blueVariationId"}] } } }';
+    return '{"f": { "debug": { "v": "defaultValue", "i": "defaultVariationId", "t": 0, "p": [], "r": [{ "o":0, "a":"eyeColor", "t":0, "c":"red", "v":"redValue", "i":"redVariationId"}, { "o":1, "a":"eyeColor", "t":0, "c":"blue", "v":"blueValue", "i":"blueVariationId"}, { "o":0, "a":"isAdmin ", "t":0, "c":"true", "v":"adminUser", "i":"isAdminVariationId"}] } } }';
   }
 }
 

@@ -300,6 +300,15 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
+  invalidUserObjectCustomPropertyType(propertyName: string, propertyType: string): LogMessage {
+    return this.log(
+      LogLevel.Warn,
+      3203,
+      FormattableLogMessage.from(
+        "ATTRIBUTE_NAME", "INVALID_TYPE")`The '\'${propertyName}\'''s type in user object is \`${propertyType}\` instead of string.`
+    );
+  }
+
   /* SDK-specific warning messages (4000-4999) */
 
   /* Common info messages (5000-5999) */

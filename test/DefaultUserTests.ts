@@ -154,5 +154,14 @@ describe("DefaultUser", () => {
     assert.equal(variationIds[0], "defaultVariationId");
   });
 
+  // it("Default user set works", async () => {
+  //   const userWithNonStringCustomAttribute = { identifier: "123", custom: { "isAdmin": true } };
+
+  //   const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithRules(), sdkType: "common", sdkVersion: "1.0.0" };
+  //   const client: IConfigCatClient = createClientWithAutoPoll("APIKEY", configCatKernel, { logger: configcatClient.createConsoleLogger(configcatClient.LogLevel.Debug) });
+
+  //   // Evaluate flag when user object has a non-string custom attribute
+  //   const value = await client.getValueAsync("debug", "DEFAULT_VALUE", userWithNonStringCustomAttribute);
+  // });
 });
 

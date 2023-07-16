@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json",
     "prepare": "npm run build",
     "test": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
-    "test-debug": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --fgrep \"TITLE_OF_TEST\" --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
+    "test-debug": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --fgrep \"Default user set works\" --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix"
   },

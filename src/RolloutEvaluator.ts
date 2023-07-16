@@ -483,8 +483,18 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case "Country":
         return user.country;
       default:
-        return (user.custom || {})[attribute];
+        return this.getUserCustomAttribute(user, attribute);
     }
+  }
+
+  private getUserCustomAttribute(user: User, attribute: string): string | undefined {
+    if (user.custom && user.custom[attribute] && typeof user.custom[attribute] !== typeof String) {
+      this.logger.invalidUserObjectCustomPropertyType(attribute, typeof user.custom[attribute]);
+
+      return new String(user.custom[attribute]).toString();
+    }
+
+    return (user.custom || {})[attribute];
   }
 
   private ruleToString(rule: Comparator): string {

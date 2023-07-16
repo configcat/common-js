@@ -3,6 +3,7 @@
   "compilerOptions": {
     "target": "ES5",
     "module": "CommonJS",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "allowJs": true
   }
 }
