@@ -16,6 +16,7 @@ import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
 import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
+import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 
 describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions should create an instance, getValueAsync works", async () => {
@@ -548,7 +549,7 @@ describe("ConfigCatClient", () => {
     assert.equal(actualValue, false);
   });
 
-  describe("Initialization With AutoPollOptions - with waitForReady", async () => {
+  describe("Initialization - with waitForReady", async () => {
 
     const maxInitWaitTimeSeconds = 1;
       const configFetcher = new FakeConfigFetcherBase("{}", 0, (lastConfig, lastETag) => ({
@@ -559,7 +560,7 @@ describe("ConfigCatClient", () => {
       } as IFetchResponse));
   
 
-    it("should wait", async () => {
+    it("AutoPoll - should wait", async () => {
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { }, null);
 
@@ -570,7 +571,7 @@ describe("ConfigCatClient", () => {
       assert.equal(client.getValue("debug", false), true);
     });
 
-    it("should wait for maxInitWaitTimeSeconds", async () => {
+    it("AutoPoll - should wait for maxInitWaitTimeSeconds", async () => {
 
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
@@ -587,7 +588,7 @@ describe("ConfigCatClient", () => {
       assert.equal(client.getValue("debug", false), false);
     });
   
-    it("should wait for maxInitWaitTimeSeconds and return cached", async () => {
+    it("AutoPoll - should wait for maxInitWaitTimeSeconds and return cached", async () => {
   
       const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { 
@@ -605,19 +606,71 @@ describe("ConfigCatClient", () => {
   
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
       assert.equal(client.getValue("debug", false), true);
-    });
-  
-    it("should wait and return cached - expired", async () => {
+    });    
+
+    it("LazyLoad - return cached", async () => {
   
       const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
-      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { cache: new FakeExternalCacheWithInitialData(120_000) }, null);
+      const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { 
+        cache: new FakeExternalCacheWithInitialData()
+      }, null);
+  
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+      
+      assert.equal(state, ClientReadyState.HasUpToDateFlagData);
+      assert.equal(client.getValue("debug", false), true);
+    });    
+
+    it("LazyLoad - expired, return cached", async () => {
+  
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { 
+        cache: new FakeExternalCacheWithInitialData(120_000) 
+      }, null);
   
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
   
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
       assert.equal(client.getValue("debug", false), true);
+    }); 
+    
+    it("ManualPoll - return cached", async () => {
+  
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", { 
+        cache: new FakeExternalCacheWithInitialData()
+      }, null);
+  
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+      
+      assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
+      assert.equal(client.getValue("debug", false), true);
     });    
+
+    it("ManualPoll - flag override - local only", async () => {
+      const configCatKernel: FakeConfigCatKernel = {
+        configFetcher: configFetcher,
+        sdkType: "common",
+        sdkVersion: "1.0.0"
+      };
+      const options: ManualPollOptions = new ManualPollOptions("localhost", "common", "1.0.0", {
+        flagOverrides: {
+          dataSource: new MapOverrideDataSource({
+            "fakeKey": true,
+          }),
+          behaviour: OverrideBehaviour.LocalOnly
+        }
+      }, null);
+  
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const state = await client.waitForReady();
+      
+      assert.equal(state, ClientReadyState.HasLocalOverrideFlagDataOnly);
+      assert.equal(client.getValue("fakeKey", false), true);
+    });
   });
 
   it("getValueAsync - User.Identifier is an empty string - should return evaluated value", async () => {
@@ -1151,11 +1204,13 @@ describe("ConfigCatClient", () => {
         setupHooks(client);
       }
 
-      const expectedClientReadyEventCount = addListenersViaOptions ? 1 : 0;
-      assert.equal(expectedClientReadyEventCount, clientReadyEventCount);
-      assert.equal(0, configChangedEvents.length);
-      assert.equal(0, flagEvaluatedEvents.length);
-      assert.equal(0, errorEvents.length);
+      const state = await client.waitForReady();
+
+      assert.equal(state, ClientReadyState.NoFlagData);
+      assert.equal(clientReadyEventCount, 1);
+      assert.equal(configChangedEvents.length, 0);
+      assert.equal(flagEvaluatedEvents.length, 0);
+      assert.equal(errorEvents.length, 0);
 
       // 2. Fetch fails
       const originalConfigService = client["configService"] as ConfigServiceBase<OptionsBase>;
@@ -1170,11 +1225,11 @@ describe("ConfigCatClient", () => {
 
       await client.forceRefreshAsync();
 
-      assert.equal(0, configChangedEvents.length);
-      assert.equal(1, errorEvents.length);
+      assert.equal(configChangedEvents.length, 0);
+      assert.equal(errorEvents.length, 1);
       const [actualErrorMessage, actualErrorException] = errorEvents[0];
       expect(actualErrorMessage).to.includes(expectedErrorMessage);
-      assert.strictEqual(expectedErrorException, actualErrorException);
+      assert.strictEqual(actualErrorException, expectedErrorException);
 
       // 3. Fetch succeeds
       client["configService"] = originalConfigService;
@@ -1182,8 +1237,8 @@ describe("ConfigCatClient", () => {
       await client.forceRefreshAsync();
       const cachedPc = await configCache.get("");
 
-      assert.equal(1, configChangedEvents.length);
-      assert.strictEqual(cachedPc.config, configChangedEvents[0]);
+      assert.equal(configChangedEvents.length, 1);
+      assert.strictEqual(configChangedEvents[0], cachedPc.config);
 
       // 4. All flags are evaluated
       const keys = await client.getAllKeysAsync();
@@ -1198,10 +1253,10 @@ describe("ConfigCatClient", () => {
       // 5. Client gets disposed
       client.dispose();
 
-      assert.equal(expectedClientReadyEventCount, clientReadyEventCount);
-      assert.equal(1, configChangedEvents.length);
+      assert.equal(clientReadyEventCount, 1);
+      assert.equal(configChangedEvents.length, 1);
       assert.equal(evaluationDetails.length, flagEvaluatedEvents.length);
-      assert.equal(1, errorEvents.length);
+      assert.equal(errorEvents.length, 1);
     });
   }
 

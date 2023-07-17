@@ -8,7 +8,7 @@ import type { IConfigService } from "./ConfigServiceBase";
 import { RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
 import { OverrideBehaviour } from "./FlagOverrides";
-import type { ClientReadyState, HookEvents, Hooks, IProvidesHooks } from "./Hooks";
+import { ClientReadyState, HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
@@ -270,16 +270,13 @@ export class ConfigCatClient implements IConfigCatClient {
     this.evaluator = new RolloutEvaluator(options.logger);
 
     if (options.flagOverrides?.behaviour !== OverrideBehaviour.LocalOnly) {
-      const configServiceClass =
-        options instanceof AutoPollOptions ? AutoPollConfigService :
-        options instanceof ManualPollOptions ? ManualPollConfigService :
-        options instanceof LazyLoadOptions ? LazyLoadConfigService :
+      this.configService = options instanceof AutoPollOptions ? new AutoPollConfigService(configCatKernel.configFetcher, options) :
+        options instanceof ManualPollOptions ? new  ManualPollConfigService(configCatKernel.configFetcher, options) :
+        options instanceof LazyLoadOptions ? new  LazyLoadConfigService(configCatKernel.configFetcher, options) :
         (() => { throw new Error("Invalid 'options' value"); })();
-
-      this.configService = new configServiceClass(configCatKernel.configFetcher, options);
     }
     else {
-      this.options.hooks.emit("clientReady");
+      this.options.signalReadyState(ClientReadyState.HasLocalOverrideFlagDataOnly);
     }
 
     this.suppressFinalize = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
@@ -362,7 +359,7 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getValue<T extends SettingValue>(key: string, defaultValue: T, user?: User): SettingTypeOf<T> {
-    this.options.logger.debug("getValueAsync() called.");
+    this.options.logger.debug("getValue() called.");
 
     validateKey(key);
     ensureAllowedDefaultValue(defaultValue);
@@ -410,7 +407,7 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   getValueDetails<T extends SettingValue>(key: string, defaultValue: T, user?: User): IEvaluationDetails<SettingTypeOf<T>> {
-    this.options.logger.debug("getValueDetailsAsync() called.");
+    this.options.logger.debug("getValueDetails() called.");
 
     validateKey(key);
     ensureAllowedDefaultValue(defaultValue);

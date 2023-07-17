@@ -1,6 +1,7 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
+import { ClientReadyState } from "./Hooks";
 import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
 
 /** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
@@ -280,5 +281,12 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     else if (this.disposed) {
       this.options.logger.configServiceMethodHasNoEffectDueToDisposedClient("setOffline");
     }
+  }
+
+  protected abstract getReadyState(flagData: ProjectConfig): ClientReadyState;
+
+  protected async syncUpWithCache() {
+    const flagData = await this.options.cache.get(this.cacheKey);
+    this.options.signalReadyState(this.getReadyState(flagData));
   }
 }

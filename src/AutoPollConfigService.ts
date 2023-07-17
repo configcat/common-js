@@ -35,8 +35,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
       this.initialization.then(() => {
         if (!this.disposed) {
-          options.hooks.emit("clientReady");
-          options.hooks.emit("clientReadyWithState", this.getReadyState());
+          options.signalReadyState(this.getReadyState(options.cache.getInMemory()));
         }
       });
 
@@ -47,8 +46,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     else {
       this.initialized = true;
       this.initialization = Promise.resolve();
-      options.hooks.emit("clientReady");
-      options.hooks.emit("clientReadyWithState", this.getReadyState())
+      options.signalReadyState(this.getReadyState(options.cache.getInMemory()));
     }
 
     if (!options.offline) {
@@ -175,9 +173,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
-  private getReadyState(): ClientReadyState {
-    const flagData = this.options.cache.getInMemory();
-
+  protected getReadyState(flagData: ProjectConfig): ClientReadyState {
     if (flagData.isEmpty) {
       return ClientReadyState.NoFlagData;
     }

@@ -6,6 +6,7 @@ import type { IEvaluationDetails } from "./RolloutEvaluator";
 /** Contains the initialization state of `ConfigCatClient`. */
 export enum ClientReadyState {
   NoFlagData,
+  HasLocalOverrideFlagDataOnly,
   HasCachedFlagDataOnly,
   HasUpToDateFlagData,
 }

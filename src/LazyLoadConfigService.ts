@@ -15,10 +15,7 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
     super(configFetcher, options);
 
     this.cacheTimeToLiveMs = options.cacheTimeToLiveSeconds * 1000;
-
-    options.hooks.emit("clientReady");
-    // lazy load gets the flag data at the first getValue() call.
-    options.hooks.emit("clientReadyWithState", ClientReadyState.NoFlagData);
+    super.syncUpWithCache();
   }
 
   async getConfig(): Promise<ProjectConfig> {
@@ -48,5 +45,17 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
     this.options.logger.debug("LazyLoadConfigService.refreshConfigAsync() called.");
     return super.refreshConfigAsync();
+  }
+
+  protected getReadyState(flagData: ProjectConfig): ClientReadyState {
+    if (flagData.isEmpty) {
+      return ClientReadyState.NoFlagData;
+    }
+    
+    if (flagData.isExpired(this.cacheTimeToLiveMs)) {
+      return ClientReadyState.HasCachedFlagDataOnly;
+    }
+
+    return ClientReadyState.HasUpToDateFlagData;
   }
 }

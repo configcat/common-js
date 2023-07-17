@@ -11,9 +11,15 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
 
     super(configFetcher, options);
 
-    options.hooks.emit("clientReady");
-    // manual poll needs at least one force refresh to get flag data.
-    options.hooks.emit("clientReadyWithState", ClientReadyState.NoFlagData);
+    super.syncUpWithCache();
+  }
+
+  protected getReadyState(flagData: ProjectConfig): ClientReadyState {
+    if (flagData.isEmpty) {
+      return ClientReadyState.NoFlagData;
+    }
+
+    return ClientReadyState.HasCachedFlagDataOnly;
   }
 
   async getConfig(): Promise<ProjectConfig> {

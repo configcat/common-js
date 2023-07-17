@@ -4,6 +4,7 @@ import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
+import { ClientReadyState } from "../src/Hooks";
 
 const globalUrl = "https://cdn-global.configcat.com";
 const euOnlyUrl = "https://cdn-eu.configcat.com";
@@ -301,5 +302,9 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
 
   private getUrl(baseUrl: string) {
     return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.options.clientVersion;
+  }
+
+  protected getReadyState(flagData: ProjectConfig): ClientReadyState {
+    throw new Error("Method not implemented.");
   }
 }

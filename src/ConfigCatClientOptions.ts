@@ -236,6 +236,11 @@ export abstract class OptionsBase {
   getCacheKey(): string {
     return sha1(`${this.apiKey}_${OptionsBase.configFileName}_${ProjectConfig.serializationFormatVersion}`);
   }
+
+  signalReadyState(state: ClientReadyState) {
+    this.hooks.emit("clientReady");
+    this.hooks.emit("clientReadyWithState", state);
+  }
 }
 
 export class AutoPollOptions extends OptionsBase {
