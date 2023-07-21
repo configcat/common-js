@@ -181,7 +181,7 @@ export abstract class OptionsBase {
 
     const eventEmitter = eventEmitterFactory?.() ?? new DefaultEventEmitter();
     this.hooks = new Hooks(eventEmitter);
-    this.readyPromise = new Promise(resolve => eventEmitter.once("clientReadyWithState", resolve));
+    this.readyPromise = new Promise(resolve => this.hooks.once("clientReady", resolve));
 
     let logger: IConfigCatLogger | null | undefined;
     let cache: IConfigCatCache | null | undefined;
@@ -235,11 +235,6 @@ export abstract class OptionsBase {
 
   getCacheKey(): string {
     return sha1(`${this.apiKey}_${OptionsBase.configFileName}_${ProjectConfig.serializationFormatVersion}`);
-  }
-
-  signalReadyState(state: ClientReadyState) {
-    this.hooks.emit("clientReady");
-    this.hooks.emit("clientReadyWithState", state);
   }
 }
 

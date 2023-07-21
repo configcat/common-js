@@ -99,3 +99,5 @@ export { OverrideBehaviour } from "./FlagOverrides";
 export { RefreshResult } from "./ConfigServiceBase";
 
 export type { IProvidesHooks, HookEvents } from "./Hooks";
+
+export { ClientReadyState } from "./Hooks";

@@ -23,7 +23,7 @@ export interface IConfigCache {
 
   get(key: string): Promise<ProjectConfig> | ProjectConfig;
 
-  getInMemory(): ProjectConfig
+  getInMemory(): ProjectConfig;
 }
 
 export class InMemoryConfigCache implements IConfigCache {

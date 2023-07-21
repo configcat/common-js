@@ -14,8 +14,8 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
     super.syncUpWithCache();
   }
 
-  protected getReadyState(flagData: ProjectConfig): ClientReadyState {
-    if (flagData.isEmpty) {
+  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+    if (cachedConfig.isEmpty) {
       return ClientReadyState.NoFlagData;
     }
 

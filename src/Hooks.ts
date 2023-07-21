@@ -14,9 +14,7 @@ export enum ClientReadyState {
 /** Hooks (events) that can be emitted by `ConfigCatClient`. */
 export type HookEvents = {
   /** Occurs when the client is ready to provide the actual value of feature flags or settings. */
-  clientReady: [];
-  /** Occurs when the client is ready to provide the actual value of feature flags or settings. */
-  clientReadyWithState: [state: ClientReadyState];
+  clientReady: [state: ClientReadyState];
   /** Occurs after the value of a feature flag of setting has been evaluated. */
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
   /** Occurs after the locally cached config has been updated. */

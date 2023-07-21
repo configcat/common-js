@@ -4,7 +4,7 @@ import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ConfigServiceBase } from "./ConfigServiceBase";
 import { ClientReadyState } from "./Hooks";
-import { ProjectConfig } from "./ProjectConfig";
+import type { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
@@ -35,7 +35,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
       this.initialization.then(() => {
         if (!this.disposed) {
-          options.signalReadyState(this.getReadyState(options.cache.getInMemory()));
+          options.hooks.emit("clientReady", this.getReadyState(options.cache.getInMemory()));
         }
       });
 
@@ -46,7 +46,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     else {
       this.initialized = true;
       this.initialization = Promise.resolve();
-      options.signalReadyState(this.getReadyState(options.cache.getInMemory()));
+      options.hooks.emit("clientReady", this.getReadyState(options.cache.getInMemory()));
     }
 
     if (!options.offline) {
@@ -173,12 +173,12 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
-  protected getReadyState(flagData: ProjectConfig): ClientReadyState {
-    if (flagData.isEmpty) {
+  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+    if (cachedConfig.isEmpty) {
       return ClientReadyState.NoFlagData;
     }
-    
-    if (flagData.isExpired(this.pollIntervalMs)) {
+
+    if (cachedConfig.isExpired(this.pollIntervalMs)) {
       return ClientReadyState.HasCachedFlagDataOnly;
     }
 
