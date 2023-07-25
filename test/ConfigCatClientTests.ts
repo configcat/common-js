@@ -519,7 +519,7 @@ describe("ConfigCatClient", () => {
     const maxInitWaitTimeSeconds = 2;
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(500), sdkType: "common", sdkVersion: "1.0.0" };
-    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
     const startDate: number = new Date().getTime();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -535,15 +535,15 @@ describe("ConfigCatClient", () => {
 
     const maxInitWaitTimeSeconds = 1;
 
-    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(10000), sdkType: "common", sdkVersion: "1.0.0" };
+    const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
     const startDate: number = new Date().getTime();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
     const ellapsedMilliseconds: number = new Date().getTime() - startDate;
 
-    assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
+    assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
     assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
     assert.equal(actualValue, false);
   });
