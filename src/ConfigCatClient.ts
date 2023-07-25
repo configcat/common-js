@@ -8,11 +8,12 @@ import type { IConfigService } from "./ConfigServiceBase";
 import { RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
 import { OverrideBehaviour } from "./FlagOverrides";
-import { ClientReadyState, HookEvents, Hooks, IProvidesHooks } from "./Hooks";
+import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
+import { ClientReadyState } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
-import type { ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
+import type { IConfig, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, isAllowedValue } from "./RolloutEvaluator";
 import { errorToString } from "./Utils";
@@ -35,20 +36,6 @@ export interface IConfigCatClient extends IProvidesHooks {
   getValueAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<SettingTypeOf<T>>;
 
   /**
-   * Returns the value of a feature flag or setting identified by `key` synchronously from the cache.
-   * @remarks
-   * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
-   * Please refer to {@link https://configcat.com/docs/sdk-reference/js/#setting-type-mapping | this table} for the corresponding types.
-   * @param key Key of the feature flag or setting.
-   * @param defaultValue In case of failure, this value will be returned. Only the following types are allowed: `string`, `boolean`, `number`, `null` and `undefined`.
-   * @param user The User Object to use for evaluating targeting rules and percentage options.
-   * @returns The cached value of the feature flag or setting.
-   * @throws {Error} `key` is empty.
-   * @throws {TypeError} `defaultValue` is not of an allowed type.
-   */
-  getValue<T extends SettingValue>(key: string, defaultValue: T, user?: User): SettingTypeOf<T>;
-
-  /**
    * Returns the value along with evaluation details of a feature flag or setting identified by `key`.
    * @remarks
    * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
@@ -61,20 +48,6 @@ export interface IConfigCatClient extends IProvidesHooks {
    * @throws {TypeError} `defaultValue` is not of an allowed type.
    */
   getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>>;
-
-  /**
-   * Returns the value along with evaluation details of a feature flag or setting identified by `key` synchronously from the cache.
-   * @remarks
-   * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
-   * Please refer to {@link https://configcat.com/docs/sdk-reference/js/#setting-type-mapping | this table} for the corresponding types.
-   * @param key Key of the feature flag or setting.
-   * @param defaultValue In case of failure, this value will be returned. Only the following types are allowed: `string`, `boolean`, `number`, `null` and `undefined`.
-   * @param user The User Object to use for evaluating targeting rules and percentage options.
-   * @returns The cached value along with the details of evaluation of the feature flag or setting.
-   * @throws {Error} `key` is empty.
-   * @throws {TypeError} `defaultValue` is not of an allowed type.
-   */
-  getValueDetails<T extends SettingValue>(key: string, defaultValue: T, user?: User): IEvaluationDetails<SettingTypeOf<T>>;
 
   /**
    * Returns all setting keys.
@@ -118,6 +91,12 @@ export interface IConfigCatClient extends IProvidesHooks {
   waitForReady(): Promise<ClientReadyState>;
 
   /**
+   * Captures the current state of the client.
+   * The resulting snapshot can be used to synchronously evaluate feature flags and settings based on the captured state.
+   */
+  snapshot(): IConfigCatClientSnapshot;
+
+  /**
    * Sets the default user.
    * @param defaultUser The default User Object to use for evaluating targeting rules and percentage options.
    */
@@ -147,6 +126,46 @@ export interface IConfigCatClient extends IProvidesHooks {
    * Releases all resources used by the client.
    */
   dispose(): void;
+}
+
+/** Represents the state of `IConfigCatClient` captured at a specific point in time. */
+export interface IConfigCatClientSnapshot {
+  /** The latest config which has been fetched from the remote server. */
+  readonly fetchedConfig: IConfig | null;
+
+  /**
+   * Returns the available setting keys.
+   * (In case the client is configured to use flag override, this will also include the keys provided by the flag override).
+   */
+  getAllKeys(): ReadonlyArray<string>;
+
+  /**
+   * Returns the value of a feature flag or setting identified by `key` synchronously, based on the snapshot.
+   * @remarks
+   * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
+   * Please refer to {@link https://configcat.com/docs/sdk-reference/js/#setting-type-mapping | this table} for the corresponding types.
+   * @param key Key of the feature flag or setting.
+   * @param defaultValue In case of failure, this value will be returned. Only the following types are allowed: `string`, `boolean`, `number`, `null` and `undefined`.
+   * @param user The User Object to use for evaluating targeting rules and percentage options.
+   * @returns The cached value of the feature flag or setting.
+   * @throws {Error} `key` is empty.
+   * @throws {TypeError} `defaultValue` is not of an allowed type.
+   */
+  getValue<T extends SettingValue>(key: string, defaultValue: T, user?: User): SettingTypeOf<T>;
+
+  /**
+ * Returns the value along with evaluation details of a feature flag or setting identified by `key` synchronously, based on the snapshot.
+ * @remarks
+ * It is important to provide an argument for the `defaultValue` parameter that matches the type of the feature flag or setting you are evaluating.
+ * Please refer to {@link https://configcat.com/docs/sdk-reference/js/#setting-type-mapping | this table} for the corresponding types.
+ * @param key Key of the feature flag or setting.
+ * @param defaultValue In case of failure, this value will be returned. Only the following types are allowed: `string`, `boolean`, `number`, `null` and `undefined`.
+ * @param user The User Object to use for evaluating targeting rules and percentage options.
+ * @returns The cached value along with the details of evaluation of the feature flag or setting.
+ * @throws {Error} `key` is empty.
+ * @throws {TypeError} `defaultValue` is not of an allowed type.
+ */
+  getValueDetails<T extends SettingValue>(key: string, defaultValue: T, user?: User): IEvaluationDetails<SettingTypeOf<T>>;
 }
 
 export interface IConfigCatKernel {
@@ -270,13 +289,14 @@ export class ConfigCatClient implements IConfigCatClient {
     this.evaluator = new RolloutEvaluator(options.logger);
 
     if (options.flagOverrides?.behaviour !== OverrideBehaviour.LocalOnly) {
-      this.configService = options instanceof AutoPollOptions ? new AutoPollConfigService(configCatKernel.configFetcher, options) :
-        options instanceof ManualPollOptions ? new  ManualPollConfigService(configCatKernel.configFetcher, options) :
-        options instanceof LazyLoadOptions ? new  LazyLoadConfigService(configCatKernel.configFetcher, options) :
+      this.configService =
+        options instanceof AutoPollOptions ? new AutoPollConfigService(configCatKernel.configFetcher, options) :
+        options instanceof ManualPollOptions ? new ManualPollConfigService(configCatKernel.configFetcher, options) :
+        options instanceof LazyLoadOptions ? new LazyLoadConfigService(configCatKernel.configFetcher, options) :
         (() => { throw new Error("Invalid 'options' value"); })();
     }
     else {
-      this.options.signalReadyState(ClientReadyState.HasLocalOverrideFlagDataOnly);
+      this.options.hooks.emit("clientReady", ClientReadyState.HasLocalOverrideFlagDataOnly);
     }
 
     this.suppressFinalize = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
@@ -358,31 +378,6 @@ export class ConfigCatClient implements IConfigCatClient {
     return value;
   }
 
-  getValue<T extends SettingValue>(key: string, defaultValue: T, user?: User): SettingTypeOf<T> {
-    this.options.logger.debug("getValue() called.");
-
-    validateKey(key);
-    ensureAllowedDefaultValue(defaultValue);
-
-    let value: SettingTypeOf<T>, evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
-    let remoteConfig: ProjectConfig | null = null;
-    user ??= this.defaultUser;
-    try {
-      let settings: { [name: string]: Setting } | null;
-      [settings, remoteConfig] = this.getSettingsFromCache();
-      evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
-      value = evaluationDetails.value;
-    }
-    catch (err) {
-      this.options.logger.settingEvaluationErrorSingle("getValue", key, "defaultValue", defaultValue, err);
-      evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
-      value = defaultValue as SettingTypeOf<T>;
-    }
-
-    this.options.hooks.emit("flagEvaluated", evaluationDetails);
-    return value;
-  }
-
   async getValueDetailsAsync<T extends SettingValue>(key: string, defaultValue: T, user?: User): Promise<IEvaluationDetails<SettingTypeOf<T>>> {
     this.options.logger.debug("getValueDetailsAsync() called.");
 
@@ -399,29 +394,6 @@ export class ConfigCatClient implements IConfigCatClient {
     }
     catch (err) {
       this.options.logger.settingEvaluationErrorSingle("getValueDetailsAsync", key, "defaultValue", defaultValue, err);
-      evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
-    }
-
-    this.options.hooks.emit("flagEvaluated", evaluationDetails);
-    return evaluationDetails;
-  }
-
-  getValueDetails<T extends SettingValue>(key: string, defaultValue: T, user?: User): IEvaluationDetails<SettingTypeOf<T>> {
-    this.options.logger.debug("getValueDetails() called.");
-
-    validateKey(key);
-    ensureAllowedDefaultValue(defaultValue);
-
-    let evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
-    let remoteConfig: ProjectConfig | null = null;
-    user ??= this.defaultUser;
-    try {
-      let settings: { [name: string]: Setting } | null;
-      [settings, remoteConfig] = this.getSettingsFromCache();
-      evaluationDetails = evaluate(this.evaluator, settings, key, defaultValue, user, remoteConfig, this.options.logger);
-    }
-    catch (err) {
-      this.options.logger.settingEvaluationErrorSingle("getValueDetails", key, "defaultValue", defaultValue, err);
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
     }
 
@@ -592,6 +564,34 @@ export class ConfigCatClient implements IConfigCatClient {
     return this.options.readyPromise;
   }
 
+  snapshot(): IConfigCatClientSnapshot {
+    const getRemoteConfig: () => SettingsWithRemoteConfig = () => {
+      const config = this.options.cache.getInMemory();
+      const settings = !config.isEmpty ? config.config!.settings : null;
+      return [settings, config];
+    };
+
+    let remoteSettings: { [name: string]: Setting } | null;
+    let remoteConfig: ProjectConfig | null;
+    const flagOverrides = this.options?.flagOverrides;
+    if (flagOverrides) {
+      const localSettings = flagOverrides.dataSource.getOverridesSync();
+      switch (flagOverrides.behaviour) {
+        case OverrideBehaviour.LocalOnly:
+          return new Snapshot(localSettings, null, this);
+        case OverrideBehaviour.LocalOverRemote:
+          [remoteSettings, remoteConfig] = getRemoteConfig();
+          return new Snapshot({ ...(remoteSettings ?? {}), ...localSettings }, remoteConfig, this);
+        case OverrideBehaviour.RemoteOverLocal:
+          [remoteSettings, remoteConfig] = getRemoteConfig();
+          return new Snapshot({ ...localSettings, ...(remoteSettings ?? {}) }, remoteConfig, this);
+      }
+    }
+
+    [remoteSettings, remoteConfig] = getRemoteConfig();
+    return new Snapshot(remoteSettings, remoteConfig, this);
+  }
+
   private async getSettingsAsync(): Promise<SettingsWithRemoteConfig> {
     this.options.logger.debug("getSettingsAsync() called.");
 
@@ -619,35 +619,6 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     return await getRemoteConfigAsync();
-  }
-
-  private getSettingsFromCache(): SettingsWithRemoteConfig {
-    this.options.logger.debug("getSettingsFromCache() called.");
-
-    const getRemoteConfig: () => SettingsWithRemoteConfig = () => {
-      const config = this.options.cache.getInMemory();
-      const settings = !config.isEmpty ? config.config!.settings : null;
-      return [settings, config];
-    };
-
-    const flagOverrides = this.options?.flagOverrides;
-    if (flagOverrides) {
-      let remoteSettings: { [name: string]: Setting } | null;
-      let remoteConfig: ProjectConfig | null;
-      const localSettings = flagOverrides.dataSource.getOverridesSync();
-      switch (flagOverrides.behaviour) {
-        case OverrideBehaviour.LocalOnly:
-          return [localSettings, null];
-        case OverrideBehaviour.LocalOverRemote:
-          [remoteSettings, remoteConfig] = getRemoteConfig();
-          return [{ ...(remoteSettings ?? {}), ...localSettings }, remoteConfig];
-        case OverrideBehaviour.RemoteOverLocal:
-          [remoteSettings, remoteConfig] = getRemoteConfig();
-          return [{ ...localSettings, ...(remoteSettings ?? {}) }, remoteConfig];
-      }
-    }
-
-    return getRemoteConfig();
   }
 
   /** @inheritdoc */
@@ -693,6 +664,71 @@ export class ConfigCatClient implements IConfigCatClient {
   /** @inheritdoc */
   eventNames(): Array<keyof HookEvents> {
     return this.options.hooks.eventNames();
+  }
+}
+
+class Snapshot implements IConfigCatClientSnapshot {
+  private readonly defaultUser: User | undefined;
+  private readonly evaluator: IRolloutEvaluator;
+  private readonly options: ConfigCatClientOptions;
+
+  constructor(
+    private readonly mergedSettings: { [name: string]: Setting } | null,
+    private readonly remoteConfig: ProjectConfig | null,
+    client: ConfigCatClient) {
+
+    this.defaultUser = client["defaultUser"];
+    this.evaluator = client["evaluator"];
+    this.options = client["options"];
+  }
+
+  get fetchedConfig() {
+    const config = this.remoteConfig;
+    return config && !config.isEmpty ? config.config! : null;
+  }
+
+  getAllKeys() { return this.mergedSettings ? Object.keys(this.mergedSettings) : []; }
+
+  getValue<T extends SettingValue>(key: string, defaultValue: T, user?: User): SettingTypeOf<T> {
+    this.options.logger.debug("Snapshot.getValue() called.");
+
+    validateKey(key);
+    ensureAllowedDefaultValue(defaultValue);
+
+    let value: SettingTypeOf<T>, evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
+    user ??= this.defaultUser;
+    try {
+      evaluationDetails = evaluate(this.evaluator, this.mergedSettings, key, defaultValue, user, this.remoteConfig, this.options.logger);
+      value = evaluationDetails.value;
+    }
+    catch (err) {
+      this.options.logger.settingEvaluationErrorSingle("Snapshot.getValue", key, "defaultValue", defaultValue, err);
+      evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(this.remoteConfig), user, errorToString(err), err);
+      value = defaultValue as SettingTypeOf<T>;
+    }
+
+    this.options.hooks.emit("flagEvaluated", evaluationDetails);
+    return value;
+  }
+
+  getValueDetails<T extends SettingValue>(key: string, defaultValue: T, user?: User): IEvaluationDetails<SettingTypeOf<T>> {
+    this.options.logger.debug("Snapshot.getValueDetails() called.");
+
+    validateKey(key);
+    ensureAllowedDefaultValue(defaultValue);
+
+    let evaluationDetails: IEvaluationDetails<SettingTypeOf<T>>;
+    user ??= this.defaultUser;
+    try {
+      evaluationDetails = evaluate(this.evaluator, this.mergedSettings, key, defaultValue, user, this.remoteConfig, this.options.logger);
+    }
+    catch (err) {
+      this.options.logger.settingEvaluationErrorSingle("Snapshot.getValueDetails", key, "defaultValue", defaultValue, err);
+      evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(this.remoteConfig), user, errorToString(err), err);
+    }
+
+    this.options.hooks.emit("flagEvaluated", evaluationDetails);
+    return evaluationDetails;
   }
 }
 

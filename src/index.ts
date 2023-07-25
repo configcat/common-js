@@ -88,6 +88,8 @@ export { SettingType, Comparator } from "./ProjectConfig";
 
 export type { IConfigCatClient };
 
+export type { IConfigCatClientSnapshot } from "./ConfigCatClient";
+
 export { SettingKeyValue } from "./ConfigCatClient";
 
 export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";

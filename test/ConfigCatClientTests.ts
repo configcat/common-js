@@ -7,6 +7,7 @@ import { AutoPollOptions, IAutoPollOptions, IManualPollOptions, LazyLoadOptions,
 import { LogLevel } from "../src/ConfigCatLogger";
 import { IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
+import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
@@ -16,7 +17,6 @@ import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
 import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
-import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 
 describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions should create an instance, getValueAsync works", async () => {
@@ -549,106 +549,108 @@ describe("ConfigCatClient", () => {
     assert.equal(actualValue, false);
   });
 
-  describe("Initialization - with waitForReady", async () => {
+  describe("Initialization - with waitForReady", () => {
 
     const maxInitWaitTimeSeconds = 1;
-      const configFetcher = new FakeConfigFetcherBase("{}", 0, (lastConfig, lastETag) => ({
-        statusCode: 500,
-        reasonPhrase: "",
-        eTag: (lastETag as any | 0) + 1 + "",
-        body: lastConfig
-      } as IFetchResponse));
-  
+    const configFetcher = new FakeConfigFetcherBase("{}", 0, (lastConfig, lastETag) => ({
+      statusCode: 500,
+      reasonPhrase: "",
+      eTag: (lastETag as any | 0) + 1 + "",
+      body: lastConfig
+    } as IFetchResponse));
 
     it("AutoPoll - should wait", async () => {
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
-      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { }, null);
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {}, null);
 
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
 
       assert.equal(state, ClientReadyState.HasUpToDateFlagData);
-      assert.equal(client.getValue("debug", false), true);
+      assert.equal(client.snapshot().getValue("debug", false), true);
     });
 
     it("AutoPoll - should wait for maxInitWaitTimeSeconds", async () => {
 
       const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
-  
+
       const startDate: number = new Date().getTime();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
       const ellapsedMilliseconds: number = new Date().getTime() - startDate;
-  
+
       assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
       assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
-  
+
       assert.equal(state, ClientReadyState.NoFlagData);
-      assert.equal(client.getValue("debug", false), false);
+      assert.equal(client.snapshot().getValue("debug", false), false);
     });
-  
+
     it("AutoPoll - should wait for maxInitWaitTimeSeconds and return cached", async () => {
-  
+
       const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
-      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { 
-        maxInitWaitTimeSeconds: maxInitWaitTimeSeconds, 
-        cache: new FakeExternalCacheWithInitialData(120_000) 
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {
+        maxInitWaitTimeSeconds: maxInitWaitTimeSeconds,
+        cache: new FakeExternalCacheWithInitialData(120_000)
       }, null);
-  
+
       const startDate: number = new Date().getTime();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
       const ellapsedMilliseconds: number = new Date().getTime() - startDate;
-  
+
       assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
       assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
-  
+
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
-      assert.equal(client.getValue("debug", false), true);
-    });    
+      assert.equal(client.snapshot().getValue("debug", false), true);
+    });
 
     it("LazyLoad - return cached", async () => {
-  
+
       const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
-      const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { 
+      const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {
         cache: new FakeExternalCacheWithInitialData()
       }, null);
-  
+
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      
+
       assert.equal(state, ClientReadyState.HasUpToDateFlagData);
-      assert.equal(client.getValue("debug", false), true);
-    });    
+      assert.equal(client.snapshot().getValue("debug", false), true);
+    });
 
     it("LazyLoad - expired, return cached", async () => {
-  
+
       const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
-      const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { 
-        cache: new FakeExternalCacheWithInitialData(120_000) 
+      const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", {
+        cache: new FakeExternalCacheWithInitialData(120_000)
       }, null);
-  
+
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-  
+
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
-      assert.equal(client.getValue("debug", false), true);
-    }); 
-    
+      assert.equal(client.snapshot().getValue("debug", false), true);
+    });
+
     it("ManualPoll - return cached", async () => {
-  
+
       const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
-      const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", { 
+      const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", {
         cache: new FakeExternalCacheWithInitialData()
       }, null);
-  
+
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      
+
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
-      assert.equal(client.getValue("debug", false), true);
-    });    
+      const snapshot = client.snapshot();
+      assert.equal(snapshot.getValue("debug", false), true);
+      assert.deepEqual(snapshot.getAllKeys(), ["debug"]);
+      assert.isNotNull(snapshot.fetchedConfig);
+    });
 
     it("ManualPoll - flag override - local only", async () => {
       const configCatKernel: FakeConfigCatKernel = {
@@ -664,12 +666,15 @@ describe("ConfigCatClient", () => {
           behaviour: OverrideBehaviour.LocalOnly
         }
       }, null);
-  
+
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      
+
       assert.equal(state, ClientReadyState.HasLocalOverrideFlagDataOnly);
-      assert.equal(client.getValue("fakeKey", false), true);
+      const snapshot = client.snapshot();
+      assert.equal(snapshot.getValue("fakeKey", false), true);
+      assert.deepEqual(snapshot.getAllKeys(), ["fakeKey"]);
+      assert.isNull(snapshot.fetchedConfig);
     });
   });
 

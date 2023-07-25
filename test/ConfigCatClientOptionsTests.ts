@@ -409,7 +409,7 @@ class FakeCache implements IConfigCache {
     throw new Error("Method not implemented.");
   }
   getInMemory(): ProjectConfig {
-    throw new Error("Method not implemented.");    
+    throw new Error("Method not implemented.");
   }
 }
 

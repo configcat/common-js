@@ -3,8 +3,8 @@ import "mocha";
 import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
-import { Config, ProjectConfig } from "../src/ProjectConfig";
 import { ClientReadyState } from "../src/Hooks";
+import { Config, ProjectConfig } from "../src/ProjectConfig";
 
 const globalUrl = "https://cdn-global.configcat.com";
 const euOnlyUrl = "https://cdn-eu.configcat.com";
