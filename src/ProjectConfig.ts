@@ -167,9 +167,9 @@ export enum Comparator {
   In = 0,
   /** Does the comparison value interpreted as a comma-separated list of strings not contain the comparison attribute? */
   NotIn = 1,
-  /** Does the comparison value contain the comparison attribute as a substring? */
+  /** Is the comparison value contained by the comparison attribute as a substring? */
   Contains = 2,
-  /** Does the comparison value not contain the comparison attribute as a substring? */
+  /** Is the comparison value not contained by the comparison attribute as a substring? */
   NotContains = 3,
   /** Does the comparison value interpreted as a comma-separated list of semantic versions contain the comparison attribute? */
   SemVerIn = 4,
