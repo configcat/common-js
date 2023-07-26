@@ -5,7 +5,7 @@ import { ConfigCatConsoleLogger, LoggerWrapper } from "./ConfigCatLogger";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
 import type { FlagOverrides } from "./FlagOverrides";
-import type { IProvidesHooks } from "./Hooks";
+import type { ClientReadyState, IProvidesHooks } from "./Hooks";
 import { Hooks } from "./Hooks";
 import { ProjectConfig } from "./ProjectConfig";
 import type { User } from "./RolloutEvaluator";
@@ -156,6 +156,8 @@ export abstract class OptionsBase {
 
   hooks: Hooks;
 
+  readyPromise: Promise<ClientReadyState>;
+
   constructor(apiKey: string, clientVersion: string, options?: IOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
     eventEmitterFactory?: (() => IEventEmitter) | null) {
@@ -179,6 +181,7 @@ export abstract class OptionsBase {
 
     const eventEmitter = eventEmitterFactory?.() ?? new DefaultEventEmitter();
     this.hooks = new Hooks(eventEmitter);
+    this.readyPromise = new Promise(resolve => this.hooks.once("clientReady", resolve));
 
     let logger: IConfigCatLogger | null | undefined;
     let cache: IConfigCatCache | null | undefined;

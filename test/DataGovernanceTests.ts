@@ -3,6 +3,7 @@ import "mocha";
 import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
 import { ConfigServiceBase } from "../src/ConfigServiceBase";
+import { ClientReadyState } from "../src/Hooks";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
 
 const globalUrl = "https://cdn-global.configcat.com";
@@ -301,5 +302,9 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
 
   private getUrl(baseUrl: string) {
     return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.options.clientVersion;
+  }
+
+  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+    throw new Error("Method not implemented.");
   }
 }

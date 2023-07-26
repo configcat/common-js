@@ -88,6 +88,8 @@ export { SettingType, Comparator } from "./ProjectConfig";
 
 export type { IConfigCatClient };
 
+export type { IConfigCatClientSnapshot } from "./ConfigCatClient";
+
 export { SettingKeyValue } from "./ConfigCatClient";
 
 export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
@@ -99,3 +101,5 @@ export { OverrideBehaviour } from "./FlagOverrides";
 export { RefreshResult } from "./ConfigServiceBase";
 
 export type { IProvidesHooks, HookEvents } from "./Hooks";
+
+export { ClientReadyState } from "./Hooks";

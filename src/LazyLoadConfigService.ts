@@ -3,6 +3,7 @@ import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ConfigServiceBase } from "./ConfigServiceBase";
+import { ClientReadyState } from "./Hooks";
 import type { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
@@ -14,8 +15,7 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
     super(configFetcher, options);
 
     this.cacheTimeToLiveMs = options.cacheTimeToLiveSeconds * 1000;
-
-    options.hooks.emit("clientReady");
+    super.syncUpWithCache();
   }
 
   async getConfig(): Promise<ProjectConfig> {
@@ -45,5 +45,17 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
     this.options.logger.debug("LazyLoadConfigService.refreshConfigAsync() called.");
     return super.refreshConfigAsync();
+  }
+
+  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+    if (cachedConfig.isEmpty) {
+      return ClientReadyState.NoFlagData;
+    }
+
+    if (cachedConfig.isExpired(this.cacheTimeToLiveMs)) {
+      return ClientReadyState.HasCachedFlagDataOnly;
+    }
+
+    return ClientReadyState.HasUpToDateFlagData;
   }
 }

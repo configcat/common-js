@@ -3,6 +3,7 @@ import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ConfigServiceBase } from "./ConfigServiceBase";
+import { ClientReadyState } from "./Hooks";
 import type { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
@@ -32,7 +33,11 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         resolve();
       });
 
-      this.initialization.then(() => !this.disposed && options.hooks.emit("clientReady"));
+      this.initialization.then(() => {
+        if (!this.disposed) {
+          options.hooks.emit("clientReady", this.getReadyState(options.cache.getInMemory()));
+        }
+      });
 
       if (options.maxInitWaitTimeSeconds > 0) {
         setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
@@ -41,7 +46,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     else {
       this.initialized = true;
       this.initialization = Promise.resolve();
-      options.hooks.emit("clientReady");
+      options.hooks.emit("clientReady", this.getReadyState(options.cache.getInMemory()));
     }
 
     if (!options.offline) {
@@ -166,5 +171,17 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
     this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
+  }
+
+  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+    if (cachedConfig.isEmpty) {
+      return ClientReadyState.NoFlagData;
+    }
+
+    if (cachedConfig.isExpired(this.pollIntervalMs)) {
+      return ClientReadyState.HasCachedFlagDataOnly;
+    }
+
+    return ClientReadyState.HasUpToDateFlagData;
   }
 }

@@ -1,4 +1,4 @@
-import { LogEventId } from "../../lib";
+import { IConfigCatCache, LogEventId } from "../../lib";
 import { IConfigCache } from "../../src/ConfigCatCache";
 import { IConfigCatKernel } from "../../src/ConfigCatClient";
 import { OptionsBase } from "../../src/ConfigCatClientOptions";
@@ -42,6 +42,28 @@ export class FakeCache implements IConfigCache {
   get(_key: string): Promise<ProjectConfig> | ProjectConfig {
     return this.cached;
   }
+
+  getInMemory(): ProjectConfig {
+    return this.cached;
+  }
+}
+
+export class FakeExternalCacheWithInitialData implements IConfigCatCache {
+  expirationDelta: number;
+
+  constructor(expirationDelta = 0) {
+    this.expirationDelta = expirationDelta;
+  }
+
+  set(key: string, value: string): void | Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  get(key: string): string | Promise<string | null | undefined> | null | undefined {
+    const cachedJson = '{"f": { "debug": { "v": true, "i": "abcdefgh", "t": 0, "p": [], "r": [] } } }';
+    const config = new ProjectConfig(cachedJson, JSON.parse(cachedJson), (new Date().getTime()) - this.expirationDelta, "\"ETAG\"");
+    return ProjectConfig.serialize(config);
+  }
+
 }
 
 export class FakeConfigFetcherBase implements IConfigFetcher {
