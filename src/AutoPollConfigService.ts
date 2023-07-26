@@ -33,11 +33,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         resolve();
       });
 
-      this.initialization.then(() => {
-        if (!this.disposed) {
-          options.hooks.emit("clientReady", this.getReadyState(options.cache.getInMemory()));
-        }
-      });
+      this.initialization.then(() => options.hooks.emit("clientReady", this.getReadyState(options.cache.getInMemory())));
 
       if (options.maxInitWaitTimeSeconds > 0) {
         setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
