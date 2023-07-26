@@ -104,7 +104,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
       this.onConfigUpdated(fetchResult.config);
 
-      if (success && (fetchResult.config.httpETag != latestConfig.httpETag || fetchResult.config.configJson != latestConfig.configJson)) {
+      if (success && !ProjectConfig.equals(fetchResult.config, latestConfig)) {
         this.onConfigChanged(fetchResult.config);
       }
 
