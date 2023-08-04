@@ -21,15 +21,16 @@ export class DefaultEventEmitter implements IEventEmitter {
       throw new TypeError("Listener must be a function");
     }
 
-    const listeners = this.events[eventName];
+    // TODO: remove `as string` when updating to TypeScript 4.4 or newer (https://stackoverflow.com/a/64943542/8656352)
+    const listeners = this.events[eventName as string];
     const listener: Listener = { fn, once };
 
     if (!listeners) {
-      this.events[eventName] = listener;
+      this.events[eventName as string] = listener;
       this.eventCount++;
     }
     else if (isSingle(listeners)) {
-      this.events[eventName] = [listeners, listener];
+      this.events[eventName as string] = [listeners, listener];
     }
     else {
       listeners.push(listener);
@@ -39,7 +40,7 @@ export class DefaultEventEmitter implements IEventEmitter {
   }
 
   private removeListenerCore<TState>(eventName: string | symbol, state: TState, isMatch: (listener: Listener, state: TState) => boolean) {
-    const listeners = this.events[eventName];
+    const listeners = this.events[eventName as string];
 
     if (!listeners) {
       return this;
@@ -53,7 +54,7 @@ export class DefaultEventEmitter implements IEventEmitter {
             this.removeEvent(eventName);
           }
           else if (listeners.length === 1) {
-            this.events[eventName] = listeners[0];
+            this.events[eventName as string] = listeners[0];
           }
           break;
         }
@@ -71,7 +72,7 @@ export class DefaultEventEmitter implements IEventEmitter {
       this.events = {};
     }
     else {
-      delete this.events[eventName];
+      delete this.events[eventName as string];
     }
   }
 
@@ -100,7 +101,7 @@ export class DefaultEventEmitter implements IEventEmitter {
       this.events = {};
       this.eventCount = 0;
     }
-    else if (this.events[eventName]) {
+    else if (this.events[eventName as string]) {
       this.removeEvent(eventName);
     }
 
@@ -108,7 +109,7 @@ export class DefaultEventEmitter implements IEventEmitter {
   }
 
   listeners(eventName: string | symbol): Function[] {
-    const listeners = this.events[eventName];
+    const listeners = this.events[eventName as string];
 
     if (!listeners) {
       return [];
@@ -126,7 +127,7 @@ export class DefaultEventEmitter implements IEventEmitter {
   }
 
   listenerCount(eventName: string | symbol): number {
-    const listeners = this.events[eventName];
+    const listeners = this.events[eventName as string];
 
     if (!listeners) {
       return 0;
@@ -161,7 +162,7 @@ export class DefaultEventEmitter implements IEventEmitter {
   }
 
   emit(eventName: string | symbol, arg0?: any, arg1?: any, arg2?: any, arg3?: any, ...moreArgs: any[]): boolean {
-    let listeners = this.events[eventName];
+    let listeners = this.events[eventName as string];
 
     if (!listeners) {
       return false;

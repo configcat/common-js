@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import "mocha";
-import { ManualPollOptions } from "../lib/ConfigCatClientOptions";
 import { ExternalConfigCache, IConfigCache, IConfigCatCache, InMemoryConfigCache, } from "../src/ConfigCatCache";
+import { ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
 import { FakeLogger } from "./helpers/fakes";

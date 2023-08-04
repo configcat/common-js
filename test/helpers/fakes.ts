@@ -1,4 +1,4 @@
-import { IConfigCatCache, LogEventId } from "../../lib";
+import { IConfigCatCache, LogEventId } from "../../src";
 import { IConfigCache } from "../../src/ConfigCatCache";
 import { IConfigCatKernel } from "../../src/ConfigCatClient";
 import { OptionsBase } from "../../src/ConfigCatClientOptions";

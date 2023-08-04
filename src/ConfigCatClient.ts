@@ -110,7 +110,7 @@ export interface IConfigCatClient extends IProvidesHooks {
   /**
    * Returns `true` when the client is configured not to initiate HTTP requests, otherwise `false`.
    */
-  get isOffline(): boolean;
+  readonly isOffline: boolean;
 
   /**
    * Configures the client to allow HTTP requests.
