@@ -34,8 +34,10 @@ export function ObjectEntriesPolyfill<T>(o: { [s: string]: T } | ArrayLike<T>): 
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [PropertyKey, T]>): { [k: PropertyKey]: T } {
-  const result: { [k: PropertyKey]: T } = {};
+export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [PropertyKey, T]>): { [k: string]: T } {
+  // TODO: change `k: string` to `k: PropertyKey` in the following line and remove `as string` below
+  // when updating to TypeScript 4.4 or newer (https://stackoverflow.com/a/64943542/8656352)
+  const result: { [k: string]: T } = {};
   if (Array.isArray(entries)) {
     for (const [key, value] of entries) {
       result[key] = value;
@@ -46,7 +48,7 @@ export function ObjectFromEntriesPolyfill<T>(entries: Iterable<readonly [Propert
     let element: readonly [PropertyKey, T], done: boolean | undefined;
     while (({ value: element, done } = iterator.next(), !done)) {
       const [key, value] = element;
-      result[key] = value;
+      result[key as string] = value;
     }
   }
   else {

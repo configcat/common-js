@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import "mocha";
-import { PollingMode } from "../lib";
+import { PollingMode } from "../src";
 import { IConfigCatClient } from "../src/ConfigCatClient";
 import * as configcatClient from "../src/index";
 import { FakeConfigCatKernel, FakeConfigFetcher } from "./helpers/fakes";

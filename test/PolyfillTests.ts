@@ -36,7 +36,8 @@ describe("Polyfills", () => {
 
     assert.deepEqual({}, ObjectFromEntriesPolyfill<any>((function* () { })()));
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>((function* () { yield* [["a", 1], [2, "b"]]; })()));
+    const entries = (function* () { yield* [["a", 1], [2, "b"]]; })() as unknown as Iterable<readonly [PropertyKey, any]>;
+    assert.deepEqual({ "a": 1, 2: "b" }, ObjectFromEntriesPolyfill<any>(entries));
 
     assert.throws(() => ObjectFromEntriesPolyfill<any>(1 as any));
   });

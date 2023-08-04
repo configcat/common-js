@@ -45,24 +45,21 @@ export class FetchError<TCause extends keyof FetchErrorCauses = keyof FetchError
   args: FetchErrorCauses[TCause];
 
   constructor(public cause: TCause, ...args: FetchErrorCauses[TCause]) {
-    let message: string | undefined;
-    switch (cause) {
-      case "abort":
-        message = "Request was aborted.";
-        break;
-      case "timeout":
-        const [timeoutMs] = args as FetchErrorCauses["timeout"];
-        message = `Request timed out. Timeout value: ${timeoutMs}ms`;
-        break;
-      case "failure":
-        const [err] = args as FetchErrorCauses["failure"];
-        message = "Request failed due to a network or protocol error.";
-        if (err) {
-          message += " " + (err instanceof Error ? err.message : err + "");
-        }
-        break;
-    }
-    super(message);
+    super(((cause: TCause, args: FetchErrorCauses[TCause]): string | undefined => {
+      switch (cause) {
+        case "abort":
+          return "Request was aborted.";
+        case "timeout":
+          const [timeoutMs] = args as FetchErrorCauses["timeout"];
+          return `Request timed out. Timeout value: ${timeoutMs}ms`;
+        case "failure":
+          const [err] = args as FetchErrorCauses["failure"];
+          const message = "Request failed due to a network or protocol error.";
+          return err
+            ? message + " " + (err instanceof Error ? err.message : err + "")
+            : message;
+      }
+    })(cause, args));
 
     // NOTE: due to a known issue in the TS compiler, instanceof is broken when subclassing Error and targeting ES5 or earlier
     // (see https://github.com/microsoft/TypeScript/issues/13965).

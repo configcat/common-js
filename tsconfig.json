@@ -10,8 +10,9 @@
       "DOM", // APIs used: setTimeout, clearTimeout
       "ES2017.Object", // APIs used: Object.values (polyfilled), Object.entries (polyfilled)
       "ES2019.Object", // APIs used: Object.fromEntries (polyfilled)
-      "ES2021.WeakRef", // APIs used: WeakRef (polyfilled - only API but not behavior!)
-      "ES2021.Promise" // APIs used: AggregateError (only used if available)
+      // TODO: use the following built-in libs instead of the manually included lib.*.d.ts files when upgrading TypeScript to v4.3 or newer
+      //"ES2021.WeakRef", // APIs used: WeakRef (only used if available)
+      //"ES2021.Promise" // APIs used: AggregateError (only used if available)
     ]
   }
 }

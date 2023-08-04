@@ -3,6 +3,13 @@
   "compilerOptions": {
     "target": "ES5",
     "module": "CommonJS",
-    "downlevelIteration": true
-  }
+    "downlevelIteration": true,
+  },
+  "ts-node": {
+    "files": true
+  },
+  "files": [
+    "src/lib.es2021.promise.d.ts",
+    "src/lib.es2021.weakref.d.ts"
+  ]
 }

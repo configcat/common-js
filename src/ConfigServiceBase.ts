@@ -39,7 +39,7 @@ export interface IConfigService {
 
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]>;
 
-  get isOffline(): boolean;
+  readonly isOffline: boolean;
 
   setOnline(): void;
 
