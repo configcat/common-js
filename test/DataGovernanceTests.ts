@@ -304,7 +304,7 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
     return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.options.clientVersion;
   }
 
-  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+  getCacheState(cachedConfig: ProjectConfig): ClientReadyState {
     throw new Error("Method not implemented.");
   }
 }

@@ -1,5 +1,6 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import { ProjectConfig } from "./ProjectConfig";
+import { isPromiseLike } from "./Utils";
 
 /** Defines the interface used by the ConfigCat SDK to store and retrieve downloaded config data. */
 export interface IConfigCatCache {
@@ -72,22 +73,42 @@ export class ExternalConfigCache implements IConfigCache {
     }
   }
 
-  async get(key: string): Promise<ProjectConfig> {
-    try {
-      const externalSerializedConfig = await this.cache.get(key);
+  private updateCachedConfig(externalSerializedConfig: string | null | undefined): void {
+    if (externalSerializedConfig === null || externalSerializedConfig === void 0 || externalSerializedConfig === this.cachedSerializedConfig) {
+      return;
+    }
 
-      if (externalSerializedConfig === null || externalSerializedConfig === void 0 || externalSerializedConfig === this.cachedSerializedConfig) {
-        return this.cachedConfig;
+    this.cachedConfig = ProjectConfig.deserialize(externalSerializedConfig);
+    this.cachedSerializedConfig = externalSerializedConfig;
+  }
+
+  get(key: string): Promise<ProjectConfig> {
+    try {
+      const cacheGetResult = this.cache.get(key);
+
+      // Take the async path only when the IConfigCatCache.get operation is asynchronous.
+      if (isPromiseLike(cacheGetResult)) {
+        return cacheGetResult.then(externalSerializedConfig => {
+          try {
+            this.updateCachedConfig(externalSerializedConfig);
+          }
+          catch (err) {
+            this.logger.configServiceCacheReadError(err);
+          }
+
+          return this.cachedConfig;
+        });
       }
 
-      this.cachedConfig = ProjectConfig.deserialize(externalSerializedConfig);
-      this.cachedSerializedConfig = externalSerializedConfig;
+      // Otherwise, keep the code flow synchronous so the config services can sync up
+      // with the cache in their ctors synchronously (see ConfigServiceBase.syncUpWithCache).
+      this.updateCachedConfig(cacheGetResult);
     }
     catch (err) {
       this.logger.configServiceCacheReadError(err);
     }
 
-    return this.cachedConfig;
+    return Promise.resolve(this.cachedConfig);
   }
 
   getInMemory(): ProjectConfig {

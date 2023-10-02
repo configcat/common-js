@@ -1225,6 +1225,7 @@ describe("ConfigCatClient", () => {
         get isOffline(): boolean { return false; }
         setOnline(): void { }
         setOffline(): void { }
+        getCacheState(): ClientReadyState { return ClientReadyState.NoFlagData; }
         dispose(): void { }
       };
 
@@ -1300,6 +1301,7 @@ describe("ConfigCatClient", () => {
       get isOffline(): boolean { return false; }
       setOnline(): void { }
       setOffline(): void { }
+      getCacheState(): ClientReadyState { return ClientReadyState.NoFlagData; }
       dispose(): void { }
     };
 

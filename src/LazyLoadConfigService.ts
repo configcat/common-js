@@ -47,7 +47,7 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
     return super.refreshConfigAsync();
   }
 
-  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+  getCacheState(cachedConfig: ProjectConfig): ClientReadyState {
     if (cachedConfig.isEmpty) {
       return ClientReadyState.NoFlagData;
     }

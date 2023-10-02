@@ -130,6 +130,8 @@ export interface IConfigCatClient extends IProvidesHooks {
 
 /** Represents the state of `IConfigCatClient` captured at a specific point in time. */
 export interface IConfigCatClientSnapshot {
+  readonly clientCacheState: ClientReadyState;
+
   /** The latest config which has been fetched from the remote server. */
   readonly fetchedConfig: IConfig | null;
 
@@ -681,7 +683,12 @@ class Snapshot implements IConfigCatClientSnapshot {
     this.defaultUser = client["defaultUser"];
     this.evaluator = client["evaluator"];
     this.options = client["options"];
+    this.clientCacheState = remoteConfig
+      ? client["configService"]!.getCacheState(remoteConfig)
+      : ClientReadyState.HasLocalOverrideFlagDataOnly;
   }
+
+  readonly clientCacheState: ClientReadyState;
 
   get fetchedConfig() {
     const config = this.remoteConfig;

@@ -10,3 +10,8 @@ export function errorToString(err: any, includeStackTrace = false): string {
     ? includeStackTrace && err.stack ? err.stack : err.toString()
     : err + "";
 }
+
+export function isPromiseLike<T>(obj: unknown): obj is PromiseLike<T> {
+  // See also: https://stackoverflow.com/a/27746324/8656352
+  return typeof (obj as PromiseLike<T>)?.then === "function";
+}

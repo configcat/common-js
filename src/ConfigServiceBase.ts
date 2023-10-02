@@ -45,6 +45,8 @@ export interface IConfigService {
 
   setOffline(): void;
 
+  getCacheState(cachedConfig: ProjectConfig): ClientReadyState;
+
   dispose(): void;
 }
 
@@ -283,10 +285,15 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  protected abstract getReadyState(cachedConfig: ProjectConfig): ClientReadyState;
+  abstract getCacheState(cachedConfig: ProjectConfig): ClientReadyState;
 
-  protected async syncUpWithCache(): Promise<void> {
+  protected onCacheSynced(cachedConfig: ProjectConfig): void {
+    this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));
+  }
+
+  protected async syncUpWithCache(): Promise<ProjectConfig> {
     const cachedConfig = await this.options.cache.get(this.cacheKey);
-    this.options.hooks.emit("clientReady", this.getReadyState(cachedConfig));
+    this.onCacheSynced(cachedConfig);
+    return cachedConfig;
   }
 }
