@@ -12,7 +12,8 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   private initialized: boolean;
   private readonly initialization: Promise<void>;
   private signalInitialization: () => void = () => { /* Intentional no-op. */ };
-  private timerId?: ReturnType<typeof setTimeout>;
+  private workerTimerId?: ReturnType<typeof setTimeout>;
+  private readonly initTimerId?: ReturnType<typeof setTimeout>;
   private readonly pollIntervalMs: number;
 
   constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
@@ -32,13 +33,14 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       // 3. maxInitWaitTimeSeconds > 0 and maxInitWaitTimeSeconds has passed (see the setTimeout call below).
       this.initialization = new Promise(resolve => this.signalInitialization = () => {
         this.initialized = true;
+        clearTimeout(this.initTimerId);
         resolve();
       });
 
       this.initialization.then(() => super.onCacheSynced(options.cache.getInMemory()));
 
       if (options.maxInitWaitTimeSeconds > 0) {
-        setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
+        this.initTimerId = setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
       }
     }
     else {
@@ -63,14 +65,14 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       return true;
     }
 
-    let cancelDelay: () => void;
+    const delayCleanup: { clearTimer?: () => void } = {};
     // Simply awaiting the initialization promise would also work but we limit waiting to maxInitWaitTimeSeconds for maximum safety.
-    const result = await Promise.race([
-      (async () => { await this.initialization; return true; })(),
-      delay(this.options.maxInitWaitTimeSeconds * 1000, cancel => cancelDelay = cancel)
+    const success = await Promise.race([
+      this.initialization.then(() => true),
+      delay(this.options.maxInitWaitTimeSeconds * 1000, delayCleanup).then(() => false)
     ]);
-    cancelDelay!();
-    return !!result;
+    delayCleanup.clearTimer!();
+    return success;
   }
 
   async getConfig(): Promise<ProjectConfig> {
@@ -111,7 +113,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   dispose(): void {
     this.options.logger.debug("AutoPollConfigService.dispose() called.");
     super.dispose();
-    if (this.timerId) {
+    if (this.workerTimerId) {
       this.stopRefreshWorker();
     }
   }
@@ -151,12 +153,12 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
 
     this.options.logger.debug("AutoPollConfigService.startRefreshWorker() - calling refreshWorkerLogic()'s setTimeout.");
-    this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
+    this.workerTimerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
   private stopRefreshWorker() {
     this.options.logger.debug("AutoPollConfigService.stopRefreshWorker() - clearing setTimeout.");
-    clearTimeout(this.timerId);
+    clearTimeout(this.workerTimerId);
   }
 
   private async refreshWorkerLogic(delayMs: number) {
@@ -173,7 +175,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
 
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
-    this.timerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
+    this.workerTimerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
   getCacheState(cachedConfig: ProjectConfig): ClientReadyState {

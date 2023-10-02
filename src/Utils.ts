@@ -1,7 +1,9 @@
-export function delay(delayMs: number, obtainCancel?: (cancel: () => void) => void): Promise<void> {
+export function delay(delayMs: number, delayCleanup?: { clearTimer?: () => void } | null): Promise<void> {
   let timerId: ReturnType<typeof setTimeout>;
   const promise = new Promise<void>(resolve => timerId = setTimeout(resolve, delayMs));
-  obtainCancel?.(() => clearTimeout(timerId));
+  if (delayCleanup) {
+    delayCleanup.clearTimer = () => clearTimeout(timerId);
+  }
   return promise;
 }
 
