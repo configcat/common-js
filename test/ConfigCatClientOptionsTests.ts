@@ -1,9 +1,10 @@
 import { assert, expect } from "chai";
 import "mocha";
-import { ExternalConfigCache, IConfigCache, IConfigCatCache, InMemoryConfigCache } from "../src/ConfigCatCache";
+import { ExternalConfigCache, IConfigCache, InMemoryConfigCache } from "../src/ConfigCatCache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { ConfigCatConsoleLogger, IConfigCatLogger, LogEventId, LogLevel, LogMessage, LoggerWrapper } from "../src/ConfigCatLogger";
 import { ProjectConfig } from "../src/ProjectConfig";
+import { FakeExternalCache } from "./helpers/fakes";
 
 describe("Options", () => {
 
@@ -409,15 +410,6 @@ class FakeCache implements IConfigCache {
     throw new Error("Method not implemented.");
   }
   getInMemory(): ProjectConfig {
-    throw new Error("Method not implemented.");
-  }
-}
-
-class FakeExternalCache implements IConfigCatCache {
-  set(key: string, value: string): void | Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  get(key: string): string | Promise<string | null | undefined> | null | undefined {
     throw new Error("Method not implemented.");
   }
 }

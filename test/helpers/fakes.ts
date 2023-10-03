@@ -48,6 +48,35 @@ export class FakeCache implements IConfigCache {
   }
 }
 
+export class FakeExternalCache implements IConfigCatCache {
+  private cachedValue: string | undefined;
+
+  set(key: string, value: string): void {
+    this.cachedValue = value;
+  }
+
+  get(key: string): string | undefined {
+    return this.cachedValue;
+  }
+}
+
+export class FakeExternalAsyncCache implements IConfigCatCache {
+  private cachedValue: string | undefined;
+
+  constructor(private readonly delayMs = 0) {
+  }
+
+  async set(key: string, value: string): Promise<void> {
+    await delay(this.delayMs);
+    this.cachedValue = value;
+  }
+
+  async get(key: string): Promise<string | undefined> {
+    await delay(this.delayMs);
+    return this.cachedValue;
+  }
+}
+
 export class FakeExternalCacheWithInitialData implements IConfigCatCache {
   expirationDelta: number;
 
