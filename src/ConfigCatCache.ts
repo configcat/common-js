@@ -88,16 +88,15 @@ export class ExternalConfigCache implements IConfigCache {
 
       // Take the async path only when the IConfigCatCache.get operation is asynchronous.
       if (isPromiseLike(cacheGetResult)) {
-        return cacheGetResult.then(externalSerializedConfig => {
+        return (async (cacheGetPromise) => {
           try {
-            this.updateCachedConfig(externalSerializedConfig);
+            this.updateCachedConfig(await cacheGetPromise);
           }
           catch (err) {
             this.logger.configServiceCacheReadError(err);
           }
-
           return this.cachedConfig;
-        });
+        })(cacheGetResult);
       }
 
       // Otherwise, keep the code flow synchronous so the config services can sync up
