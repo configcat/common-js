@@ -5,11 +5,10 @@ import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService } from "./ConfigServiceBase";
-import { RefreshResult } from "./ConfigServiceBase";
+import { ClientCacheState, RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
 import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
-import { ClientReadyState } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
@@ -88,7 +87,7 @@ export interface IConfigCatClient extends IProvidesHooks {
    * Waits for the client initialization.
    * @returns A promise that fulfills with the client's initialization state.
    */
-  waitForReady(): Promise<ClientReadyState>;
+  waitForReady(): Promise<ClientCacheState>;
 
   /**
    * Captures the current state of the client.
@@ -130,7 +129,7 @@ export interface IConfigCatClient extends IProvidesHooks {
 
 /** Represents the state of `IConfigCatClient` captured at a specific point in time. */
 export interface IConfigCatClientSnapshot {
-  readonly clientCacheState: ClientReadyState;
+  readonly clientCacheState: ClientCacheState;
 
   /** The latest config which has been fetched from the remote server. */
   readonly fetchedConfig: IConfig | null;
@@ -298,7 +297,7 @@ export class ConfigCatClient implements IConfigCatClient {
         (() => { throw new Error("Invalid 'options' value"); })();
     }
     else {
-      this.options.hooks.emit("clientReady", ClientReadyState.HasLocalOverrideFlagDataOnly);
+      this.options.hooks.emit("clientReady", ClientCacheState.HasLocalOverrideFlagDataOnly);
     }
 
     this.suppressFinalize = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
@@ -563,7 +562,7 @@ export class ConfigCatClient implements IConfigCatClient {
     this.configService?.setOffline();
   }
 
-  waitForReady(): Promise<ClientReadyState> {
+  waitForReady(): Promise<ClientCacheState> {
     return this.options.readyPromise;
   }
 
@@ -685,10 +684,10 @@ class Snapshot implements IConfigCatClientSnapshot {
     this.options = client["options"];
     this.clientCacheState = remoteConfig
       ? client["configService"]!.getCacheState(remoteConfig)
-      : ClientReadyState.HasLocalOverrideFlagDataOnly;
+      : ClientCacheState.HasLocalOverrideFlagDataOnly;
   }
 
-  readonly clientCacheState: ClientReadyState;
+  readonly clientCacheState: ClientCacheState;
 
   get fetchedConfig() {
     const config = this.remoteConfig;

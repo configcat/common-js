@@ -6,7 +6,7 @@ import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/Conf
 import { AutoPollOptions, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, IOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
 import { LogLevel } from "../src/ConfigCatLogger";
 import { IFetchResponse } from "../src/ConfigFetcher";
-import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
+import { ClientCacheState, ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
@@ -1313,18 +1313,18 @@ describe("ConfigCatClient", () => {
   });
 
   for (const pollingMode of [PollingMode.AutoPoll, PollingMode.LazyLoad, PollingMode.ManualPoll]) {
-    const testCases: [boolean, boolean, string, ClientReadyState, ClientReadyState][] = [
-      [false, false, "empty", ClientReadyState.NoFlagData, ClientReadyState.NoFlagData],
-      [true, false, "empty", ClientReadyState.NoFlagData, ClientReadyState.NoFlagData],
-      [true, true, "empty", ClientReadyState.NoFlagData, ClientReadyState.NoFlagData],
-      [true, false, "expired", ClientReadyState.HasCachedFlagDataOnly, ClientReadyState.HasCachedFlagDataOnly],
-      [true, true, "expired", ClientReadyState.NoFlagData, ClientReadyState.HasCachedFlagDataOnly],
+    const testCases: [boolean, boolean, string, ClientCacheState, ClientCacheState][] = [
+      [false, false, "empty", ClientCacheState.NoFlagData, ClientCacheState.NoFlagData],
+      [true, false, "empty", ClientCacheState.NoFlagData, ClientCacheState.NoFlagData],
+      [true, true, "empty", ClientCacheState.NoFlagData, ClientCacheState.NoFlagData],
+      [true, false, "expired", ClientCacheState.HasCachedFlagDataOnly, ClientCacheState.HasCachedFlagDataOnly],
+      [true, true, "expired", ClientCacheState.NoFlagData, ClientCacheState.HasCachedFlagDataOnly],
     ];
 
     if (pollingMode !== PollingMode.ManualPoll) {
       testCases.push(
-        [true, false, "fresh", ClientReadyState.HasUpToDateFlagData, ClientReadyState.HasUpToDateFlagData],
-        [true, true, "fresh", ClientReadyState.NoFlagData, ClientReadyState.HasUpToDateFlagData],
+        [true, false, "fresh", ClientCacheState.HasUpToDateFlagData, ClientCacheState.HasUpToDateFlagData],
+        [true, true, "fresh", ClientCacheState.NoFlagData, ClientCacheState.HasUpToDateFlagData],
       );
     }
 

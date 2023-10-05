@@ -1,7 +1,6 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
-import type { ClientReadyState } from "./Hooks";
 import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
 
 /** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
@@ -34,6 +33,14 @@ export class RefreshResult {
   }
 }
 
+/** Specifies the possible states of the local cache. */
+export enum ClientCacheState {
+  NoFlagData,
+  HasLocalOverrideFlagDataOnly,
+  HasCachedFlagDataOnly,
+  HasUpToDateFlagData,
+}
+
 export interface IConfigService {
   getConfig(): Promise<ProjectConfig>;
 
@@ -45,7 +52,7 @@ export interface IConfigService {
 
   setOffline(): void;
 
-  getCacheState(cachedConfig: ProjectConfig): ClientReadyState;
+  getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
   dispose(): void;
 }
@@ -285,7 +292,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  abstract getCacheState(cachedConfig: ProjectConfig): ClientReadyState;
+  abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
   protected onCacheSynced(cachedConfig: ProjectConfig): void {
     this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));

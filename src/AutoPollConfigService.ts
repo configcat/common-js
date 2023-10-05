@@ -2,8 +2,7 @@ import type { AutoPollOptions } from "./ConfigCatClientOptions";
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
-import { ConfigServiceBase } from "./ConfigServiceBase";
-import { ClientReadyState } from "./Hooks";
+import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
 import type { ProjectConfig } from "./ProjectConfig";
 import { delay } from "./Utils";
 
@@ -178,15 +177,15 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     this.workerTimerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
-  getCacheState(cachedConfig: ProjectConfig): ClientReadyState {
+  getCacheState(cachedConfig: ProjectConfig): ClientCacheState {
     if (cachedConfig.isEmpty) {
-      return ClientReadyState.NoFlagData;
+      return ClientCacheState.NoFlagData;
     }
 
     if (cachedConfig.isExpired(this.pollIntervalMs)) {
-      return ClientReadyState.HasCachedFlagDataOnly;
+      return ClientCacheState.HasCachedFlagDataOnly;
     }
 
-    return ClientReadyState.HasUpToDateFlagData;
+    return ClientCacheState.HasUpToDateFlagData;
   }
 }

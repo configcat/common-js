@@ -1,8 +1,7 @@
 import type { ManualPollOptions } from "./ConfigCatClientOptions";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
-import { ConfigServiceBase } from "./ConfigServiceBase";
-import { ClientReadyState } from "./Hooks";
+import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
 import type { ProjectConfig } from "./ProjectConfig";
 
 export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
@@ -14,12 +13,12 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
     super.syncUpWithCache();
   }
 
-  getCacheState(cachedConfig: ProjectConfig): ClientReadyState {
+  getCacheState(cachedConfig: ProjectConfig): ClientCacheState {
     if (cachedConfig.isEmpty) {
-      return ClientReadyState.NoFlagData;
+      return ClientCacheState.NoFlagData;
     }
 
-    return ClientReadyState.HasCachedFlagDataOnly;
+    return ClientCacheState.HasCachedFlagDataOnly;
   }
 
   async getConfig(): Promise<ProjectConfig> {
