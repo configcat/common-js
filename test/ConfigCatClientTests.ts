@@ -1364,12 +1364,12 @@ describe("ConfigCatClient", () => {
         try {
           // After client instantiation, if IConfigCatCache.get is a sync operation, the snapshot should immediately report the expected cache state.
           let snapshot = client.snapshot();
-          assert.equal(expectedImmediateCacheState, snapshot.clientCacheState);
+          assert.equal(expectedImmediateCacheState, snapshot.cacheState);
 
           // Otherwise, it should report the expected cache state after some delay.
           await delay(asyncCacheDelayMs + 10);
           snapshot = client.snapshot();
-          assert.equal(expectedDelayedCacheState, snapshot.clientCacheState);
+          assert.equal(expectedDelayedCacheState, snapshot.cacheState);
         }
         finally {
           client.dispose();

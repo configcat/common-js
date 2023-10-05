@@ -19,7 +19,7 @@ export const ClientReadyState = ClientCacheState;
 /** Hooks (events) that can be emitted by `ConfigCatClient`. */
 export type HookEvents = {
   /** Occurs when the client is ready to provide the actual value of feature flags or settings. */
-  clientReady: [state: ClientCacheState];
+  clientReady: [cacheState: ClientCacheState];
   /** Occurs after the value of a feature flag of setting has been evaluated. */
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
   /** Occurs after the locally cached config has been updated. */
