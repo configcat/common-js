@@ -3,10 +3,10 @@ import "mocha";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { IConfigCache } from "../src/ConfigCatCache";
 import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
-import { AutoPollOptions, IAutoPollOptions, IManualPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
+import { AutoPollOptions, IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, IOptions, LazyLoadOptions, ManualPollOptions, OptionsBase, PollingMode } from "../src/ConfigCatClientOptions";
 import { LogLevel } from "../src/ConfigCatLogger";
 import { IFetchResponse } from "../src/ConfigFetcher";
-import { ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
+import { ClientCacheState, ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
@@ -15,7 +15,7 @@ import { Config, IConfig, ProjectConfig, Setting } from "../src/ProjectConfig";
 import { IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClient", () => {
@@ -153,7 +153,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const user = new User("a@configcat.com");
@@ -194,7 +194,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const user = new User("a@configcat.com");
@@ -235,7 +235,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const user = new User("a@configcat.com");
@@ -279,7 +279,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const user = new User("a@configcat.com");
@@ -322,7 +322,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const err = new Error("Something went wrong.");
@@ -375,7 +375,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const user = new User("a@configcat.com");
@@ -425,7 +425,7 @@ describe("ConfigCatClient", () => {
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, () => configCache);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, () => configCache);
     const client = new ConfigCatClient(options, configCatKernel);
 
     const err = new Error("Something went wrong.");
@@ -1197,7 +1197,7 @@ describe("ConfigCatClient", () => {
       const configCache = new FakeCache();
       const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0", defaultCacheFactory: () => configCache };
       const userOptions: IManualPollOptions = addListenersViaOptions ? { setupHooks } : {};
-      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, userOptions, configCatKernel.defaultCacheFactory);
+      const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, userOptions, configCatKernel.defaultCacheFactory);
 
       const expectedErrorMessage = "Error occurred in the `forceRefreshAsync` method.";
       const expectedErrorException = new Error("Something went wrong.");
@@ -1225,6 +1225,7 @@ describe("ConfigCatClient", () => {
         get isOffline(): boolean { return false; }
         setOnline(): void { }
         setOffline(): void { }
+        getCacheState(): ClientReadyState { return ClientReadyState.NoFlagData; }
         dispose(): void { }
       };
 
@@ -1272,7 +1273,7 @@ describe("ConfigCatClient", () => {
     const configFetcher = new FakeConfigFetcherBase(null, 100, (lastConfig, lastETag) => { throw errorException; });
     const configCache = new FakeCache();
     const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0", defaultCacheFactory: () => configCache };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCatKernel.defaultCacheFactory);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, configCatKernel.defaultCacheFactory);
 
     const client = new ConfigCatClient(options, configCatKernel);
 
@@ -1290,7 +1291,7 @@ describe("ConfigCatClient", () => {
     const configFetcher = new FakeConfigFetcherBase(null, 100, (lastConfig, lastETag) => { throw errorException; });
     const configCache = new FakeCache();
     const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0", defaultCacheFactory: () => configCache };
-    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkType, {}, configCatKernel.defaultCacheFactory);
+    const options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, {}, configCatKernel.defaultCacheFactory);
 
     const client = new ConfigCatClient(options, configCatKernel);
 
@@ -1300,6 +1301,7 @@ describe("ConfigCatClient", () => {
       get isOffline(): boolean { return false; }
       setOnline(): void { }
       setOffline(): void { }
+      getCacheState(): ClientReadyState { return ClientReadyState.NoFlagData; }
       dispose(): void { }
     };
 
@@ -1309,4 +1311,70 @@ describe("ConfigCatClient", () => {
     expect(refreshResult.errorMessage).to.include(errorMessage);
     assert.strictEqual(refreshResult.errorException, errorException);
   });
+
+  for (const pollingMode of [PollingMode.AutoPoll, PollingMode.LazyLoad, PollingMode.ManualPoll]) {
+    const testCases: [boolean, boolean, string, ClientCacheState, ClientCacheState][] = [
+      [false, false, "empty", ClientCacheState.NoFlagData, ClientCacheState.NoFlagData],
+      [true, false, "empty", ClientCacheState.NoFlagData, ClientCacheState.NoFlagData],
+      [true, true, "empty", ClientCacheState.NoFlagData, ClientCacheState.NoFlagData],
+      [true, false, "expired", ClientCacheState.HasCachedFlagDataOnly, ClientCacheState.HasCachedFlagDataOnly],
+      [true, true, "expired", ClientCacheState.NoFlagData, ClientCacheState.HasCachedFlagDataOnly],
+    ];
+
+    if (pollingMode !== PollingMode.ManualPoll) {
+      testCases.push(
+        [true, false, "fresh", ClientCacheState.HasUpToDateFlagData, ClientCacheState.HasUpToDateFlagData],
+        [true, true, "fresh", ClientCacheState.NoFlagData, ClientCacheState.HasUpToDateFlagData],
+      );
+    }
+
+    for (const [externalCache, asyncCacheGet, initialCacheState, expectedImmediateCacheState, expectedDelayedCacheState] of testCases) {
+      const cacheType = externalCache ? (asyncCacheGet ? "external cache (async get)" : "external cache (sync get)") : "in-memory cache";
+      it(`${PollingMode[pollingMode]} - snapshot() should correctly report client cache state - ${cacheType} - ${initialCacheState}`, async () => {
+        const configFetcher = new FakeConfigFetcher(100);
+        const configJson = configFetcher.constructor.configJson;
+        const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+        const asyncCacheDelayMs = 1, expirationSeconds = 5;
+
+        const clientOptions: IOptions = {
+          cache: externalCache ? (asyncCacheGet ? new FakeExternalAsyncCache(asyncCacheDelayMs) : new FakeExternalCache()) : null
+        };
+        let options: OptionsBase;
+        switch (pollingMode) {
+          case PollingMode.AutoPoll:
+            (clientOptions as IAutoPollOptions).pollIntervalSeconds = expirationSeconds;
+            options = new AutoPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, clientOptions, configCatKernel.defaultCacheFactory);
+            break;
+          case PollingMode.LazyLoad:
+            (clientOptions as ILazyLoadingOptions).cacheTimeToLiveSeconds = expirationSeconds;
+            options = new LazyLoadOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, clientOptions, configCatKernel.defaultCacheFactory);
+            break;
+          case PollingMode.ManualPoll:
+            options = new ManualPollOptions("APIKEY", configCatKernel.sdkType, configCatKernel.sdkVersion, clientOptions, configCatKernel.defaultCacheFactory);
+            break;
+        }
+
+        if (clientOptions.cache && (initialCacheState === "expired" || initialCacheState === "fresh")) {
+          const timestamp = ProjectConfig.generateTimestamp() - expirationSeconds * 1000 * (initialCacheState === "expired" ? 1.5 : 0.5);
+          const pc = new ProjectConfig(configJson, new Config(configJson), timestamp, "\"etag\"");
+          await clientOptions.cache.set(options.getCacheKey(), ProjectConfig.serialize(pc));
+        }
+
+        const client = new ConfigCatClient(options, configCatKernel);
+        try {
+          // After client instantiation, if IConfigCatCache.get is a sync operation, the snapshot should immediately report the expected cache state.
+          let snapshot = client.snapshot();
+          assert.equal(expectedImmediateCacheState, snapshot.cacheState);
+
+          // Otherwise, it should report the expected cache state after some delay.
+          await delay(asyncCacheDelayMs + 10);
+          snapshot = client.snapshot();
+          assert.equal(expectedDelayedCacheState, snapshot.cacheState);
+        }
+        finally {
+          client.dispose();
+        }
+      });
+    }
+  }
 });

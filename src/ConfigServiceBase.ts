@@ -1,7 +1,6 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
-import type { ClientReadyState } from "./Hooks";
 import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
 
 /** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
@@ -34,6 +33,14 @@ export class RefreshResult {
   }
 }
 
+/** Specifies the possible states of the local cache. */
+export enum ClientCacheState {
+  NoFlagData,
+  HasLocalOverrideFlagDataOnly,
+  HasCachedFlagDataOnly,
+  HasUpToDateFlagData,
+}
+
 export interface IConfigService {
   getConfig(): Promise<ProjectConfig>;
 
@@ -44,6 +51,8 @@ export interface IConfigService {
   setOnline(): void;
 
   setOffline(): void;
+
+  getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
   dispose(): void;
 }
@@ -283,10 +292,15 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  protected abstract getReadyState(cachedConfig: ProjectConfig): ClientReadyState;
+  abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
-  protected async syncUpWithCache(): Promise<void> {
+  protected onCacheSynced(cachedConfig: ProjectConfig): void {
+    this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));
+  }
+
+  protected async syncUpWithCache(): Promise<ProjectConfig> {
     const cachedConfig = await this.options.cache.get(this.cacheKey);
-    this.options.hooks.emit("clientReady", this.getReadyState(cachedConfig));
+    this.onCacheSynced(cachedConfig);
+    return cachedConfig;
   }
 }

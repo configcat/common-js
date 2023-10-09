@@ -2,8 +2,7 @@ import type { LazyLoadOptions } from "./ConfigCatClientOptions";
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
-import { ConfigServiceBase } from "./ConfigServiceBase";
-import { ClientReadyState } from "./Hooks";
+import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
 import type { ProjectConfig } from "./ProjectConfig";
 
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
@@ -47,15 +46,15 @@ export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> im
     return super.refreshConfigAsync();
   }
 
-  protected getReadyState(cachedConfig: ProjectConfig): ClientReadyState {
+  getCacheState(cachedConfig: ProjectConfig): ClientCacheState {
     if (cachedConfig.isEmpty) {
-      return ClientReadyState.NoFlagData;
+      return ClientCacheState.NoFlagData;
     }
 
     if (cachedConfig.isExpired(this.cacheTimeToLiveMs)) {
-      return ClientReadyState.HasCachedFlagDataOnly;
+      return ClientCacheState.HasCachedFlagDataOnly;
     }
 
-    return ClientReadyState.HasUpToDateFlagData;
+    return ClientCacheState.HasUpToDateFlagData;
   }
 }

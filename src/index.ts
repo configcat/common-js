@@ -98,7 +98,7 @@ export { User } from "./RolloutEvaluator";
 
 export { OverrideBehaviour } from "./FlagOverrides";
 
-export { RefreshResult } from "./ConfigServiceBase";
+export { ClientCacheState, RefreshResult } from "./ConfigServiceBase";
 
 export type { IProvidesHooks, HookEvents } from "./Hooks";
 

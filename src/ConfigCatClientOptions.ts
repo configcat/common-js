@@ -2,10 +2,11 @@ import type { IConfigCache, IConfigCatCache } from "./ConfigCatCache";
 import { ExternalConfigCache, InMemoryConfigCache } from "./ConfigCatCache";
 import type { IConfigCatLogger } from "./ConfigCatLogger";
 import { ConfigCatConsoleLogger, LoggerWrapper } from "./ConfigCatLogger";
+import type { ClientCacheState } from "./ConfigServiceBase";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
 import type { FlagOverrides } from "./FlagOverrides";
-import type { ClientReadyState, IProvidesHooks } from "./Hooks";
+import type { IProvidesHooks } from "./Hooks";
 import { Hooks } from "./Hooks";
 import { ProjectConfig } from "./ProjectConfig";
 import type { User } from "./RolloutEvaluator";
@@ -156,7 +157,7 @@ export abstract class OptionsBase {
 
   hooks: Hooks;
 
-  readyPromise: Promise<ClientReadyState>;
+  readyPromise: Promise<ClientCacheState>;
 
   constructor(apiKey: string, clientVersion: string, options?: IOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,

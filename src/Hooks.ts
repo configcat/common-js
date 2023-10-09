@@ -1,20 +1,25 @@
+import { ClientCacheState } from "./ConfigServiceBase";
 import type { IEventEmitter, IEventProvider } from "./EventEmitter";
 import { NullEventEmitter } from "./EventEmitter";
 import type { IConfig } from "./ProjectConfig";
 import type { IEvaluationDetails } from "./RolloutEvaluator";
 
-/** Contains the initialization state of `ConfigCatClient`. */
-export enum ClientReadyState {
-  NoFlagData,
-  HasLocalOverrideFlagDataOnly,
-  HasCachedFlagDataOnly,
-  HasUpToDateFlagData,
-}
+/**
+ * Contains the initialization state of `ConfigCatClient`.
+ * @deprecated This type is obsolete and will be removed from the public API in a future major version. Please use `ClientCacheState` instead.
+ */
+export type ClientReadyState = ClientCacheState;
+
+/**
+ * @deprecated This type is obsolete and will be removed from the public API in a future major version. Please use `ClientCacheState` instead.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const ClientReadyState = ClientCacheState;
 
 /** Hooks (events) that can be emitted by `ConfigCatClient`. */
 export type HookEvents = {
   /** Occurs when the client is ready to provide the actual value of feature flags or settings. */
-  clientReady: [state: ClientReadyState];
+  clientReady: [cacheState: ClientCacheState];
   /** Occurs after the value of a feature flag of setting has been evaluated. */
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
   /** Occurs after the locally cached config has been updated. */

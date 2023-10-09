@@ -6,6 +6,7 @@
       "request": "launch",
       "name": "Run tests",
       "cwd": "${workspaceRoot}",
+      "env": { "TS_NODE_PROJECT": "./tsconfig.mocha.json" },
       "runtimeArgs": [
         "--expose-gc"
       ],

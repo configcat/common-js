@@ -20,7 +20,7 @@ export enum LogLevel {
 
 export type LogEventId = number;
 
-/** Represents a log message format with names arguments. */
+/** Represents a log message format with named arguments. */
 export class FormattableLogMessage {
   static from(...argNames: string[]): (strings: TemplateStringsArray, ...argValues: unknown[]) => FormattableLogMessage {
     return (strings: TemplateStringsArray, ...argValues: unknown[]) =>
