@@ -106,24 +106,26 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   protected async refreshConfigCoreAsync(latestConfig: ProjectConfig): Promise<[FetchResult, ProjectConfig]> {
     const fetchResult = await this.fetchAsync(latestConfig);
 
+    let configChanged = false;
     const success = fetchResult.status === FetchStatus.Fetched;
     if (success
         || fetchResult.config.timestamp > latestConfig.timestamp && (!fetchResult.config.isEmpty || latestConfig.isEmpty)) {
       await this.options.cache.set(this.cacheKey, fetchResult.config);
 
-      this.onConfigUpdated(fetchResult.config);
-
-      if (success && !ProjectConfig.equals(fetchResult.config, latestConfig)) {
-        this.onConfigChanged(fetchResult.config);
-      }
-
+      configChanged = success && !ProjectConfig.equals(fetchResult.config, latestConfig);
       latestConfig = fetchResult.config;
+    }
+
+    this.onConfigFetched(fetchResult.config);
+
+    if (configChanged) {
+      this.onConfigChanged(fetchResult.config);
     }
 
     return [fetchResult, latestConfig];
   }
 
-  protected onConfigUpdated(newConfig: ProjectConfig): void { }
+  protected onConfigFetched(newConfig: ProjectConfig): void { }
 
   protected onConfigChanged(newConfig: ProjectConfig): void {
     this.options.logger.debug("config changed");

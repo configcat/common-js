@@ -28,7 +28,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
       // This promise will be resolved when
       // 1. the cache contains a valid config at startup (see startRefreshWorker) or
-      // 2. config.json is downloaded the first time (see onConfigUpdated) or
+      // 2. config json is fetched the first time, regardless of success or failure (see onConfigUpdated) or
       // 3. maxInitWaitTimeSeconds > 0 and maxInitWaitTimeSeconds has passed (see the setTimeout call below).
       this.initialization = new Promise(resolve => this.signalInitialization = () => {
         this.initialized = true;
@@ -117,8 +117,8 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
   }
 
-  protected onConfigUpdated(newConfig: ProjectConfig): void {
-    super.onConfigUpdated(newConfig);
+  protected onConfigFetched(newConfig: ProjectConfig): void {
+    super.onConfigFetched(newConfig);
     this.signalInitialization();
   }
 
