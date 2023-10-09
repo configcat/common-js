@@ -525,12 +525,36 @@ describe("ConfigCatClient", () => {
     const startDate: number = new Date().getTime();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
-    const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+    const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-    assert.isAtLeast(ellapsedMilliseconds, 500);
-    assert.isAtMost(ellapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
+    assert.isAtLeast(elapsedMilliseconds, 500);
+    assert.isAtMost(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
     assert.equal(actualValue, true);
   });
+
+  for (const statusCode of [403, 404, 500, null]) {
+    it(`Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueDetailsAsync should not wait maxInitWaitTimeSeconds even if fetch result is ${statusCode ?? "network error"}`, async () => {
+
+      const maxInitWaitTimeSeconds = 2;
+
+      const configFetchDelay = maxInitWaitTimeSeconds * 1000 / 4;
+      const configFetcher = new FakeConfigFetcherBase(null, configFetchDelay, () =>
+        statusCode ? { statusCode, reasonPhrase: "x" } : (() => { throw "network error"; })());
+
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
+
+      const startDate: number = new Date().getTime();
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const actualDetails = await client.getValueDetailsAsync("debug", false);
+      const elapsedMilliseconds: number = new Date().getTime() - startDate;
+
+      assert.isAtLeast(elapsedMilliseconds, 500);
+      assert.isAtMost(elapsedMilliseconds, configFetchDelay * 2);
+      assert.equal(actualDetails.isDefaultValue, true);
+      assert.equal(actualDetails.value, false);
+    });
+  }
 
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait for maxInitWaitTimeSeconds only and return default value", async () => {
 
@@ -542,10 +566,10 @@ describe("ConfigCatClient", () => {
     const startDate: number = new Date().getTime();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
-    const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+    const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-    assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
-    assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+    assert.isAtLeast(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
+    assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
     assert.equal(actualValue, false);
   });
 
@@ -572,16 +596,17 @@ describe("ConfigCatClient", () => {
 
     it("AutoPoll - should wait for maxInitWaitTimeSeconds", async () => {
 
-      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
-      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+      const configFetcher = new FakeConfigFetcherWithNullNewConfig(maxInitWaitTimeSeconds * 2 * 1000);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
       const startDate: number = new Date().getTime();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-      assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
-      assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+      assert.isAtLeast(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
+      assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
       assert.equal(state, ClientReadyState.NoFlagData);
       assert.equal(client.snapshot().getValue("debug", false), false);
@@ -589,7 +614,13 @@ describe("ConfigCatClient", () => {
 
     it("AutoPoll - should wait for maxInitWaitTimeSeconds and return cached", async () => {
 
-      const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const configFetcher = new FakeConfigFetcherBase("{}", maxInitWaitTimeSeconds * 2 * 1000, (lastConfig, lastETag) => ({
+        statusCode: 500,
+        reasonPhrase: "",
+        eTag: (lastETag as any | 0) + 1 + "",
+        body: lastConfig
+      } as IFetchResponse));
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {
         maxInitWaitTimeSeconds: maxInitWaitTimeSeconds,
         cache: new FakeExternalCacheWithInitialData(120_000)
@@ -598,10 +629,10 @@ describe("ConfigCatClient", () => {
       const startDate: number = new Date().getTime();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-      assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
-      assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+      assert.isAtLeast(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
+      assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
       assert.equal(client.snapshot().getValue("debug", false), true);
