@@ -1,5 +1,6 @@
 import { assert, expect } from "chai";
 import "mocha";
+import { SettingValueContainer } from "../lib/ProjectConfig";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { IConfigCache } from "../src/ConfigCatCache";
 import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
@@ -15,7 +16,7 @@ import { Config, IConfig, ProjectConfig, Setting } from "../src/ProjectConfig";
 import { IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercantageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercentageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClient", () => {
@@ -259,8 +260,8 @@ describe("ConfigCatClient", () => {
     assert.isUndefined(actual.errorMessage);
     assert.isUndefined(actual.errorException);
     assert.isDefined(actual.matchedEvaluationRule);
-    assert.strictEqual(actual.value, actual.matchedEvaluationRule?.value);
-    assert.strictEqual(actual.variationId, actual.matchedEvaluationRule?.variationId);
+    assert.strictEqual(actual.value, (actual.matchedEvaluationRule?.then as SettingValueContainer).value);
+    assert.strictEqual(actual.variationId, (actual.matchedEvaluationRule?.then as SettingValueContainer).variationId);
     assert.isUndefined(actual.matchedEvaluationPercentageRule);
 
     assert.equal(1, flagEvaluatedEvents.length);
@@ -275,7 +276,7 @@ describe("ConfigCatClient", () => {
     const defaultValue = "N/A";
     const timestamp = new Date().getTime();
 
-    const configFetcherClass = FakeConfigFetcherWithPercantageRules;
+    const configFetcherClass = FakeConfigFetcherWithPercentageRules;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };

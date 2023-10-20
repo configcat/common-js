@@ -12,10 +12,10 @@ import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
-import type { IConfig, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
+import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue} from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, isAllowedValue } from "./RolloutEvaluator";
-import { errorToString } from "./Utils";
+import { errorToString, isArray, throwError } from "./Utils";
 
 /** ConfigCat SDK client. */
 export interface IConfigCatClient extends IProvidesHooks {
@@ -249,7 +249,7 @@ export class ConfigCatClient implements IConfigCatClient {
       pollingMode === PollingMode.AutoPoll ? AutoPollOptions :
       pollingMode === PollingMode.ManualPoll ? ManualPollOptions :
       pollingMode === PollingMode.LazyLoad ? LazyLoadOptions :
-      (() => { throw new Error("Invalid 'pollingMode' value"); })();
+      throwError(new Error("Invalid 'pollingMode' value"));
 
     const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.defaultCacheFactory, configCatKernel.eventEmitterFactory);
 
@@ -294,7 +294,7 @@ export class ConfigCatClient implements IConfigCatClient {
         options instanceof AutoPollOptions ? new AutoPollConfigService(configCatKernel.configFetcher, options) :
         options instanceof ManualPollOptions ? new ManualPollConfigService(configCatKernel.configFetcher, options) :
         options instanceof LazyLoadOptions ? new LazyLoadConfigService(configCatKernel.configFetcher, options) :
-        (() => { throw new Error("Invalid 'options' value"); })();
+        throwError(new Error("Invalid 'options' value"));
     }
     else {
       this.options.hooks.emit("clientReady", ClientCacheState.HasLocalOverrideFlagDataOnly);
@@ -489,22 +489,30 @@ export class ConfigCatClient implements IConfigCatClient {
           return new SettingKeyValue(settingKey, setting.value);
         }
 
-        const rolloutRules = settings[settingKey].targetingRules;
-        if (rolloutRules && rolloutRules.length > 0) {
-          for (let i = 0; i < rolloutRules.length; i++) {
-            const rolloutRule: RolloutRule = rolloutRules[i];
-            if (variationId === rolloutRule.variationId) {
-              return new SettingKeyValue(settingKey, rolloutRule.value);
+        const targetingRules = settings[settingKey].targetingRules;
+        if (targetingRules && targetingRules.length > 0) {
+          for (let i = 0; i < targetingRules.length; i++) {
+            const then = targetingRules[i].then;
+            if (isArray(then)) {
+              for (let j = 0; j < then.length; j++) {
+                const percentageOption: PercentageOption = then[j];
+                if (variationId === percentageOption.variationId) {
+                  return new SettingKeyValue(settingKey, percentageOption.value);
+                }
+              }
+            }
+            else if (variationId === then.variationId) {
+              return new SettingKeyValue(settingKey, then.value);
             }
           }
         }
 
-        const percentageItems = settings[settingKey].percentageOptions;
-        if (percentageItems && percentageItems.length > 0) {
-          for (let i = 0; i < percentageItems.length; i++) {
-            const percentageItem: RolloutPercentageItem = percentageItems[i];
-            if (variationId === percentageItem.variationId) {
-              return new SettingKeyValue(settingKey, percentageItem.value);
+        const percentageOptions = settings[settingKey].percentageOptions;
+        if (percentageOptions && percentageOptions.length > 0) {
+          for (let i = 0; i < percentageOptions.length; i++) {
+            const percentageOption: PercentageOption = percentageOptions[i];
+            if (variationId === percentageOption.variationId) {
+              return new SettingKeyValue(settingKey, percentageOption.value);
             }
           }
         }

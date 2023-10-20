@@ -10,7 +10,7 @@ const globalUrl = "https://cdn-global.configcat.com";
 const euOnlyUrl = "https://cdn-eu.configcat.com";
 const customUrl = "https://cdn-custom.configcat.com";
 const forcedUrl = "https://cdn-forced.configcat.com";
-const testObject = { test: "test" };
+const testObject = { test: { t: 0, v: { b: true } } };
 
 describe("DataGovernance", () => {
 
@@ -301,7 +301,7 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
   }
 
   private getUrl(baseUrl: string) {
-    return baseUrl + "/configuration-files/API_KEY/config_v5.json?sdk=" + this.options.clientVersion;
+    return baseUrl + "/configuration-files/API_KEY/config_v6.json?sdk=" + this.options.clientVersion;
   }
 
   getCacheState(cachedConfig: ProjectConfig): ClientReadyState {

@@ -58,7 +58,7 @@ describe("Local Overrides", () => {
 
   it("Values from map - RemoteOverLocal", async () => {
     const configCatKernel: FakeConfigCatKernel = {
-      configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+      configFetcher: new FakeConfigFetcherBase('{"f":{"fakeKey":{"t":0,"v":{"b":false}}}}'),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
@@ -107,7 +107,7 @@ describe("Local Overrides", () => {
     dataSource["double_setting"] = 3.14;
     dataSource["string-setting"] = "test";
     const configCatKernel: FakeConfigCatKernel = {
-      configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+      configFetcher: new FakeConfigFetcherBase('{"f":{"fakeKey":{"t":0,"v":{"b":false}}}}'),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };

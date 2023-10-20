@@ -4,5 +4,5 @@ dist/
 lib/
 node_modules/
 src/Semver.ts
-src/Sha1.ts
+src/Hash.ts
 src/lib.*.d.ts

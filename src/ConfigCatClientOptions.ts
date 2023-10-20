@@ -6,11 +6,11 @@ import type { ClientCacheState } from "./ConfigServiceBase";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
 import type { FlagOverrides } from "./FlagOverrides";
+import { sha1 } from "./Hash";
 import type { IProvidesHooks } from "./Hooks";
 import { Hooks } from "./Hooks";
 import { ProjectConfig } from "./ProjectConfig";
 import type { User } from "./RolloutEvaluator";
-import { sha1 } from "./Sha1";
 
 /** Specifies the supported polling modes. */
 export enum PollingMode {
@@ -129,7 +129,7 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
 
 export abstract class OptionsBase {
 
-  private static readonly configFileName = "config_v5.json";
+  private static readonly configFileName = "config_v6.json";
 
   logger: LoggerWrapper;
 
