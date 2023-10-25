@@ -74,7 +74,7 @@ export class ExternalConfigCache implements IConfigCache {
   }
 
   private updateCachedConfig(externalSerializedConfig: string | null | undefined): void {
-    if (externalSerializedConfig === null || externalSerializedConfig === void 0 || externalSerializedConfig === this.cachedSerializedConfig) {
+    if (externalSerializedConfig == null || externalSerializedConfig === this.cachedSerializedConfig) {
       return;
     }
 

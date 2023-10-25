@@ -253,11 +253,11 @@ export class AutoPollOptions extends OptionsBase {
 
     if (options) {
 
-      if (options.pollIntervalSeconds !== void 0 && options.pollIntervalSeconds !== null) {
+      if (options.pollIntervalSeconds != null) {
         this.pollIntervalSeconds = options.pollIntervalSeconds;
       }
 
-      if (options.maxInitWaitTimeSeconds !== void 0 && options.maxInitWaitTimeSeconds !== null) {
+      if (options.maxInitWaitTimeSeconds != null) {
         this.maxInitWaitTimeSeconds = options.maxInitWaitTimeSeconds;
       }
     }
@@ -296,7 +296,7 @@ export class LazyLoadOptions extends OptionsBase {
     super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
 
     if (options) {
-      if (options.cacheTimeToLiveSeconds !== void 0 && options.cacheTimeToLiveSeconds !== null) {
+      if (options.cacheTimeToLiveSeconds != null) {
         this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
       }
     }

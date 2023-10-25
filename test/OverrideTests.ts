@@ -200,7 +200,7 @@ describe("Local Overrides", () => {
 
       const expectedEvaluatedValues: SettingKeyValue[] = [{
         settingKey: key,
-        settingValue: typeof overrideValue === "boolean" || typeof overrideValue === "string" || typeof overrideValue === "number" || overrideValue === null || overrideValue === void 0
+        settingValue: typeof overrideValue === "boolean" || typeof overrideValue === "string" || typeof overrideValue === "number" || overrideValue == null
           ? overrideValue
           : null
       }];

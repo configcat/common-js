@@ -332,7 +332,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
     if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
 
-      const hashCandidate: string = key + ((user.identifier === null || user.identifier === void 0) ? "" : user.identifier);
+      const hashCandidate: string = key + (user.identifier == null ? "" : user.identifier);
       const hashValue: any = sha1(hashCandidate).substring(0, 7);
       const hashScale: number = parseInt(hashValue, 16) % 100;
       let bucket = 0;
@@ -592,7 +592,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   const evaluateResult = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
 
-  if (defaultValue !== null && defaultValue !== void 0 && typeof defaultValue !== typeof evaluateResult.value) {
+  if (defaultValue != null && typeof defaultValue !== typeof evaluateResult.value) {
     throw new TypeError(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluateResult.value}.\nPlease pass a corresponding default value type.`);
   }
 
@@ -638,8 +638,7 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
 }
 
 export function isAllowedValue(value: SettingValue): boolean {
-  return value === null
-    || value === void 0
+  return value == null
     || typeof value === "boolean"
     || typeof value === "number"
     || typeof value === "string";
