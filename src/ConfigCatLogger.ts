@@ -84,13 +84,13 @@ export class LoggerWrapper implements IConfigCatLogger {
     private readonly hooks?: Hooks) {
   }
 
-  private isLogLevelEnabled(logLevel: LogLevel): boolean {
+  isEnabled(logLevel: LogLevel): boolean {
     return this.level >= logLevel;
   }
 
   /** @inheritdoc */
   log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): LogMessage {
-    if (this.isLogLevelEnabled(level)) {
+    if (this.isEnabled(level)) {
       this.logger.log(level, eventId, message, exception);
     }
 
@@ -259,7 +259,7 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  targetingIsNotPossible(key: string): LogMessage {
+  userObjectIsMissing(key: string): LogMessage {
     return this.log(
       LogLevel.Warn, 3001,
       FormattableLogMessage.from(
@@ -272,6 +272,33 @@ export class LoggerWrapper implements IConfigCatLogger {
     return this.log(
       LogLevel.Warn, 3002,
       "The `dataGovernance` parameter specified at the client initialization is not in sync with the preferences on the ConfigCat Dashboard. Read more: https://configcat.com/docs/advanced/data-governance/"
+    );
+  }
+
+  userObjectAttributeIsMissingPercentage(key: string, attributeName: string): LogMessage {
+    return this.log(
+      LogLevel.Warn, 3003,
+      FormattableLogMessage.from(
+        "KEY", "ATTRIBUTE_NAME", "ATTRIBUTE_NAME"
+      )`Cannot evaluate % options for setting '${key}' (the User.${attributeName} attribute is missing). You should set the User.${attributeName} attribute in order to make targeting work properly. Read more: https://configcat.com/docs/advanced/user-object/`
+    );
+  }
+
+  userObjectAttributeIsMissingCondition(condition: string, key: string, attributeName: string): LogMessage {
+    return this.log(
+      LogLevel.Warn, 3003,
+      FormattableLogMessage.from(
+        "CONDITION", "KEY", "ATTRIBUTE_NAME", "ATTRIBUTE_NAME"
+      )`Cannot evaluate condition (${condition}) for setting '${key}' (the User.${attributeName} attribute is missing). You should set the User.${attributeName} attribute in order to make targeting work properly. Read more: https://configcat.com/docs/advanced/user-object/`
+    );
+  }
+
+  userObjectAttributeIsInvalid(condition: string, key: string, reason: string, attributeName: string): LogMessage {
+    return this.log(
+      LogLevel.Warn, 3004,
+      FormattableLogMessage.from(
+        "CONDITION", "KEY", "REASON", "ATTRIBUTE_NAME"
+      )`Cannot evaluate condition (${condition}) for setting '${key}' (${reason}). Please check the User.${attributeName} attribute and make sure that its value corresponds to the comparison operator.`
     );
   }
 
@@ -304,7 +331,7 @@ export class LoggerWrapper implements IConfigCatLogger {
 
   /* Common info messages (5000-5999) */
 
-  settingEvaluated(evaluateLog: object): LogMessage {
+  settingEvaluated(evaluateLog: string): LogMessage {
     return this.log(
       LogLevel.Info, 5000,
       FormattableLogMessage.from(

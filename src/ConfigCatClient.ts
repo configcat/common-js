@@ -12,7 +12,7 @@ import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
-import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue} from "./ProjectConfig";
+import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue } from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, isAllowedValue } from "./RolloutEvaluator";
 import { errorToString, isArray, throwError } from "./Utils";
@@ -761,7 +761,7 @@ function validateKey(key: string): void {
 }
 
 function ensureAllowedDefaultValue(value: SettingValue): void {
-  if (!isAllowedValue(value)) {
+  if (value != null && !isAllowedValue(value)) {
     throw new TypeError("The default value must be boolean, number, string, null or undefined.");
   }
 }

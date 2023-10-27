@@ -69,7 +69,17 @@ createToken('LOOSEPLAIN', `[v=\\s]*${src[t['MAINVERSIONLOOSE']]
   src[t['BUILD']]}?`);
 createToken('LOOSE', `^${src[t['LOOSEPLAIN']]}$`);
 
-class SemVer {
+export interface ISemVer {
+  version: string;
+  major: number;
+  minor: number;
+  patch: number;
+  prerelease?: ReadonlyArray<number | string>;
+  build: ReadonlyArray<string>;
+  compare(other: ISemVer): number;
+}
+
+class SemVer implements ISemVer {
   loose: any;
   includePrerelease: any;
   version: any;
@@ -360,7 +370,7 @@ class SemVer {
   }
 }
 
-const parse = (version: any, options: any) => {
+export const parse = (version: string | ISemVer, options?: boolean | { loose?: boolean, includePrerelease?: boolean }): ISemVer | null => {
   if (!options || typeof options !== 'object') {
     options = {
       loose: !!options,
@@ -391,17 +401,3 @@ const parse = (version: any, options: any) => {
     return null
   }
 }
-
-const compare = (a: any, b: any, loose: any) =>
-  new SemVer(a, loose).compare(new SemVer(b, loose));
-
-export const valid = (version: any) => {
-  const v = parse(version, false)
-  return v ? v.version : null
-};
-export const looseeq = (a: any, b: any) => compare(a, b, true) === 0;
-export const eq = (a: any, b: any) => compare(a, b, false) === 0;
-export const lt = (a: any, b: any) => compare(a, b, false) < 0;
-export const lte = (a: any, b: any) => compare(a, b, false) <= 0;
-export const gt = (a: any, b: any) => compare(a, b, false) > 0;
-export const gte = (a: any, b: any) => compare(a, b, false) >= 0;

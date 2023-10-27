@@ -5,6 +5,7 @@ import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/Conf
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { SettingValue } from "../src/ProjectConfig";
+import { isAllowedValue } from "../src/RolloutEvaluator";
 import { FakeConfigCatKernel, FakeConfigFetcherBase, FakeConfigFetcherWithNullNewConfig } from "./helpers/fakes";
 
 describe("Local Overrides", () => {
@@ -200,9 +201,7 @@ describe("Local Overrides", () => {
 
       const expectedEvaluatedValues: SettingKeyValue[] = [{
         settingKey: key,
-        settingValue: typeof overrideValue === "boolean" || typeof overrideValue === "string" || typeof overrideValue === "number" || overrideValue == null
-          ? overrideValue
-          : null
+        settingValue: isAllowedValue(overrideValue) ? overrideValue : null
       }];
       assert.deepEqual(expectedEvaluatedValues, actualEvaluatedValues);
     });

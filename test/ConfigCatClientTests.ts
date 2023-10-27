@@ -12,8 +12,8 @@ import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
-import { Config, IConfig, ProjectConfig, Setting } from "../src/ProjectConfig";
-import { IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
+import { Config, IConfig, ProjectConfig, SettingValue } from "../src/ProjectConfig";
+import { EvaluateContext, IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
 import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercentageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
@@ -328,7 +328,7 @@ describe("ConfigCatClient", () => {
 
     const err = new Error("Something went wrong.");
     client["evaluator"] = new class implements IRolloutEvaluator {
-      evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluateResult {
+      evaluate(defaultValue: SettingValue, context: EvaluateContext): IEvaluateResult {
         throw err;
       }
     };
@@ -431,7 +431,7 @@ describe("ConfigCatClient", () => {
 
     const err = new Error("Something went wrong.");
     client["evaluator"] = new class implements IRolloutEvaluator {
-      evaluate(setting: Setting, key: string, defaultValue: any, user: User | undefined, remoteConfig: ProjectConfig | null, defaultVariationId?: any): IEvaluateResult {
+      evaluate(defaultValue: SettingValue, context: EvaluateContext): IEvaluateResult {
         throw err;
       }
     };

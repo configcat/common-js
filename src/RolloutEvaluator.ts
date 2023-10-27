@@ -1,10 +1,752 @@
-import { connected } from "process";
 import type { LoggerWrapper } from "./ConfigCatLogger";
+import { LogLevel } from "./ConfigCatLogger";
 import { sha1, sha256 } from "./Hash";
-import type { IPercentageOption, ITargetingRule, PercentageOption, ProjectConfig, Setting, SettingValue, SettingValueContainer, TargetingRule, UserConditionUnion, VariationIdValue } from "./ProjectConfig";
-import { UserComparator } from "./ProjectConfig";
-import * as semver from "./Semver";
-import { errorToString } from "./Utils";
+import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, ProjectConfig, Setting, SettingValue, SettingValueContainer, TargetingRule, UserCondition, UserConditionUnion, VariationIdValue, WellKnownUserObjectAttribute } from "./ProjectConfig";
+import { SettingType, UserComparator } from "./ProjectConfig";
+import type { ISemVer } from "./Semver";
+import { parse as parseSemVer } from "./Semver";
+import { errorToString, formatStringList, isArray } from "./Utils";
+
+/** User Object. Contains user attributes which are used for evaluating targeting rules and percentage options. */
+export class User {
+  constructor(
+    /** The unique identifier of the user or session (e.g. email address, primary key, session ID, etc.) */
+    public identifier: string,
+    /** Email address of the user. */
+    public email?: string,
+    /** Country of the user. */
+    public country?: string,
+    /** Custom attributes of the user for advanced targeting rule definitions (e.g. user role, subscription type, etc.) */
+    public custom: { [key: string]: string } = {}
+  ) {
+  }
+}
+
+// NOTE: This could be an instance method of the User class, however formerly we suggested `const user = { ... }`-style initialization in the SDK docs,
+// which would lead to "...is not a function" errors if we called functions on instances created that way as those don't have the correct prototype.
+function getUserAttributes(user: User): { [key: string]: string } {
+  // TODO: https://trello.com/c/A3DDpqYU
+  const result: { [key: string]: string } = {};
+
+  const identifierAttribute: WellKnownUserObjectAttribute = "Identifier";
+  const emailAttribute: WellKnownUserObjectAttribute = "Email";
+  const countryAttribute: WellKnownUserObjectAttribute = "Country";
+
+  result[identifierAttribute] = user.identifier ?? "";
+
+  if (user.email != null) {
+    result[emailAttribute] = user.email;
+  }
+
+  if (user.country != null) {
+    result[countryAttribute] = user.country;
+  }
+
+  if (user.custom != null) {
+    const wellKnownAttributes: string[] = [identifierAttribute, emailAttribute, countryAttribute];
+    for (const attributeName of Object.keys(user.custom)) {
+      if (wellKnownAttributes.indexOf(attributeName) < 0) {
+        result[attributeName] = user.custom[attributeName];
+      }
+    }
+  }
+
+  return result;
+}
+
+export class EvaluateContext {
+  private $userAttributes?: { [key: string]: string } | null;
+  get userAttributes(): { [key: string]: string } | null {
+    const attributes = this.$userAttributes;
+    return attributes !== void 0 ? attributes : (this.$userAttributes = this.user ? getUserAttributes(this.user) : null);
+  }
+
+  isMissingUserObjectLogged?: boolean;
+  isMissingUserObjectAttributeLogged?: boolean;
+
+  logBuilder?: EvaluateLogBuilder; // initialized by RolloutEvaluator.evaluate
+
+  constructor(
+    readonly key: string,
+    readonly setting: Setting,
+    readonly user: User | undefined
+  ) {
+  }
+}
+
+export interface IEvaluateResult {
+  selectedValue: SettingValueContainer;
+  matchedTargetingRule?: TargetingRule;
+  matchedPercentageOption?: PercentageOption;
+}
+
+export interface IRolloutEvaluator {
+  evaluate(defaultValue: SettingValue, context: EvaluateContext): IEvaluateResult;
+}
+
+export class RolloutEvaluator implements IRolloutEvaluator {
+  constructor(private readonly logger: LoggerWrapper) {
+  }
+
+  evaluate(defaultValue: SettingValue, context: EvaluateContext): IEvaluateResult {
+    this.logger.debug("RolloutEvaluator.evaluate() called.");
+
+    let logBuilder = context.logBuilder;
+
+    // Building the evaluation log is expensive, so let's not do it if it wouldn't be logged anyway.
+    if (this.logger.isEnabled(LogLevel.Info)) {
+      context.logBuilder = logBuilder = new EvaluateLogBuilder();
+
+      logBuilder.append(`Evaluating '${context.key}'`);
+
+      if (context.user) {
+        logBuilder.append(` for User '${JSON.stringify(context.userAttributes)}'`);
+      }
+
+      logBuilder.increaseIndent();
+    }
+
+    let returnValue: SettingValue;
+    try {
+      const result = this.evaluateSetting(context);
+      returnValue = result.selectedValue.value;
+      let isAllowedReturnValue: boolean;
+
+      if (defaultValue != null) {
+        // NOTE: We've already checked earlier in the call chain that the defaultValue is of an allowed type (see also ensureAllowedDefaultValue).
+
+        const settingType = context.setting.type;
+        // A negative setting type indicates a setting which comes from a flag override (see also Setting.fromValue).
+        if (settingType >= 0 && !isCompatibleValue(defaultValue, settingType)) {
+          throw new TypeError(
+            "The type of a setting must match the type of the specified default value. "
+            + `Setting's type was ${SettingType[settingType]} but the default value's type was ${typeof defaultValue}. `
+            + `Please use a default value which corresponds to the setting type ${SettingType[settingType]}.`);
+        }
+
+        // When a default value other than null or undefined is specified, the return value must have the same type as the default value
+        // so that the consistency between TS (compile-time) and JS (run-time) return value types is maintained.
+        isAllowedReturnValue = typeof returnValue === typeof defaultValue;
+      }
+      else {
+        // When the specified default value is null or undefined, the return value can be of whatever allowed type (boolean, string, number).
+        isAllowedReturnValue = isAllowedValue(returnValue);
+      }
+
+      if (!isAllowedReturnValue) {
+        throw new TypeError(
+          returnValue === null ? "Setting value is null." :
+          returnValue === void 0 ? "Setting value is undefined." :
+          `Setting value '${returnValue}' is of an unsupported type (${typeof returnValue}).`);
+      }
+
+      return result;
+    }
+    catch (err) {
+      logBuilder?.resetIndent().increaseIndent();
+
+      returnValue = defaultValue;
+      throw err;
+    }
+    finally {
+      if (logBuilder) {
+        logBuilder.newLine(`Returning '${returnValue}'.`)
+          .decreaseIndent();
+        this.logger.settingEvaluated(logBuilder.toString());
+      }
+    }
+  }
+
+  private evaluateSetting(context: EvaluateContext): IEvaluateResult {
+    let evaluateResult: IEvaluateResult | undefined;
+
+    const targetingRules = context.setting.targetingRules;
+    if (targetingRules.length > 0 && (evaluateResult = this.evaluateTargetingRules(targetingRules, context))) {
+      return evaluateResult;
+    }
+
+    const percentageOptions = context.setting.percentageOptions;
+    if (percentageOptions.length > 0 && (evaluateResult = this.evaluatePercentageOptions(percentageOptions, void 0, context))) {
+      return evaluateResult;
+    }
+
+    return { selectedValue: context.setting };
+  }
+
+  private evaluateTargetingRules(targetingRules: ReadonlyArray<TargetingRule>, context: EvaluateContext): IEvaluateResult | undefined {
+    const logBuilder = context.logBuilder;
+
+    logBuilder?.newLine("Evaluating targeting rules and applying the first match if any:");
+
+    for (let i = 0; i < targetingRules.length; i++) {
+      const targetingRule = targetingRules[i];
+      const conditions = targetingRule.conditions;
+
+      const isMatchOrError = this.evaluateConditions(conditions, targetingRule, context.key, context);
+
+      if (isMatchOrError !== true) {
+        if (isEvaluationError(isMatchOrError)) {
+          logBuilder?.increaseIndent()
+            .newLine(targetingRuleIgnoredMessage)
+            .decreaseIndent();
+        }
+        continue;
+      }
+
+      if (!isArray(targetingRule.then)) {
+        return { selectedValue: targetingRule.then, matchedTargetingRule: targetingRule };
+      }
+
+      const percentageOptions = targetingRule.then;
+
+      logBuilder?.increaseIndent();
+
+      const evaluateResult = this.evaluatePercentageOptions(percentageOptions, targetingRule, context);
+      if (evaluateResult) {
+        logBuilder?.decreaseIndent();
+        return evaluateResult;
+      }
+
+      logBuilder?.newLine(targetingRuleIgnoredMessage)
+        .decreaseIndent();
+    }
+  }
+
+  private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, targetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
+    const logBuilder = context.logBuilder;
+
+    if (!context.user) {
+      logBuilder?.newLine("Skipping % options because the User Object is missing.");
+
+      if (!context.isMissingUserObjectLogged) {
+        this.logger.userObjectIsMissing(context.key);
+        context.isMissingUserObjectLogged = true;
+      }
+
+      return;
+    }
+
+    const percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
+    const percentageOptionsAttributeValue = context.userAttributes![percentageOptionsAttributeName];
+    if (percentageOptionsAttributeValue == null) {
+      logBuilder?.newLine(`Skipping % options because the User.${percentageOptionsAttributeName} attribute is missing.`);
+
+      if (!context.isMissingUserObjectAttributeLogged) {
+        this.logger.userObjectAttributeIsMissingPercentage(context.key, percentageOptionsAttributeName);
+        context.isMissingUserObjectAttributeLogged = true;
+      }
+
+      return;
+    }
+
+    logBuilder?.newLine(`Evaluating % options based on the User.${percentageOptionsAttributeName} attribute:`);
+
+    const sha1Hash = sha1(context.key + percentageOptionsAttributeValue);
+    const hashValue = parseInt(sha1Hash.substring(0, 7), 16) % 100;
+
+    logBuilder?.newLine(`- Computing hash in the [0..99] range from User.${percentageOptionsAttributeName} => ${hashValue} (this value is sticky and consistent across all SDKs)`);
+
+    let bucket = 0;
+    for (let i = 0; i < percentageOptions.length; i++) {
+      const percentageOption = percentageOptions[i];
+
+      bucket += percentageOption.percentage;
+
+      if (hashValue >= bucket) {
+        continue;
+      }
+
+      logBuilder?.newLine(`- Hash value ${hashValue} selects % option ${i + 1} (${percentageOption.percentage}%), '${valueToString(percentageOption.value)}'.`);
+
+      return { selectedValue: percentageOption, matchedTargetingRule: targetingRule, matchedPercentageOption: percentageOption };
+    }
+
+    throw new Error("Sum of percentage option percentages are less than 100.");
+  }
+
+  private evaluateConditions(conditions: ReadonlyArray<ConditionUnion>, targetingRule: TargetingRule | undefined, contextSalt: string, context: EvaluateContext): boolean | string {
+    // The result of a condition evaluation is either match (true) / no match (false) or an error (string).
+    let result: boolean | string = true;
+
+    const logBuilder = context.logBuilder;
+    let newLineBeforeThen = false;
+
+    logBuilder?.newLine("- ");
+
+    for (let i = 0; i < conditions.length; i++) {
+      const condition = conditions[i];
+
+      if (logBuilder) {
+        if (!i) {
+          logBuilder.append("IF ")
+            .increaseIndent();
+        }
+        else {
+          logBuilder.increaseIndent()
+            .newLine("AND ");
+        }
+      }
+
+      switch (condition.type) {
+        case "UserCondition":
+          result = this.evaluateUserCondition(condition, contextSalt, context);
+          newLineBeforeThen = conditions.length > 1;
+          break;
+
+        case "PrerequisiteFlagCondition":
+          result = "not implemented"; // TODO
+          newLineBeforeThen = !isEvaluationError(result) || conditions.length > 1;
+          break;
+
+        case "SegmentCondition":
+          result = "not implemented"; // TODO
+          newLineBeforeThen = !isEvaluationError(result) || conditions.length > 1;
+          break;
+
+        default:
+          throw new Error(); // execution should never get here
+      }
+
+      const isMatch = result === true;
+
+      if (logBuilder) {
+        if (!targetingRule || conditions.length > 1) {
+          logBuilder.appendConditionConsequence(isMatch);
+        }
+
+        logBuilder.decreaseIndent();
+      }
+
+      if (!isMatch) {
+        break;
+      }
+    }
+
+    if (targetingRule) {
+      logBuilder?.appendTargetingRuleConsequence(targetingRule, result, newLineBeforeThen);
+    }
+
+    return result;
+  }
+
+  private evaluateUserCondition(condition: UserConditionUnion, contextSalt: string, context: EvaluateContext): boolean | string {
+    const logBuilder = context.logBuilder;
+    logBuilder?.appendUserCondition(condition);
+
+    if (!context.user) {
+      if (!context.isMissingUserObjectLogged) {
+        this.logger.userObjectIsMissing(context.key);
+        context.isMissingUserObjectLogged = true;
+      }
+
+      return missingUserObjectError;
+    }
+
+    const userAttributeName = condition.comparisonAttribute;
+    const userAttributeValue = context.userAttributes![userAttributeName];
+    if (!userAttributeValue) { // besides null and undefined, empty string is considered missing value as well
+      this.logger.userObjectAttributeIsMissingCondition(formatUserCondition(condition), context.key, userAttributeName);
+      return missingUserAttributeError(userAttributeName);
+    }
+
+    let version: ISemVer | null;
+    switch (condition.comparator) {
+      case UserComparator.TextEquals:
+      case UserComparator.TextNotEquals:
+      case UserComparator.SensitiveTextEquals:
+      case UserComparator.SensitiveTextNotEquals:
+        return "not implemented"; // TODO
+
+      case UserComparator.IsOneOf:
+      case UserComparator.IsNotOneOf:
+        return this.evaluateIsOneOf(userAttributeValue, condition.comparisonValue, condition.comparator === UserComparator.IsNotOneOf);
+
+      case UserComparator.SensitiveIsOneOf:
+      case UserComparator.SensitiveIsNotOneOf:
+        return this.evaluateSensitiveIsOneOf(userAttributeValue, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveIsNotOneOf);
+
+      case UserComparator.TextStartsWithAnyOf:
+      case UserComparator.TextNotStartsWithAnyOf:
+      case UserComparator.SensitiveTextStartsWithAnyOf:
+      case UserComparator.SensitiveTextNotStartsWithAnyOf:
+      case UserComparator.TextEndsWithAnyOf:
+      case UserComparator.TextNotEndsWithAnyOf:
+      case UserComparator.SensitiveTextEndsWithAnyOf:
+      case UserComparator.SensitiveTextNotEndsWithAnyOf:
+        return "not implemented"; // TODO
+
+      case UserComparator.ContainsAnyOf:
+      case UserComparator.NotContainsAnyOf:
+        return this.evaluateContainsAnyOf(userAttributeValue, condition.comparisonValue, condition.comparator === UserComparator.NotContainsAnyOf);
+
+      case UserComparator.SemVerIsOneOf:
+      case UserComparator.SemVerIsNotOneOf:
+        version = parseSemVer(userAttributeValue.trim());
+        if (!version) {
+          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid semantic version`);
+        }
+        return this.evaluateSemVerIsOneOf(version, condition.comparisonValue, condition.comparator === UserComparator.SemVerIsNotOneOf);
+
+      case UserComparator.SemVerLess:
+      case UserComparator.SemVerLessOrEquals:
+      case UserComparator.SemVerGreater:
+      case UserComparator.SemVerGreaterOrEquals:
+        version = parseSemVer(userAttributeValue.trim());
+        if (!version) {
+          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid semantic version`);
+        }
+        return this.evaluateSemVerRelation(version, condition.comparator, condition.comparisonValue);
+
+      case UserComparator.NumberEquals:
+      case UserComparator.NumberNotEquals:
+      case UserComparator.NumberLess:
+      case UserComparator.NumberLessOrEquals:
+      case UserComparator.NumberGreater:
+      case UserComparator.NumberGreaterOrEquals:
+        const number = parseFloat(userAttributeValue.replace(",", "."));
+        if (!isFinite(number)) {
+          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid decimal number`);
+        }
+        return this.evaluateNumberRelation(number, condition.comparator, condition.comparisonValue);
+
+      case UserComparator.DateTimeBefore:
+      case UserComparator.DateTimeAfter:
+        return "not implemented"; // TODO
+
+      case UserComparator.ArrayContainsAnyOf:
+      case UserComparator.ArrayNotContainsAnyOf:
+      case UserComparator.SensitiveArrayContainsAnyOf:
+      case UserComparator.SensitiveArrayNotContainsAnyOf:
+        return "not implemented"; // TODO
+
+      default:
+        throw new Error(); // execution should never get here (unless there is an error in the config JSON)
+    }
+  }
+
+  private evaluateIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+    for (let i = 0; i < comparisonValues.length; i++) {
+      if (text === comparisonValues[i]) {
+        return !negate;
+      }
+    }
+
+    return negate;
+  }
+
+  private evaluateSensitiveIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
+    const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
+
+    for (let i = 0; i < comparisonValues.length; i++) {
+      if (hash === comparisonValues[i]) {
+        return !negate;
+      }
+    }
+
+    return negate;
+  }
+
+  private evaluateContainsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+    for (let i = 0; i < comparisonValues.length; i++) {
+      if (text.indexOf(comparisonValues[i]) >= 0) {
+        return !negate;
+      }
+    }
+
+    return negate;
+  }
+
+  private evaluateSemVerIsOneOf(version: ISemVer, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+    let result = false;
+
+    for (let i = 0; i < comparisonValues.length; i++) {
+      const item = comparisonValues[i];
+
+      // NOTE: Previous versions of the evaluation algorithm ignore empty comparison values.
+      // We keep this behavior for backward compatibility.
+      if (!item.length) {
+        continue;
+      }
+
+      const version2 = parseSemVer(item.trim());
+      if (!version2) {
+        // NOTE: Previous versions of the evaluation algorithm ignored invalid comparison values.
+        // We keep this behavior for backward compatibility.
+        return false;
+      }
+
+      if (!result && version.compare(version2) === 0) {
+        // NOTE: Previous versions of the evaluation algorithm require that
+        // none of the comparison values are empty or invalid, that is, we can't stop when finding a match.
+        // We keep this behavior for backward compatibility.
+        result = true;
+      }
+    }
+
+    return result !== negate;
+  }
+
+  private evaluateSemVerRelation(version: ISemVer,
+    comparator: UserComparator.SemVerLess | UserComparator.SemVerLessOrEquals | UserComparator.SemVerGreater | UserComparator.SemVerGreaterOrEquals,
+    comparisonValue: string): boolean {
+
+    const version2 = parseSemVer(comparisonValue.trim());
+    if (!version2) {
+      return false;
+    }
+
+    const comparisonResult = version.compare(version2);
+    switch (comparator) {
+      case UserComparator.SemVerLess: return comparisonResult < 0;
+      case UserComparator.SemVerLessOrEquals: return comparisonResult <= 0;
+      case UserComparator.SemVerGreater: return comparisonResult > 0;
+      case UserComparator.SemVerGreaterOrEquals: return comparisonResult >= 0;
+    }
+  }
+
+  private evaluateNumberRelation(number: number,
+    comparator: UserComparator.NumberEquals | UserComparator.NumberNotEquals | UserComparator.NumberLess | UserComparator.NumberLessOrEquals | UserComparator.NumberGreater | UserComparator.NumberGreaterOrEquals,
+    comparisonValue: number): boolean {
+    switch (comparator) {
+      case UserComparator.NumberEquals: return number === comparisonValue;
+      case UserComparator.NumberNotEquals: return number !== comparisonValue;
+      case UserComparator.NumberLess: return number < comparisonValue;
+      case UserComparator.NumberLessOrEquals: return number <= comparisonValue;
+      case UserComparator.NumberGreater: return number > comparisonValue;
+      case UserComparator.NumberGreaterOrEquals: return number >= comparisonValue;
+    }
+  }
+}
+
+function isEvaluationError(isMatchOrError: boolean | string): isMatchOrError is string {
+  return typeof isMatchOrError === "string";
+}
+
+function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {
+  return sha256(value + configJsonSalt + contextSalt);
+}
+
+function handleInvalidUserAttribute(logger: LoggerWrapper, condition: UserConditionUnion, key: string, userAttributeName: string, reason: string) {
+  logger.userObjectAttributeIsInvalid(formatUserCondition(condition), key, reason, userAttributeName);
+  return invalidUserAttributeError(userAttributeName, reason);
+}
+
+/* Evaluation log */
+
+const missingUserObjectError = "cannot evaluate, User Object is missing";
+const missingUserAttributeError = (attributeName: string) => `cannot evaluate, the User.${attributeName} attribute is missing`;
+const invalidUserAttributeError = (attributeName: string, reason: string) => `cannot evaluate, the User.${attributeName} attribute is invalid (${reason})`;
+
+const targetingRuleIgnoredMessage = "The current targeting rule is ignored and the evaluation continues with the next rule.";
+
+const invalidValuePlaceholder = "<invalid value>";
+const invalidOperatorPlaceholder = "<invalid operator>";
+
+const stringListMaxLength = 10;
+
+class EvaluateLogBuilder {
+  private log = "";
+  private indent = "";
+
+  resetIndent(): this {
+    this.indent = "";
+    return this;
+  }
+
+  increaseIndent(): this {
+    this.indent += "  ";
+    return this;
+  }
+
+  decreaseIndent(): this {
+    this.indent = this.indent.slice(0, -2);
+    return this;
+  }
+
+  newLine(text?: string): this {
+    this.log += "\n" + this.indent + (text ?? "");
+    return this;
+  }
+
+  append(text: string): this {
+    this.log += text;
+    return this;
+  }
+
+  toString(): string {
+    return this.log;
+  }
+
+  appendEvaluationResult(isMatch: boolean): this {
+    return this.append(`${isMatch}`);
+  }
+
+  private appendUserConditionCore(comparisonAttribute: string, comparator: UserComparator, comparisonValue?: unknown) {
+    return this.append(`User.${comparisonAttribute} ${formatUserComparator(comparator)} '${comparisonValue ?? invalidValuePlaceholder}'`);
+  }
+
+  private appendUserConditionString(comparisonAttribute: string, comparator: UserComparator, comparisonValue: string, isSensitive: boolean) {
+    return this.appendUserConditionCore(comparisonAttribute, comparator, !isSensitive ? comparisonValue : "<hashed value>");
+  }
+
+  private appendUserConditionStringList(comparisonAttribute: string, comparator: UserComparator, comparisonValue: ReadonlyArray<string>, isSensitive: boolean): this {
+    if (comparisonValue == null) {
+      return this.appendUserConditionCore(comparisonAttribute, comparator);
+    }
+
+    const valueText = "value", valuesText = "values";
+
+    const comparatorFormatted = formatUserComparator(comparator);
+    if (isSensitive) {
+      return this.append(`User.${comparisonAttribute} ${comparatorFormatted} [<${comparisonValue.length} hashed ${comparisonValue.length === 1 ? valueText : valuesText}>]`);
+    }
+    else {
+      const comparisonValueFormatted = formatStringList(comparisonValue, stringListMaxLength, count =>
+        `, ... <${count} more ${count === 1 ? valueText : valuesText}>`);
+
+      return this.append(`User.${comparisonAttribute} ${comparatorFormatted} [${comparisonValueFormatted}]`);
+    }
+  }
+
+  private appendUserConditionNumber(comparisonAttribute: string, comparator: UserComparator, comparisonValue: number, isDateTime?: boolean) {
+    if (comparisonValue == null) {
+      return this.appendUserConditionCore(comparisonAttribute, comparator);
+    }
+
+    const comparatorFormatted = formatUserComparator(comparator);
+    let date: Date;
+    return isDateTime && !isNaN((date = new Date(comparisonValue * 1000)) as unknown as number) // see https://stackoverflow.com/a/1353711/8656352
+      ? this.append(`User.${comparisonAttribute} ${comparatorFormatted} '${comparisonValue}' (${date.toISOString()} UTC)`)
+      : this.append(`User.${comparisonAttribute} ${comparatorFormatted} '${comparisonValue}'`);
+  }
+
+  appendUserCondition(condition: UserConditionUnion): this {
+    const { comparisonAttribute, comparator } = condition;
+    switch (condition.comparator) {
+      case UserComparator.IsOneOf:
+      case UserComparator.IsNotOneOf:
+      case UserComparator.ContainsAnyOf:
+      case UserComparator.NotContainsAnyOf:
+      case UserComparator.SemVerIsOneOf:
+      case UserComparator.SemVerIsNotOneOf:
+      case UserComparator.TextStartsWithAnyOf:
+      case UserComparator.TextNotStartsWithAnyOf:
+      case UserComparator.TextEndsWithAnyOf:
+      case UserComparator.TextNotEndsWithAnyOf:
+      case UserComparator.ArrayContainsAnyOf:
+      case UserComparator.ArrayNotContainsAnyOf:
+        return this.appendUserConditionStringList(comparisonAttribute, comparator, condition.comparisonValue, false);
+
+      case UserComparator.SemVerLess:
+      case UserComparator.SemVerLessOrEquals:
+      case UserComparator.SemVerGreater:
+      case UserComparator.SemVerGreaterOrEquals:
+      case UserComparator.TextEquals:
+      case UserComparator.TextNotEquals:
+        return this.appendUserConditionString(comparisonAttribute, comparator, condition.comparisonValue, false);
+
+      case UserComparator.NumberEquals:
+      case UserComparator.NumberNotEquals:
+      case UserComparator.NumberLess:
+      case UserComparator.NumberLessOrEquals:
+      case UserComparator.NumberGreater:
+      case UserComparator.NumberGreaterOrEquals:
+        return this.appendUserConditionNumber(comparisonAttribute, comparator, condition.comparisonValue);
+
+      case UserComparator.SensitiveIsOneOf:
+      case UserComparator.SensitiveIsNotOneOf:
+      case UserComparator.SensitiveTextStartsWithAnyOf:
+      case UserComparator.SensitiveTextNotStartsWithAnyOf:
+      case UserComparator.SensitiveTextEndsWithAnyOf:
+      case UserComparator.SensitiveTextNotEndsWithAnyOf:
+      case UserComparator.SensitiveArrayContainsAnyOf:
+      case UserComparator.SensitiveArrayNotContainsAnyOf:
+        return this.appendUserConditionStringList(comparisonAttribute, comparator, condition.comparisonValue, true);
+
+      case UserComparator.DateTimeBefore:
+      case UserComparator.DateTimeAfter:
+        return this.appendUserConditionNumber(comparisonAttribute, comparator, condition.comparisonValue, true);
+
+      case UserComparator.SensitiveTextEquals:
+      case UserComparator.SensitiveTextNotEquals:
+        return this.appendUserConditionString(comparisonAttribute, comparator, condition.comparisonValue, true);
+
+      default:
+        return this.appendUserConditionCore(comparisonAttribute, comparator, (condition as UserCondition).comparisonValue);
+    }
+  }
+
+  appendConditionConsequence(isMatch: boolean): this {
+    this.append(" => ").appendEvaluationResult(isMatch);
+    return isMatch ? this : this.append(", skipping the remaining AND conditions");
+  }
+
+  appendTargetingRuleThenPart(targetingRule: TargetingRule, newLine: boolean) {
+    (newLine ? this.newLine() : this.append(" "))
+      .append("THEN");
+
+    const then = targetingRule.then;
+    return this.append(!isArray(then) ? ` '${valueToString(then.value)}'` : " % options");
+  }
+
+  appendTargetingRuleConsequence(targetingRule: TargetingRule, isMatchOrError: boolean | string, newLine: boolean): this {
+    this.increaseIndent();
+
+    this.appendTargetingRuleThenPart(targetingRule, newLine)
+      .append(" => ").append(isMatchOrError === true ? "MATCH, applying rule" : isMatchOrError === false ? "no match" : isMatchOrError);
+
+    return this.decreaseIndent();
+  }
+}
+
+function formatUserComparator(comparator: UserComparator) {
+  switch (comparator) {
+    case UserComparator.IsOneOf:
+    case UserComparator.SensitiveIsOneOf:
+    case UserComparator.SemVerIsOneOf: return "IS ONE OF";
+    case UserComparator.IsNotOneOf:
+    case UserComparator.SensitiveIsNotOneOf:
+    case UserComparator.SemVerIsNotOneOf: return "IS NOT ONE OF";
+    case UserComparator.ContainsAnyOf: return "CONTAINS ANY OF";
+    case UserComparator.NotContainsAnyOf: return "NOT CONTAINS ANY OF";
+    case UserComparator.SemVerLess:
+    case UserComparator.NumberLess: return "<";
+    case UserComparator.SemVerLessOrEquals:
+    case UserComparator.NumberLessOrEquals: return "<=";
+    case UserComparator.SemVerGreater:
+    case UserComparator.NumberGreater: return ">";
+    case UserComparator.SemVerGreaterOrEquals:
+    case UserComparator.NumberGreaterOrEquals: return ">=";
+    case UserComparator.NumberEquals: return "=";
+    case UserComparator.NumberNotEquals: return "!=";
+    case UserComparator.DateTimeBefore: return "BEFORE";
+    case UserComparator.DateTimeAfter: return "AFTER";
+    case UserComparator.TextEquals:
+    case UserComparator.SensitiveTextEquals: return "EQUALS";
+    case UserComparator.TextNotEquals:
+    case UserComparator.SensitiveTextNotEquals: return "NOT EQUALS";
+    case UserComparator.TextStartsWithAnyOf:
+    case UserComparator.SensitiveTextStartsWithAnyOf: return "STARTS WITH ANY OF";
+    case UserComparator.TextNotStartsWithAnyOf:
+    case UserComparator.SensitiveTextNotStartsWithAnyOf: return "NOT STARTS WITH ANY OF";
+    case UserComparator.TextEndsWithAnyOf:
+    case UserComparator.SensitiveTextEndsWithAnyOf: return "ENDS WITH ANY OF";
+    case UserComparator.TextNotEndsWithAnyOf:
+    case UserComparator.SensitiveTextNotEndsWithAnyOf: return "NOT ENDS WITH ANY OF";
+    case UserComparator.ArrayContainsAnyOf:
+    case UserComparator.SensitiveArrayContainsAnyOf: return "ARRAY CONTAINS ANY OF";
+    case UserComparator.ArrayNotContainsAnyOf:
+    case UserComparator.SensitiveArrayNotContainsAnyOf: return "ARRAY NOT CONTAINS ANY OF";
+    default: return invalidOperatorPlaceholder;
+  }
+}
+
+function formatUserCondition(condition: UserConditionUnion) {
+  return new EvaluateLogBuilder().appendUserCondition(condition).toString();
+}
+
+/* Helper functions */
 
 export type SettingTypeOf<T> =
   T extends boolean ? boolean :
@@ -13,10 +755,6 @@ export type SettingTypeOf<T> =
   T extends null ? boolean | number | string | null :
   T extends undefined ? boolean | number | string | undefined :
   any;
-
-export interface IRolloutEvaluator {
-  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluateResult;
-}
 
 /** The evaluated value and additional information about the evaluation of a feature flag or setting. */
 export interface IEvaluationDetails<TValue = SettingValue> {
@@ -54,507 +792,11 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   matchedEvaluationPercentageRule?: IPercentageOption;
 }
 
-/** User Object. Contains user attributes which are used for evaluating targeting rules and percentage options. */
-export class User {
-
-  constructor(identifier: string, email?: string, country?: string, custom?: { [key: string]: string }) {
-    this.identifier = identifier;
-    this.email = email;
-    this.country = country;
-    this.custom = custom || {};
-  }
-
-  /** The unique identifier of the user or session (e.g. email address, primary key, session ID, etc.) */
-  identifier: string;
-
-  /** Email address of the user. */
-  email?: string;
-
-  /** Country of the user. */
-  country?: string;
-
-  /** Custom attributes of the user for advanced targeting rule definitions (e.g. user role, subscription type, etc.) */
-  custom?: { [key: string]: string } = {};
-}
-
-export class RolloutEvaluator implements IRolloutEvaluator {
-
-  private readonly logger: LoggerWrapper;
-
-  constructor(logger: LoggerWrapper) {
-
-    this.logger = logger;
-  }
-
-  evaluate(setting: Setting, key: string, defaultValue: SettingValue, user: User | undefined, remoteConfig: ProjectConfig | null): IEvaluateResult {
-    this.logger.debug("RolloutEvaluator.Evaluate() called.");
-
-    // A negative setting type indicates a flag override (see also Setting.fromValue)
-    if (setting.type < 0 && !isAllowedValue(setting.value)) {
-      throw new TypeError(
-        setting.value === null ? "Setting value is null." :
-        setting.value === void 0 ? "Setting value is undefined." :
-        `Setting value '${setting.value}' is of an unsupported type (${typeof setting.value}).`);
-    }
-
-    const eLog: EvaluateLogger = new EvaluateLogger();
-
-    eLog.user = user;
-    eLog.keyName = key;
-    eLog.returnValue = defaultValue;
-
-    let result: IEvaluateResult | null;
-
-    try {
-      if (user) {
-        // evaluate comparison-based rules
-
-        result = this.evaluateRules(setting.targetingRules, user, key, setting.configJsonSalt ?? "", eLog);
-        if (result !== null) {
-          eLog.returnValue = result.value;
-
-          return result;
-        }
-
-        // evaluate percentage-based rules
-
-        result = this.evaluatePercentageRules(setting.percentageOptions, key, user);
-
-        if (setting.percentageOptions && setting.percentageOptions.length > 0) {
-          eLog.opAppendLine("Evaluating % options => " + (!result ? "user not targeted" : "user targeted"));
-        }
-
-        if (result !== null) {
-          eLog.returnValue = result.value;
-
-          return result;
-        }
-      }
-      else {
-        if ((setting.targetingRules && setting.targetingRules.length > 0)
-            || (setting.percentageOptions && setting.percentageOptions.length > 0)) {
-          this.logger.targetingIsNotPossible(key);
-        }
-      }
-
-      // regular evaluate
-      result = {
-        value: setting.value,
-        variationId: setting.variationId
-      };
-      eLog.returnValue = result.value;
-
-      return result;
-    }
-    finally {
-      this.logger.settingEvaluated(eLog);
-    }
-  }
-
-  private evaluateRules(rolloutRules: ReadonlyArray<TargetingRule>, user: User, settingKey: string, configJsonSalt: string, eLog: EvaluateLogger): IEvaluateResult | null {
-
-    this.logger.debug("RolloutEvaluator.EvaluateRules() called.");
-
-    if (rolloutRules.length > 0) {
-
-      for (let i = 0; i < rolloutRules.length; i++) {
-
-        const targetingRule = rolloutRules[i];
-        const rule = targetingRule.conditions[0] as UserConditionUnion;
-
-        const comparisonAttribute = this.getUserAttribute(user, rule.comparisonAttribute);
-
-        let log: string = "Evaluating rule: '" + comparisonAttribute + "' " + this.ruleToString(rule.comparator) + " '" + rule.comparisonValue + "' => ";
-
-        if (!comparisonAttribute) {
-          log += "NO MATCH (Attribute is not defined on the user object)";
-          eLog.opAppendLine(log);
-          continue;
-        }
-
-        const result: IEvaluateResult = {
-          value: (targetingRule.then as SettingValueContainer).value,
-          variationId: (targetingRule.then as SettingValueContainer).variationId,
-          matchedTargetingRule: targetingRule
-        };
-
-        switch (rule.comparator) {
-          case UserComparator.IsOneOf:
-
-            const cvs = rule.comparisonValue;
-
-            for (let ci = 0; ci < cvs.length; ci++) {
-
-              if (cvs[ci] === comparisonAttribute) {
-                log += "MATCH";
-                eLog.opAppendLine(log);
-
-                return result;
-              }
-            }
-
-            log += "no match";
-
-            break;
-
-          case UserComparator.IsNotOneOf:
-
-            if (!rule.comparisonValue.some(e => {
-              if (e === comparisonAttribute) {
-                return true;
-              }
-
-              return false;
-            })) {
-              log += "MATCH";
-              eLog.opAppendLine(log);
-
-              return result;
-            }
-
-            log += "no match";
-
-            break;
-
-          case UserComparator.ContainsAnyOf:
-
-            if (comparisonAttribute.indexOf(rule.comparisonValue[0]) !== -1) {
-              log += "MATCH";
-              eLog.opAppendLine(log);
-
-              return result;
-            }
-
-            log += "no match";
-
-            break;
-
-          case UserComparator.NotContainsAnyOf:
-
-            if (comparisonAttribute.indexOf(rule.comparisonValue[0]) === -1) {
-              log += "MATCH";
-              eLog.opAppendLine(log);
-
-              return result;
-            }
-
-            log += "no match";
-
-            break;
-
-          case UserComparator.SemVerIsOneOf:
-          case UserComparator.SemVerIsNotOneOf:
-          case UserComparator.SemVerLess:
-          case UserComparator.SemVerLessOrEquals:
-          case UserComparator.SemVerGreater:
-          case UserComparator.SemVerGreaterOrEquals:
-
-            if (this.evaluateSemver(comparisonAttribute, rule.comparisonValue, rule.comparator)) {
-              log += "MATCH";
-              eLog.opAppendLine(log);
-
-              return result;
-            }
-
-            log += "no match";
-
-            break;
-
-          case UserComparator.NumberEquals:
-          case UserComparator.NumberNotEquals:
-          case UserComparator.NumberLess:
-          case UserComparator.NumberLessOrEquals:
-          case UserComparator.NumberGreater:
-          case UserComparator.NumberGreaterOrEquals:
-
-            if (this.evaluateNumber(comparisonAttribute, rule.comparisonValue, rule.comparator)) {
-              log += "MATCH";
-              eLog.opAppendLine(log);
-
-              return result;
-            }
-
-            log += "no match";
-
-            break;
-          case UserComparator.SensitiveIsOneOf: {
-            const values = rule.comparisonValue;
-            const hashedComparisonAttribute: string = hashComparisonValue(comparisonAttribute, configJsonSalt, settingKey);
-
-            for (let ci = 0; ci < values.length; ci++) {
-
-              if (values[ci].trim() === hashedComparisonAttribute) {
-                log += "MATCH";
-                eLog.opAppendLine(log);
-
-                return result;
-              }
-            }
-
-            log += "no match";
-
-            break;
-          }
-
-          case UserComparator.SensitiveIsNotOneOf: {
-            const hashedComparisonAttribute: string = hashComparisonValue(comparisonAttribute, configJsonSalt, settingKey);
-
-            if (!rule.comparisonValue.some(e => {
-              if (e.trim() === hashedComparisonAttribute) {
-                return true;
-              }
-
-              return false;
-            })) {
-              log += "MATCH";
-              eLog.opAppendLine(log);
-
-              return result;
-            }
-
-            log += "no match";
-
-            break;
-          }
-
-          default:
-            break;
-        }
-
-        eLog.opAppendLine(log);
-      }
-    }
-
-    return null;
-  }
-
-  private evaluatePercentageRules(rolloutPercentageItems: ReadonlyArray<PercentageOption>, key: string, user: User): IEvaluateResult | null {
-    this.logger.debug("RolloutEvaluator.EvaluateVariations() called.");
-    if (rolloutPercentageItems && rolloutPercentageItems.length > 0) {
-
-      const hashCandidate: string = key + (user.identifier == null ? "" : user.identifier);
-      const hashValue: any = sha1(hashCandidate).substring(0, 7);
-      const hashScale: number = parseInt(hashValue, 16) % 100;
-      let bucket = 0;
-
-      for (let i = 0; i < rolloutPercentageItems.length; i++) {
-        const percentageRule: PercentageOption = rolloutPercentageItems[i];
-        bucket += +percentageRule.percentage;
-
-        if (hashScale < bucket) {
-          return {
-            value: percentageRule.value,
-            variationId: percentageRule.variationId,
-            matchedPercentageOption: percentageRule
-          };
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private evaluateNumber(v1: string, n2: number, comparator: UserComparator): boolean {
-    this.logger.debug("RolloutEvaluator.EvaluateNumber() called.");
-
-    let n1: number;
-
-    if (v1 && !Number.isNaN(Number.parseFloat(v1.replace(",", ".")))) {
-      n1 = Number.parseFloat(v1.replace(",", "."));
-    }
-    else {
-      return false;
-    }
-
-    switch (comparator) {
-      case UserComparator.NumberEquals:
-        return n1 === n2;
-      case UserComparator.NumberNotEquals:
-        return n1 !== n2;
-      case UserComparator.NumberLess:
-        return n1 < n2;
-      case UserComparator.NumberLessOrEquals:
-        return n1 <= n2;
-      case UserComparator.NumberGreater:
-        return n1 > n2;
-      case UserComparator.NumberGreaterOrEquals:
-        return n1 >= n2;
-      default:
-        break;
-    }
-
-    return false;
-  }
-
-  private evaluateSemver(v1: string, v2: string | ReadonlyArray<string>, comparator: UserComparator): boolean {
-    this.logger.debug("RolloutEvaluator.EvaluateSemver() called.");
-    if (semver.valid(v1) == null || v2 === void 0) {
-      return false;
-    }
-
-    switch (comparator) {
-      case UserComparator.SemVerIsOneOf:
-        const sv = v2 as ReadonlyArray<string>;
-        let found = false;
-        for (let ci = 0; ci < sv.length; ci++) {
-
-          if (!sv[ci] || sv[ci].trim() === "") {
-            continue;
-          }
-
-          if (semver.valid(sv[ci].trim()) == null) {
-            return false;
-          }
-
-          if (!found) {
-            found = semver.looseeq(v1, sv[ci].trim());
-          }
-        }
-
-        return found;
-
-      case UserComparator.SemVerIsNotOneOf:
-        return !(v2 as ReadonlyArray<string>).some(e => {
-
-          if (!e || e.trim() === "") {
-            return false;
-          }
-
-          e = semver.valid(e.trim());
-
-          if (e == null) {
-            return false;
-          }
-
-          return semver.eq(v1, e);
-        });
-
-      case UserComparator.SemVerLess:
-        v2 = (v2 as string).trim();
-        if (semver.valid(v2) == null) {
-          return false;
-        }
-
-        return semver.lt(v1, v2);
-      case UserComparator.SemVerLessOrEquals:
-        v2 = (v2 as string).trim();
-        if (semver.valid(v2) == null) {
-          return false;
-        }
-
-        return semver.lte(v1, v2);
-      case UserComparator.SemVerGreater:
-        v2 = (v2 as string).trim();
-        if (semver.valid(v2) == null) {
-          return false;
-        }
-
-        return semver.gt(v1, v2);
-      case UserComparator.SemVerGreaterOrEquals:
-        v2 = (v2 as string).trim();
-        if (semver.valid(v2) == null) {
-          return false;
-        }
-        return semver.gte(v1, v2);
-      default:
-        break;
-    }
-
-    return false;
-  }
-
-  private getUserAttribute(user: User, attribute: string): string | undefined {
-    switch (attribute) {
-      case "Identifier":
-        return user.identifier;
-      case "Email":
-        return user.email;
-      case "Country":
-        return user.country;
-      default:
-        return (user.custom || {})[attribute];
-    }
-  }
-
-  private ruleToString(rule: UserComparator): string {
-    switch (rule) {
-      case UserComparator.IsOneOf:
-        return "IS ONE OF";
-      case UserComparator.IsNotOneOf:
-        return "IS NOT ONE OF";
-      case UserComparator.ContainsAnyOf:
-        return "CONTAINS";
-      case UserComparator.NotContainsAnyOf:
-        return "DOES NOT CONTAIN";
-      case UserComparator.SemVerIsOneOf:
-        return "IS ONE OF (SemVer)";
-      case UserComparator.SemVerIsNotOneOf:
-        return "IS NOT ONE OF (SemVer)";
-      case UserComparator.SemVerLess:
-        return "< (SemVer)";
-      case UserComparator.SemVerLessOrEquals:
-        return "<= (SemVer)";
-      case UserComparator.SemVerGreater:
-        return "> (SemVer)";
-      case UserComparator.SemVerGreaterOrEquals:
-        return ">= (SemVer)";
-      case UserComparator.NumberEquals:
-        return "= (Number)";
-      case UserComparator.NumberNotEquals:
-        return "!= (Number)";
-      case UserComparator.NumberLess:
-        return "< (Number)";
-      case UserComparator.NumberLessOrEquals:
-        return "<= (Number)";
-      case UserComparator.NumberGreater:
-        return "> (Number)";
-      case UserComparator.NumberGreaterOrEquals:
-        return ">= (Number)";
-      case UserComparator.SensitiveIsOneOf:
-        return "IS ONE OF (Sensitive)";
-      case UserComparator.SensitiveIsNotOneOf:
-        return "IS NOT ONE OF (Sensitive)";
-      default:
-        return rule + "";
-    }
-  }
-}
-
-export interface IEvaluateResult {
-  value: SettingValue;
-  variationId?: string;
-  matchedTargetingRule?: TargetingRule;
-  matchedPercentageOption?: PercentageOption;
-}
-
-class EvaluateLogger {
-  user!: User | undefined;
-
-  keyName!: string;
-
-  returnValue!: any;
-
-  operations = "";
-
-  opAppendLine(s: string): void {
-    this.operations += " " + s + "\n";
-  }
-
-  toString(): string {
-    return "Evaluate '" + this.keyName + "'"
-            + "\n User : " + JSON.stringify(this.user)
-            + "\n" + this.operations
-            + " Returning value : " + this.returnValue;
-  }
-}
-
-/* Helper functions */
-
 function evaluationDetailsFromEvaluateResult<T extends SettingValue>(key: string, evaluateResult: IEvaluateResult, fetchTime?: Date, user?: User): IEvaluationDetails<SettingTypeOf<T>> {
   return {
     key,
-    value: evaluateResult.value as SettingTypeOf<T>,
-    variationId: evaluateResult.variationId,
+    value: evaluateResult.selectedValue.value as SettingTypeOf<T>,
+    variationId: evaluateResult.selectedValue.variationId,
     fetchTime,
     user,
     isDefaultValue: false,
@@ -586,15 +828,11 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
 
   const setting = settings[key];
   if (!setting) {
-    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultValue", defaultValue, keysToString(settings)).toString();
+    errorMessage = logger.settingEvaluationFailedDueToMissingKey(key, "defaultValue", defaultValue, formatStringList(Object.keys(settings))).toString();
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  const evaluateResult = evaluator.evaluate(setting, key, defaultValue, user, remoteConfig);
-
-  if (defaultValue != null && typeof defaultValue !== typeof evaluateResult.value) {
-    throw new TypeError(`The type of a setting must match the type of the given default value.\nThe setting's type was ${typeof defaultValue}, the given default value's type was ${typeof evaluateResult.value}.\nPlease pass a corresponding default value type.`);
-  }
+  const evaluateResult = evaluator.evaluate(defaultValue, new EvaluateContext(key, setting, user));
 
   return evaluationDetailsFromEvaluateResult<T>(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
 }
@@ -613,7 +851,7 @@ export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: str
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
-      const evaluateResult = evaluator.evaluate(setting, key, null, user, remoteConfig);
+      const evaluateResult = evaluator.evaluate(null, new EvaluateContext(key, setting, user));
       evaluationDetails = evaluationDetailsFromEvaluateResult(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
     }
     catch (err) {
@@ -637,21 +875,24 @@ export function checkSettingsAvailable(settings: { [name: string]: Setting } | n
   return true;
 }
 
-export function isAllowedValue(value: SettingValue): boolean {
-  return value == null
-    || typeof value === "boolean"
-    || typeof value === "number"
-    || typeof value === "string";
+export function isAllowedValue(value: unknown): value is NonNullable<SettingValue> {
+  return typeof value === "boolean" || typeof value === "string" || typeof value === "number";
+}
+
+function isCompatibleValue(value: SettingValue, settingType: SettingType): boolean {
+  switch (settingType) {
+    case SettingType.Boolean: return typeof value === "boolean";
+    case SettingType.String: return typeof value === "string";
+    case SettingType.Int:
+    case SettingType.Double: return typeof value === "number";
+    default: return false;
+  }
+}
+
+function valueToString(value: NonNullable<SettingValue>): string {
+  return isAllowedValue(value) ? value.toString() : invalidValuePlaceholder;
 }
 
 export function getTimestampAsDate(projectConfig: ProjectConfig | null): Date | undefined {
   return projectConfig ? new Date(projectConfig.timestamp) : void 0;
-}
-
-function keysToString(settings: { [name: string]: Setting }) {
-  return Object.keys(settings).map(key => `'${key}'`).join(", ");
-}
-
-function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {
-  return sha256(value + configJsonSalt + contextSalt);
 }
