@@ -44,3 +44,50 @@ export function formatStringList(items: ReadonlyArray<string>, maxLength = 0, ge
 
   return "'" + items.join("'" + separator + "'") + "'" + appendix;
 }
+
+export function utf8Encode(text: string): string {
+  function codePointAt(text: string, index: number): number {
+    const ch = text.charCodeAt(index);
+    if (0xD800 <= ch && ch < 0xDC00) { // is high surrogate?
+      const nextCh = text.charCodeAt(index + 1);
+      if (0xDC00 <= nextCh && nextCh <= 0xDFFF) { // is low surrogate?
+        return (ch << 10) + nextCh - 0x35FDC00;
+      }
+    }
+    return ch;
+  }
+
+  let utf8text = "", chunkStart = 0;
+  const fromCharCode = String.fromCharCode;
+
+  let i;
+  for (i = 0; i < text.length; i++) {
+    const cp = codePointAt(text, i);
+    if (cp <= 0x7F) {
+      continue;
+    }
+
+    // See also: https://stackoverflow.com/a/6240184/8656352
+
+    utf8text += text.slice(chunkStart, i);
+    if (cp <= 0x7FF) {
+      utf8text += fromCharCode(0xC0 | (cp >> 6));
+      utf8text += fromCharCode(0x80 | (cp & 0x3F));
+    }
+    else if (cp <= 0xFFFF) {
+      utf8text += fromCharCode(0xE0 | (cp >> 12));
+      utf8text += fromCharCode(0x80 | ((cp >> 6) & 0x3F));
+      utf8text += fromCharCode(0x80 | (cp & 0x3F));
+    }
+    else {
+      utf8text += fromCharCode(0xF0 | (cp >> 18));
+      utf8text += fromCharCode(0x80 | ((cp >> 12) & 0x3F));
+      utf8text += fromCharCode(0x80 | ((cp >> 6) & 0x3F));
+      utf8text += fromCharCode(0x80 | (cp & 0x3F));
+      ++i;
+    }
+    chunkStart = i + 1;
+  }
+
+  return utf8text += text.slice(chunkStart, i);
+}

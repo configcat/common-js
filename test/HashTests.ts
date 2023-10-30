@@ -1,6 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { sha1, sha256 } from "../src/Hash";
+import { utf8Encode } from "../src/Utils";
 
 describe("Hash functions", () => {
   for (const [input, expectedOutput] of [
@@ -24,9 +25,9 @@ describe("Hash functions", () => {
     ["\u{0} \u{7F}\n\u{80} \u{7FF}\n\u{800} \u{FFFF}\n\u{10000} \u{10FFFF}\r\n", "306979857214e80b4eee7caf751d38c7491147fa62ed2980f4fd6d7398479b9b"],
   ]) {
     it(`sha256 should work - input: '${input}'`, () => {
-      let actualOutput = sha256(input);
+      let actualOutput = sha256(utf8Encode(input));
       assert.equal(actualOutput, expectedOutput);
-      actualOutput = sha256(input);
+      actualOutput = sha256(utf8Encode(input));
       assert.equal(actualOutput, expectedOutput);
     });
   }

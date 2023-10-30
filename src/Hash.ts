@@ -1,3 +1,5 @@
+import { utf8Encode } from "./Utils";
+
 export function sha1(msg: string) {
   function rotate_left(n: number, s: number) {
     var t4 = ( n<<s ) | (n>>>(32-s));
@@ -89,7 +91,7 @@ export function sha1(msg: string) {
 }
 
 // Based on: https://stackoverflow.com/a/59777755/8656352
-export function sha256(msg: string) {
+export function sha256(msgUtf8: string) {
   function rightRotate(value: number, amount: number) {
     return (value >>> amount) | (value << (32 - amount));
   };
@@ -124,14 +126,13 @@ export function sha256(msg: string) {
     precomputedData.k = k;
   }
 
-  var ascii = utf8Encode(msg);
-  var asciiBitLength = ascii[lengthProperty] * 8;
-  ascii += '\x80' // Append Ƈ' bit (plus zero padding)
+  var asciiBitLength = msgUtf8[lengthProperty] * 8;
+  msgUtf8 += '\x80' // Append Ƈ' bit (plus zero padding)
 
   var words: number[] = [];
-  while (ascii[lengthProperty] % 64 - 56) ascii += '\x00' // More zero padding
-  for (i = 0; i < ascii[lengthProperty]; i++) {
-    j = ascii.charCodeAt(i);
+  while (msgUtf8[lengthProperty] % 64 - 56) msgUtf8 += '\x00' // More zero padding
+  for (i = 0; i < msgUtf8[lengthProperty]; i++) {
+    j = msgUtf8.charCodeAt(i);
     words[i >> 2] |= j << ((3 - i) % 4) * 8;
   }
   words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
@@ -178,53 +179,6 @@ export function sha256(msg: string) {
   }
 
   return toHexString(hash, 8);
-}
-
-function codePointAt(text: string, index: number) {
-  const ch = text.charCodeAt(index);
-  if (0xD800 <= ch && ch < 0xDC00) { // is high surrogate?
-    const nextCh = text.charCodeAt(index + 1);
-    if (0xDC00 <= nextCh && nextCh <= 0xDFFF) { // is low surrogate?
-      return (ch << 10) + nextCh - 0x35FDC00;
-    }
-  }
-  return ch;
-}
-
-function utf8Encode(text: string) {
-  let utf8text = "", chunkStart = 0;
-  const fromCharCode = String.fromCharCode;
-
-  let i;
-  for (i = 0; i < text.length; i++) {
-    const cp = codePointAt(text, i);
-    if (cp <= 0x7F) {
-      continue;
-    }
-
-    // See also: https://stackoverflow.com/a/6240184/8656352
-
-    utf8text += text.slice(chunkStart, i);
-    if (cp <= 0x7FF) {
-      utf8text += fromCharCode(0xC0 | (cp >> 6));
-      utf8text += fromCharCode(0x80 | (cp & 0x3F));
-    }
-    else if (cp <= 0xFFFF) {
-      utf8text += fromCharCode(0xE0 | (cp >> 12));
-      utf8text += fromCharCode(0x80 | ((cp >> 6) & 0x3F));
-      utf8text += fromCharCode(0x80 | (cp & 0x3F));
-    }
-    else {
-      utf8text += fromCharCode(0xF0 | (cp >> 18));
-      utf8text += fromCharCode(0x80 | ((cp >> 12) & 0x3F));
-      utf8text += fromCharCode(0x80 | ((cp >> 6) & 0x3F));
-      utf8text += fromCharCode(0x80 | (cp & 0x3F));
-      ++i;
-    }
-    chunkStart = i + 1;
-  }
-
-  return utf8text += text.slice(chunkStart, i);
 }
 
 function toHexString(int32Array: number[], count?: number) {

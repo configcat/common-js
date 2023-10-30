@@ -5,7 +5,7 @@ import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOptio
 import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
-import { errorToString, formatStringList, isArray } from "./Utils";
+import { errorToString, formatStringList, isArray, utf8Encode } from "./Utils";
 
 /** User Object. Contains user attributes which are used for evaluating targeting rules and percentage options. */
 export class User {
@@ -361,13 +361,16 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       return missingUserAttributeError(userAttributeName);
     }
 
-    let version: ISemVer | null;
+    let version: ISemVer | null, number: number, array: ReadonlyArray<string> | null;
     switch (condition.comparator) {
       case UserComparator.TextEquals:
       case UserComparator.TextNotEquals:
+        return this.evaluateTextEquals(userAttributeValue, condition.comparisonValue, condition.comparator === UserComparator.TextNotEquals);
+
       case UserComparator.SensitiveTextEquals:
       case UserComparator.SensitiveTextNotEquals:
-        return "not implemented"; // TODO
+        return this.evaluateSensitiveTextEquals(userAttributeValue, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveTextNotEquals);
 
       case UserComparator.IsOneOf:
       case UserComparator.IsNotOneOf:
@@ -380,13 +383,21 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       case UserComparator.TextStartsWithAnyOf:
       case UserComparator.TextNotStartsWithAnyOf:
+        return this.evaluateTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue, true, condition.comparator === UserComparator.TextNotStartsWithAnyOf);
+
       case UserComparator.SensitiveTextStartsWithAnyOf:
       case UserComparator.SensitiveTextNotStartsWithAnyOf:
+        return this.evaluateSensitiveTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, true, condition.comparator === UserComparator.SensitiveTextNotStartsWithAnyOf);
+
       case UserComparator.TextEndsWithAnyOf:
       case UserComparator.TextNotEndsWithAnyOf:
+        return this.evaluateTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue, false, condition.comparator === UserComparator.TextNotEndsWithAnyOf);
+
       case UserComparator.SensitiveTextEndsWithAnyOf:
       case UserComparator.SensitiveTextNotEndsWithAnyOf:
-        return "not implemented"; // TODO
+        return this.evaluateSensitiveTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, false, condition.comparator === UserComparator.SensitiveTextNotEndsWithAnyOf);
 
       case UserComparator.ContainsAnyOf:
       case UserComparator.NotContainsAnyOf:
@@ -416,7 +427,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case UserComparator.NumberLessOrEquals:
       case UserComparator.NumberGreater:
       case UserComparator.NumberGreaterOrEquals:
-        const number = parseFloat(userAttributeValue.replace(",", "."));
+        number = parseFloat(userAttributeValue.replace(",", "."));
         if (!isFinite(number)) {
           return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid decimal number`);
         }
@@ -424,22 +435,67 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       case UserComparator.DateTimeBefore:
       case UserComparator.DateTimeAfter:
-        return "not implemented"; // TODO
+        number = parseFloat(userAttributeValue.replace(",", "."));
+        if (!isFinite(number)) {
+          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);
+        }
+        return this.evaluateDateTimeRelation(number, condition.comparisonValue, condition.comparator === UserComparator.DateTimeBefore);
 
       case UserComparator.ArrayContainsAnyOf:
       case UserComparator.ArrayNotContainsAnyOf:
+        array = parseArrayComparisonValue(userAttributeValue);
+        if (!array) {
+          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid JSON string array`);
+        }
+        return this.evaluateArrayContainsAnyOf(array, condition.comparisonValue, condition.comparator === UserComparator.ArrayNotContainsAnyOf);
+
       case UserComparator.SensitiveArrayContainsAnyOf:
       case UserComparator.SensitiveArrayNotContainsAnyOf:
-        return "not implemented"; // TODO
+        array = parseArrayComparisonValue(userAttributeValue);
+        if (!array) {
+          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid JSON string array`);
+        }
+        return this.evaluateSensitiveArrayContainsAnyOf(array, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveArrayNotContainsAnyOf);
 
       default:
         throw new Error(); // execution should never get here (unless there is an error in the config JSON)
     }
   }
 
+  private evaluateTextEquals(text: string, comparisonValue: string, negate: boolean): boolean {
+    return (text === comparisonValue) !== negate;
+  }
+
+  private evaluateSensitiveTextEquals(text: string, comparisonValue: string, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
+    const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
+    return (hash === comparisonValue) !== negate;
+  }
+
   private evaluateIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+    // NOTE: Array.prototype.indexOf uses strict equality.
+    const isMatch = comparisonValues.indexOf(text) >= 0;
+    return isMatch !== negate;
+  }
+
+  private evaluateSensitiveIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
+    const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
+    // NOTE: Array.prototype.indexOf uses strict equality.
+    const isMatch = comparisonValues.indexOf(hash) >= 0;
+    return isMatch !== negate;
+  }
+
+  private evaluateTextSliceEqualsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, startsWith: boolean, negate: boolean): boolean {
     for (let i = 0; i < comparisonValues.length; i++) {
-      if (text === comparisonValues[i]) {
+      const item = comparisonValues[i];
+
+      if (text.length < item.length) {
+        continue;
+      }
+
+      // NOTE: String.prototype.startsWith/endsWith were introduced after ES5. We'd rather work around them instead of polyfilling them.
+      const isMatch = (startsWith ? text.lastIndexOf(item, 0) : text.indexOf(item, text.length - item.length)) >= 0;
+      if (isMatch) {
         return !negate;
       }
     }
@@ -447,11 +503,24 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return negate;
   }
 
-  private evaluateSensitiveIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
-    const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
+  private evaluateSensitiveTextSliceEqualsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, startsWith: boolean, negate: boolean): boolean {
+    const textUtf8 = utf8Encode(text);
 
     for (let i = 0; i < comparisonValues.length; i++) {
-      if (hash === comparisonValues[i]) {
+      const item = comparisonValues[i];
+
+      const index = item.indexOf("_");
+      const sliceLength = parseInt(item.slice(0, index));
+
+      if (textUtf8.length < sliceLength) {
+        continue;
+      }
+
+      const sliceUtf8 = startsWith ? textUtf8.slice(0, sliceLength) : textUtf8.slice(textUtf8.length - sliceLength);
+      const hash = hashComparisonValueSlice(sliceUtf8, configJsonSalt, contextSalt);
+
+      const isMatch = hash === item.slice(index + 1);
+      if (isMatch) {
         return !negate;
       }
     }
@@ -528,6 +597,35 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case UserComparator.NumberGreater: return number > comparisonValue;
       case UserComparator.NumberGreaterOrEquals: return number >= comparisonValue;
     }
+  }
+
+  private evaluateDateTimeRelation(number: number, comparisonValue: number, before: boolean): boolean {
+    return before ? number < comparisonValue : number > comparisonValue;
+  }
+
+  private evaluateArrayContainsAnyOf(array: ReadonlyArray<string>, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+    for (let i = 0; i < array.length; i++) {
+      // NOTE: Array.prototype.indexOf uses strict equality.
+      const isMatch = comparisonValues.indexOf(array[i]) >= 0;
+      if (isMatch) {
+        return !negate;
+      }
+    }
+
+    return negate;
+  }
+
+  private evaluateSensitiveArrayContainsAnyOf(array: ReadonlyArray<string>, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
+    for (let i = 0; i < array.length; i++) {
+      const hash = hashComparisonValue(array[i], configJsonSalt, contextSalt);
+      // NOTE: Array.prototype.indexOf uses strict equality.
+      const isMatch = comparisonValues.indexOf(hash) >= 0;
+      if (isMatch) {
+        return !negate;
+      }
+    }
+
+    return negate;
   }
 
   private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean | string {
@@ -642,8 +740,22 @@ function isEvaluationError(isMatchOrError: boolean | string): isMatchOrError is 
   return typeof isMatchOrError === "string";
 }
 
+function parseArrayComparisonValue(value: string): ReadonlyArray<string> | null {
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); }
+  catch { return null; }
+
+  return isArray(parsed) && !parsed.some(item => typeof item !== "string")
+    ? parsed as ReadonlyArray<string>
+    : null;
+}
+
 function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {
-  return sha256(value + configJsonSalt + contextSalt);
+  return hashComparisonValueSlice(utf8Encode(value), configJsonSalt, contextSalt);
+}
+
+function hashComparisonValueSlice(sliceUtf8: string, configJsonSalt: string, contextSalt: string) {
+  return sha256(sliceUtf8 + utf8Encode(configJsonSalt) + utf8Encode(contextSalt));
 }
 
 function handleInvalidUserAttribute(logger: LoggerWrapper, condition: UserConditionUnion, key: string, userAttributeName: string, reason: string) {
