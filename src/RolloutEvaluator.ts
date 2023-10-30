@@ -9,6 +9,46 @@ import { errorToString, formatStringList, isArray, utf8Encode } from "./Utils";
 
 /** User Object. Contains user attributes which are used for evaluating targeting rules and percentage options. */
 export class User {
+  /**
+   * Converts the specified `Date` value to the format expected by datetime comparison operators (BEFORE/AFTER).
+   * @param date The `Date` value to convert.
+   * @returns The User Object attribute value in the expected format.
+  */
+  static attributeValueFromDate(date: Date): string {
+    if (!(date instanceof Date)) {
+      throw new Error("Invalid 'date' value");
+    }
+
+    const unixTimeSeconds = date.getTime() / 1000;
+    return unixTimeSeconds + "";
+  }
+
+  /**
+   * Converts the specified `number` value to the format expected by number comparison operators.
+   * @param number The `number` value to convert.
+   * @returns The User Object attribute value in the expected format.
+  */
+  static attributeValueFromNumber(number: number): string {
+    if (typeof number !== "number" || !isFinite(number)) {
+      throw new Error("Invalid 'date' value");
+    }
+
+    return number + "";
+  }
+
+  /**
+   * Converts the specified `string` items to the format expected by array comparison operators (ARRAY CONTAINS ANY OF/ARRAY NOT CONTAINS ANY OF).
+   * @param items The `string` items to convert.
+   * @returns The User Object attribute value in the expected format.
+  */
+  static attributeValueFromStringArray(...items: ReadonlyArray<string>): string {
+    if (!isStringArray(items)) {
+      throw new Error("Invalid 'items' value");
+    }
+
+    return JSON.stringify(items);
+  }
+
   constructor(
     /** The unique identifier of the user or session (e.g. email address, primary key, session ID, etc.) */
     public identifier: string,
@@ -740,14 +780,16 @@ function isEvaluationError(isMatchOrError: boolean | string): isMatchOrError is 
   return typeof isMatchOrError === "string";
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return isArray(value) && !value.some(item => typeof item !== "string");
+}
+
 function parseArrayComparisonValue(value: string): ReadonlyArray<string> | null {
-  let parsed: unknown;
-  try { parsed = JSON.parse(value); }
+  let parsedObject: unknown;
+  try { parsedObject = JSON.parse(value); }
   catch { return null; }
 
-  return isArray(parsed) && !parsed.some(item => typeof item !== "string")
-    ? parsed as ReadonlyArray<string>
-    : null;
+  return isStringArray(parsedObject) ? parsedObject : null;
 }
 
 function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {
