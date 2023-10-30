@@ -1,8 +1,8 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import { LogLevel } from "./ConfigCatLogger";
 import { sha1, sha256 } from "./Hash";
-import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, ProjectConfig, Setting, SettingValue, SettingValueContainer, TargetingRule, UserCondition, UserConditionUnion, VariationIdValue, WellKnownUserObjectAttribute } from "./ProjectConfig";
-import { SettingType, UserComparator } from "./ProjectConfig";
+import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserCondition, UserConditionUnion, VariationIdValue, WellKnownUserObjectAttribute } from "./ProjectConfig";
+import { SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
 import { errorToString, formatStringList, isArray } from "./Utils";
@@ -299,8 +299,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           break;
 
         case "SegmentCondition":
-          result = "not implemented"; // TODO
-          newLineBeforeThen = !isEvaluationError(result) || conditions.length > 1;
+          result = this.evaluateSegmentCondition(condition, context);
+          newLineBeforeThen = !isEvaluationError(result) || result !== missingUserObjectError || conditions.length > 1;
           break;
 
         default:
@@ -517,6 +517,61 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case UserComparator.NumberGreaterOrEquals: return number >= comparisonValue;
     }
   }
+
+  private evaluateSegmentCondition(condition: SegmentCondition, context: EvaluateContext): boolean | string {
+    const logBuilder = context.logBuilder;
+    logBuilder?.appendSegmentCondition(condition);
+
+    if (!context.user) {
+      if (!context.isMissingUserObjectLogged) {
+        this.logger.userObjectIsMissing(context.key);
+        context.isMissingUserObjectLogged = true;
+      }
+
+      return missingUserObjectError;
+    }
+
+    const segment = condition.segment;
+
+    logBuilder?.newLine("(")
+      .increaseIndent()
+      .newLine(`Evaluating segment '${segment.name}':`);
+
+    const segmentResult = this.evaluateConditions(segment.conditions, void 0, segment.name, context);
+    let result = segmentResult;
+
+    if (!isEvaluationError(result)) {
+      switch (condition.comparator) {
+        case SegmentComparator.IsIn:
+          break;
+        case SegmentComparator.IsNotIn:
+          result = !result;
+          break;
+        default:
+          throw new Error(); // execution should never get here (unless there is an error in the config JSON)
+      }
+    }
+
+    if (logBuilder) {
+      logBuilder.newLine("Segment evaluation result: ");
+      (!isEvaluationError(result)
+        ? logBuilder.append(`User ${formatSegmentComparator(segmentResult ? SegmentComparator.IsIn : SegmentComparator.IsNotIn)}`)
+        : logBuilder.append(result))
+        .append(".");
+
+      logBuilder.newLine("Condition (").appendSegmentCondition(condition).append(")");
+      (!isEvaluationError(result)
+        ? logBuilder.append(" evaluates to ").appendEvaluationResult(result)
+        : logBuilder.append(" failed to evaluate"))
+        .append(".");
+
+      logBuilder
+        .decreaseIndent()
+        .newLine(")");
+    }
+
+    return result;
+  }
 }
 
 function isEvaluationError(isMatchOrError: boolean | string): isMatchOrError is string {
@@ -541,7 +596,9 @@ const invalidUserAttributeError = (attributeName: string, reason: string) => `ca
 const targetingRuleIgnoredMessage = "The current targeting rule is ignored and the evaluation continues with the next rule.";
 
 const invalidValuePlaceholder = "<invalid value>";
+const invalidNamePlaceholder = "<invalid name>";
 const invalidOperatorPlaceholder = "<invalid operator>";
+const invalidReferencePlaceholder = "<invalid reference>";
 
 const stringListMaxLength = 10;
 
@@ -677,6 +734,16 @@ class EvaluateLogBuilder {
     }
   }
 
+  appendSegmentCondition(condition: SegmentCondition): this {
+    const segment = condition.segment;
+    const comparator = condition.comparator;
+
+    const segmentName = segment?.name ??
+      (segment == null ? invalidReferencePlaceholder : invalidNamePlaceholder);
+
+    return this.append(`User ${formatSegmentComparator(comparator)} '${segmentName}'`);
+  }
+
   appendConditionConsequence(isMatch: boolean): this {
     this.append(" => ").appendEvaluationResult(isMatch);
     return isMatch ? this : this.append(", skipping the remaining AND conditions");
@@ -744,6 +811,14 @@ function formatUserComparator(comparator: UserComparator) {
 
 function formatUserCondition(condition: UserConditionUnion) {
   return new EvaluateLogBuilder().appendUserCondition(condition).toString();
+}
+
+function formatSegmentComparator(comparator: SegmentComparator) {
+  switch (comparator) {
+    case SegmentComparator.IsIn: return "IS IN SEGMENT";
+    case SegmentComparator.IsNotIn: return "IS NOT IN SEGMENT";
+    default: return invalidOperatorPlaceholder;
+  }
 }
 
 /* Helper functions */
