@@ -1,119 +1,116 @@
 import { assert } from "chai";
 import * as fs from "fs";
 import "mocha";
-import { EOL } from "os";
-import { ConfigCatConsoleLogger, LogLevel } from "../src/ConfigCatLogger";
-import { User } from "../src/RolloutEvaluator";
-import { FakeConfigCatKernel, FakeConfigFetcherBase } from "./helpers/fakes";
-import { createClientWithManualPoll } from "./helpers/utils";
+import { LogLevel, SettingValue, User } from "../src";
+import { createConsoleLogger } from "../src";
+import { LoggerWrapper } from "../src/ConfigCatLogger";
+import { RolloutEvaluator, evaluate, getUserAttributes } from "../src/RolloutEvaluator";
+import { CdnConfigLocation, ConfigLocation } from "./helpers/ConfigLocation";
+
+type MatrixTestCase = [key: string, user: User | undefined, userAttributesJson: string, expected: string];
 
 describe("MatrixTests", () => {
+  const logger = new LoggerWrapper(createConsoleLogger(LogLevel.Error));
+  const evaluator = new RolloutEvaluator(logger);
 
-  it("GetValue basic operators", async () => {
-    await Helper.runMatrixTest("test/data/sample_v5.json", "test/data/testmatrix.csv");
-  });
+  // https://app.configcat.com/08d5a03c-feb7-af1e-a1fa-40b3329f8bed/08d62463-86ec-8fde-f5b5-1c5c426fc830/244cf8b0-f604-11e8-b543-f23c917f9d8d
+  describeMatrixTest("Basic operators", new CdnConfigLocation("PKDVCLf-Hq-h-kCzMp-L7Q/psuH7BGHoUmdONrzzUOY7A"), "test/data/testmatrix.csv", evaluator);
 
-  it("GetValue numeric operators", async () => {
-    await Helper.runMatrixTest("test/data/sample_number_v5.json", "test/data/testmatrix_number.csv");
-  });
+  // https://app.configcat.com/08d5a03c-feb7-af1e-a1fa-40b3329f8bed/08d747f0-5986-c2ef-eef3-ec778e32e10a/244cf8b0-f604-11e8-b543-f23c917f9d8d
+  describeMatrixTest("Numeric operators", new CdnConfigLocation("PKDVCLf-Hq-h-kCzMp-L7Q/uGyK3q9_ckmdxRyI7vjwCw"), "test/data/testmatrix_number.csv", evaluator);
 
-  it("GetValue semver operators", async () => {
-    await Helper.runMatrixTest("test/data/sample_semantic_v5.json", "test/data/testmatrix_semantic.csv");
-  });
+  // https://app.configcat.com/08d5a03c-feb7-af1e-a1fa-40b3329f8bed/08d745f1-f315-7daf-d163-5541d3786e6f/244cf8b0-f604-11e8-b543-f23c917f9d8d
+  describeMatrixTest("SemVer operators", new CdnConfigLocation("PKDVCLf-Hq-h-kCzMp-L7Q/BAr3KgLTP0ObzKnBTo5nhA"), "test/data/testmatrix_semantic.csv", evaluator);
 
-  it("GetValue semver operators", async () => {
-    await Helper.runMatrixTest("test/data/sample_semantic_2_v5.json", "test/data/testmatrix_semantic_2.csv");
-  });
+  // https://app.configcat.com/08d5a03c-feb7-af1e-a1fa-40b3329f8bed/08d77fa1-a796-85f9-df0c-57c448eb9934/244cf8b0-f604-11e8-b543-f23c917f9d8d
+  describeMatrixTest("SemVer operators 2", new CdnConfigLocation("PKDVCLf-Hq-h-kCzMp-L7Q/q6jMCFIp-EmuAfnmZhPY7w"), "test/data/testmatrix_semantic_2.csv", evaluator);
 
-  it("GetValue sensitive operators", async () => {
-    await Helper.runMatrixTest("test/data/sample_sensitive_v5.json", "test/data/testmatrix_sensitive.csv");
-  });
+  // https://app.configcat.com/08d5a03c-feb7-af1e-a1fa-40b3329f8bed/08d7b724-9285-f4a7-9fcd-00f64f1e83d5/244cf8b0-f604-11e8-b543-f23c917f9d8d
+  describeMatrixTest("Sensitive text operators", new CdnConfigLocation("PKDVCLf-Hq-h-kCzMp-L7Q/qX3TP2dTj06ZpCCT1h_SPA"), "test/data/testmatrix_sensitive.csv", evaluator);
 
-  class Helper {
+  // https://app.configcat.com/08d5a03c-feb7-af1e-a1fa-40b3329f8bed/08d774b9-3d05-0027-d5f4-3e76c3dba752/244cf8b0-f604-11e8-b543-f23c917f9d8d
+  describeMatrixTest("Variation ID", new CdnConfigLocation("PKDVCLf-Hq-h-kCzMp-L7Q/nQ5qkhRAUEa6beEyyrVLBA"), "test/data/testmatrix_variationid.csv", evaluator, runVariationIdMatrixTest);
+});
 
-    static createUser(row: string, headers: string[]): User | undefined {
+function describeMatrixTest(title: string, configLocation: ConfigLocation, matrixFilePath: string, evaluator: RolloutEvaluator,
+  runner: (configLocation: ConfigLocation, key: string, user: User | undefined, expected: string, evaluator: RolloutEvaluator) => void = runMatrixTest) {
 
-      const column: string[] = row.split(";");
-      const USERNULL = "##null##";
+  for (const [key, user, userAttributesJson, expected] of getMatrixTestCases(matrixFilePath)) {
+    it(`${title} - ${configLocation} | ${key} | ${userAttributesJson}`, () => runner(configLocation, key, user, expected, evaluator));
+  }
+}
 
-      if (column[0] === USERNULL) {
-        return;
-      }
+function* getMatrixTestCases(matrixFilePath: string): Generator<MatrixTestCase> {
+  const data = fs.readFileSync(matrixFilePath, "utf8");
 
-      const result: User = new User(column[0]);
+  const lines: string[] = data.toString().split(/\r\n?|\n/);
+  const header: string[] = lines.shift()?.split(";") ?? [];
 
-      if (column[1] !== USERNULL) {
-        result.email = column[1];
-      }
-
-      if (column[2] !== USERNULL) {
-        result.country = column[2];
-      }
-
-      if (column[3] !== USERNULL) {
-        result.custom = result.custom || {};
-        result.custom[headers[3]] = column[3];
-      }
-
-      return result;
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    if (!line.trim()) {
+      continue;
     }
+    const columns = line.split(";");
 
-    static getTypedValue(value: string, header: string): string | boolean | number {
+    const user = createUser(columns, header);
+    const userAttributesJson = JSON.stringify(user ? getUserAttributes(user) : null);
 
-      if (header.substring(0, "bool".length) === "bool") {
-        return value.toLowerCase() === "true";
-      }
-
-      if (header.substring(0, "double".length) === "double") {
-        return +value;
-      }
-
-      if (header.substring(0, "integer".length) === "integer") {
-        return +value;
-      }
-
-      return value;
-    }
-
-    static async runMatrixTest(sampleFilePath: string, matrixFilePath: string): Promise<void> {
-
-      const SAMPLE: string = fs.readFileSync(sampleFilePath, "utf8");
-      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherBase(SAMPLE), sdkType: "common", sdkVersion: "1.0.0" };
-      const client = createClientWithManualPoll("SDKKEY", configCatKernel, {
-        logger: new ConfigCatConsoleLogger(LogLevel.Off)
-      });
-
-      await client.forceRefreshAsync();
-
-      const data = fs.readFileSync(matrixFilePath, "utf8");
-
-      const lines: string[] = data.toString().split(EOL);
-      const header: string[] = lines.shift()?.split(";") ?? [];
-
-      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-        const line = lines[lineIndex];
-
-        if (!line) {
-          return;
-        }
-
-        const user = Helper.createUser(line, header);
-
-        for (let i = 4; i < header.length; i++) {
-
-          const key: string = header[i];
-          const actual: any = await client.getValueAsync(key, null, user);
-          const expected: any = Helper.getTypedValue(line.split(";")[i], key);
-
-          if (actual !== expected) {
-
-            const l = `Matrix test failed in line ${lineIndex + 1}.\n User: ${JSON.stringify(user)},\n Key: ${key},\n Actual: ${actual}, Expected: ${expected}`;
-            console.log(l);
-          }
-
-          assert.strictEqual(actual, expected);
-        }
-      }
+    for (let i = 4; i < header.length; i++) {
+      const key = header[i];
+      const expected = columns[i];
+      yield [key, user, userAttributesJson, expected];
     }
   }
-});
+}
+
+function createUser(columns: ReadonlyArray<string>, headers: string[]): User | undefined {
+  const USERNULL = "##null##";
+
+  if (columns[0] === USERNULL) {
+    return;
+  }
+
+  const result: User = new User(columns[0]);
+
+  if (columns[1] !== USERNULL) {
+    result.email = columns[1];
+  }
+
+  if (columns[2] !== USERNULL) {
+    result.country = columns[2];
+  }
+
+  if (columns[3] !== USERNULL) {
+    result.custom = result.custom || {};
+    result.custom[headers[3]] = columns[3];
+  }
+
+  return result;
+}
+
+function getTypedValue(value: string, header: string): NonNullable<SettingValue> {
+  if (header.startsWith("bool")) {
+    return value.toLowerCase() === "true";
+  }
+
+  if (header.startsWith("integer") || header.startsWith("double")) {
+    return +value;
+  }
+
+  return value;
+}
+
+async function runMatrixTest(configLocation: ConfigLocation, key: string, user: User | undefined, expected: string, evaluator: RolloutEvaluator) {
+  const config = await configLocation.fetchConfigCachedAsync();
+
+  const actual = evaluate(evaluator, config.settings, key, null, user, null, evaluator["logger"]).value;
+  assert.strictEqual(actual, getTypedValue(expected, key));
+}
+
+async function runVariationIdMatrixTest(configLocation: ConfigLocation, key: string, user: User | undefined, expected: string, evaluator: RolloutEvaluator) {
+  const config = await configLocation.fetchConfigCachedAsync();
+
+  const actual = evaluate(evaluator, config.settings, key, null, user, null, evaluator["logger"]).variationId;
+  assert.strictEqual(actual, expected);
+}

@@ -64,7 +64,7 @@ export class User {
 
 // NOTE: This could be an instance method of the User class, however formerly we suggested `const user = { ... }`-style initialization in the SDK docs,
 // which would lead to "...is not a function" errors if we called functions on instances created that way as those don't have the correct prototype.
-function getUserAttributes(user: User): { [key: string]: string } {
+export function getUserAttributes(user: User): { [key: string]: string } {
   // TODO: https://trello.com/c/A3DDpqYU
   const result: { [key: string]: string } = {};
 

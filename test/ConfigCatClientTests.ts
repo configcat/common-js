@@ -1,6 +1,5 @@
 import { assert, expect } from "chai";
 import "mocha";
-import { SettingValueContainer } from "../lib/ProjectConfig";
 import { AutoPollConfigService } from "../src/AutoPollConfigService";
 import { IConfigCache } from "../src/ConfigCatCache";
 import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/ConfigCatClient";
@@ -12,6 +11,7 @@ import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
+import { SettingValueContainer } from "../src/ProjectConfig";
 import { Config, IConfig, ProjectConfig, SettingValue } from "../src/ProjectConfig";
 import { EvaluateContext, IEvaluateResult, IEvaluationDetails, IRolloutEvaluator, User } from "../src/RolloutEvaluator";
 import { delay } from "../src/Utils";
