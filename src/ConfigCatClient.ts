@@ -241,8 +241,9 @@ export class ConfigCatClient implements IConfigCatClient {
   private static get instanceCache() { return clientInstanceCache; }
 
   static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
+    const invalidSdkKeyError = "Invalid 'sdkKey' value";
     if (!sdkKey) {
-      throw new Error("Invalid 'sdkKey' value");
+      throw new Error(invalidSdkKeyError);
     }
 
     const optionsClass =
@@ -252,6 +253,10 @@ export class ConfigCatClient implements IConfigCatClient {
       throwError(new Error("Invalid 'pollingMode' value"));
 
     const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.defaultCacheFactory, configCatKernel.eventEmitterFactory);
+
+    if (actualOptions.flagOverrides?.behaviour !== OverrideBehaviour.LocalOnly && !isValidSdkKey(sdkKey, actualOptions.baseUrlOverriden)) {
+      throw new Error(invalidSdkKeyError);
+    }
 
     const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
 
@@ -752,6 +757,23 @@ export class SettingKeyValue<TValue = SettingValue> {
   constructor(
     public settingKey: string,
     public settingValue: TValue) { }
+}
+
+function isValidSdkKey(sdkKey: string, customBaseUrl: boolean) {
+  const proxyPrefix = "configcat-proxy/";
+
+  // NOTE: String.prototype.startsWith was introduced after ES5. We'd rather work around it instead of polyfilling it.
+  if (customBaseUrl && sdkKey.length > proxyPrefix.length && sdkKey.lastIndexOf(proxyPrefix, 0) === 0) {
+    return true;
+  }
+
+  const components = sdkKey.split("/");
+  const keyLength = 22;
+  switch (components.length) {
+    case 2: return components[0].length === keyLength && components[1].length === keyLength;
+    case 3: return components[0] === "configcat-sdk-1" && components[1].length === keyLength && components[2].length === keyLength;
+    default: return false;
+  }
 }
 
 function validateKey(key: string): void {

@@ -855,7 +855,7 @@ describe("ConfigCatClient", () => {
     it(`get() should return cached instance ${passOptionsToSecondGet ? "with" : "without"} warning`, done => {
       // Arrange
 
-      const sdkKey = "test";
+      const sdkKey = "test-67890123456789012/1234567890123456789012";
 
       const logger = new FakeLogger(LogLevel.Debug);
 
@@ -896,7 +896,7 @@ describe("ConfigCatClient", () => {
   it("dispose() should remove cached instance", done => {
     // Arrange
 
-    const sdkKey = "test";
+    const sdkKey = "test-67890123456789012/1234567890123456789012";
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
 
@@ -921,7 +921,7 @@ describe("ConfigCatClient", () => {
   it("dispose() should remove current cached instance only", done => {
     // Arrange
 
-    const sdkKey = "test";
+    const sdkKey = "test-67890123456789012/1234567890123456789012";
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
 
@@ -961,7 +961,7 @@ describe("ConfigCatClient", () => {
   it("disposeAll() should remove all cached instances", done => {
     // Arrange
 
-    const sdkKey1 = "test1", sdkKey2 = "test2";
+    const sdkKey1 = "test1-7890123456789012/1234567890123456789012", sdkKey2 = "test2-7890123456789012/1234567890123456789012";
 
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
 
@@ -995,7 +995,7 @@ describe("ConfigCatClient", () => {
     }
     const isFinalizationRegistryAvailable = typeof FinalizationRegistry !== "undefined";
 
-    const sdkKey1 = "test1", sdkKey2 = "test2";
+    const sdkKey1 = "test1-7890123456789012/1234567890123456789012", sdkKey2 = "test2-7890123456789012/1234567890123456789012";
 
     const logger = new FakeLogger(LogLevel.Debug);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
