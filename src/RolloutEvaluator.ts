@@ -1,8 +1,8 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import { LogLevel } from "./ConfigCatLogger";
 import { sha1, sha256 } from "./Hash";
-import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserCondition, UserConditionUnion, VariationIdValue, WellKnownUserObjectAttribute } from "./ProjectConfig";
-import { SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
+import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, PrerequisiteFlagCondition, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserCondition, UserConditionUnion, VariationIdValue, WellKnownUserObjectAttribute } from "./ProjectConfig";
+import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
 import { errorToString, formatStringList, isArray } from "./Utils";
@@ -61,6 +61,9 @@ export class EvaluateContext {
     return attributes !== void 0 ? attributes : (this.$userAttributes = this.user ? getUserAttributes(this.user) : null);
   }
 
+  private $visitedFlags?: string[];
+  get visitedFlags(): string[] { return this.$visitedFlags ??= []; }
+
   isMissingUserObjectLogged?: boolean;
   isMissingUserObjectAttributeLogged?: boolean;
 
@@ -69,8 +72,17 @@ export class EvaluateContext {
   constructor(
     readonly key: string,
     readonly setting: Setting,
-    readonly user: User | undefined
+    readonly user: User | undefined,
+    readonly settings: Readonly<{ [name: string]: Setting }>
   ) {
+  }
+
+  static forPrerequisiteFlag(key: string, setting: Setting, dependentFlagContext: EvaluateContext): EvaluateContext {
+    const context = new EvaluateContext(key, setting, dependentFlagContext.user, dependentFlagContext.settings);
+    context.$userAttributes = dependentFlagContext.$userAttributes;
+    context.$visitedFlags = dependentFlagContext.visitedFlags; // crucial to use the computed property here to make sure the list is created!
+    context.logBuilder = dependentFlagContext.logBuilder;
+    return context;
   }
 }
 
@@ -294,8 +306,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           break;
 
         case "PrerequisiteFlagCondition":
-          result = "not implemented"; // TODO
-          newLineBeforeThen = !isEvaluationError(result) || conditions.length > 1;
+          result = this.evaluatePrerequisiteFlagCondition(condition, context);
+          newLineBeforeThen = !isEvaluationError(result) || result !== circularDependencyError || conditions.length > 1;
           break;
 
         case "SegmentCondition":
@@ -518,6 +530,58 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
   }
 
+  private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean | string {
+    const logBuilder = context.logBuilder;
+    logBuilder?.appendPrerequisiteFlagCondition(condition);
+
+    const prerequisiteFlagKey = condition.prerequisiteFlagKey;
+    const prerequisiteFlag = context.settings[prerequisiteFlagKey];
+
+    context.visitedFlags.push(context.key);
+
+    if (context.visitedFlags.indexOf(prerequisiteFlagKey) >= 0) {
+      context.visitedFlags.push(prerequisiteFlagKey);
+      const dependencyCycle = formatStringList(context.visitedFlags, void 0, void 0, " -> ");
+      this.logger.circularDependencyDetected(formatPrerequisiteFlagCondition(condition), context.key, dependencyCycle);
+
+      context.visitedFlags.splice(-2);
+      return circularDependencyError;
+    }
+
+    const prerequisiteFlagContext = EvaluateContext.forPrerequisiteFlag(prerequisiteFlagKey, prerequisiteFlag, context);
+
+    logBuilder?.newLine("(")
+      .increaseIndent()
+      .newLine(`Evaluating prerequisite flag '${prerequisiteFlagKey}':`);
+
+    const prerequisiteFlagEvaluateResult = this.evaluateSetting(prerequisiteFlagContext);
+
+    context.visitedFlags.pop();
+
+    const prerequisiteFlagValue = prerequisiteFlagEvaluateResult.selectedValue.value;
+    let result = isAllowedValue(prerequisiteFlagValue);
+
+    switch (condition.comparator) {
+      case PrerequisiteFlagComparator.Equals:
+        result &&= prerequisiteFlagValue === condition.comparisonValue;
+        break;
+      case PrerequisiteFlagComparator.NotEquals:
+        result &&= prerequisiteFlagValue !== condition.comparisonValue;
+        break;
+      default:
+        throw new Error(); // execution should never get here (unless there is an error in the config JSON)
+    }
+
+    logBuilder?.newLine(`Prerequisite flag evaluation result: '${valueToString(prerequisiteFlagValue)}'.`)
+      .newLine("Condition (")
+      .appendPrerequisiteFlagCondition(condition)
+      .append(") evaluates to ").appendEvaluationResult(result).append(".")
+      .decreaseIndent()
+      .newLine(")");
+
+    return result;
+  }
+
   private evaluateSegmentCondition(condition: SegmentCondition, context: EvaluateContext): boolean | string {
     const logBuilder = context.logBuilder;
     logBuilder?.appendSegmentCondition(condition);
@@ -592,6 +656,7 @@ function handleInvalidUserAttribute(logger: LoggerWrapper, condition: UserCondit
 const missingUserObjectError = "cannot evaluate, User Object is missing";
 const missingUserAttributeError = (attributeName: string) => `cannot evaluate, the User.${attributeName} attribute is missing`;
 const invalidUserAttributeError = (attributeName: string, reason: string) => `cannot evaluate, the User.${attributeName} attribute is invalid (${reason})`;
+const circularDependencyError = "cannot evaluate, circular dependency detected";
 
 const targetingRuleIgnoredMessage = "The current targeting rule is ignored and the evaluation continues with the next rule.";
 
@@ -734,6 +799,14 @@ class EvaluateLogBuilder {
     }
   }
 
+  appendPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition): this {
+    const prerequisiteFlagKey = condition.prerequisiteFlagKey;
+    const comparator = condition.comparator;
+    const comparisonValue = condition.comparisonValue;
+
+    return this.append(`Flag '${prerequisiteFlagKey}' ${formatPrerequisiteFlagComparator(comparator)} '${valueToString(comparisonValue)}'`);
+  }
+
   appendSegmentCondition(condition: SegmentCondition): this {
     const segment = condition.segment;
     const comparator = condition.comparator;
@@ -811,6 +884,18 @@ function formatUserComparator(comparator: UserComparator) {
 
 function formatUserCondition(condition: UserConditionUnion) {
   return new EvaluateLogBuilder().appendUserCondition(condition).toString();
+}
+
+function formatPrerequisiteFlagComparator(comparator: PrerequisiteFlagComparator) {
+  switch (comparator) {
+    case PrerequisiteFlagComparator.Equals: return "EQUALS";
+    case PrerequisiteFlagComparator.NotEquals: return "NOT EQUALS";
+    default: return invalidOperatorPlaceholder;
+  }
+}
+
+function formatPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition) {
+  return new EvaluateLogBuilder().appendPrerequisiteFlagCondition(condition).toString();
 }
 
 function formatSegmentComparator(comparator: SegmentComparator) {
@@ -892,7 +977,7 @@ export function evaluationDetailsFromDefaultValue<T extends SettingValue>(key: s
   };
 }
 
-export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null, key: string, defaultValue: T,
+export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, settings: Readonly<{ [name: string]: Setting }> | null, key: string, defaultValue: T,
   user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper): IEvaluationDetails<SettingTypeOf<T>> {
 
   let errorMessage: string;
@@ -907,12 +992,12 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  const evaluateResult = evaluator.evaluate(defaultValue, new EvaluateContext(key, setting, user));
+  const evaluateResult = evaluator.evaluate(defaultValue, new EvaluateContext(key, setting, user, settings));
 
   return evaluationDetailsFromEvaluateResult<T>(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
 }
 
-export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: string]: Setting } | null,
+export function evaluateAll(evaluator: IRolloutEvaluator, settings: Readonly<{ [name: string]: Setting }> | null,
   user: User | undefined, remoteConfig: ProjectConfig | null, logger: LoggerWrapper, defaultReturnValue: string): [IEvaluationDetails[], any[] | undefined] {
 
   let errors: any[] | undefined;
@@ -926,7 +1011,7 @@ export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: str
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
-      const evaluateResult = evaluator.evaluate(null, new EvaluateContext(key, setting, user));
+      const evaluateResult = evaluator.evaluate(null, new EvaluateContext(key, setting, user, settings));
       evaluationDetails = evaluationDetailsFromEvaluateResult(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
     }
     catch (err) {
@@ -941,7 +1026,7 @@ export function evaluateAll(evaluator: IRolloutEvaluator, settings: { [name: str
   return [evaluationDetailsArray, errors];
 }
 
-export function checkSettingsAvailable(settings: { [name: string]: Setting } | null, logger: LoggerWrapper, defaultReturnValue: string): settings is { [name: string]: Setting } {
+export function checkSettingsAvailable(settings: Readonly<{ [name: string]: Setting }> | null, logger: LoggerWrapper, defaultReturnValue: string): settings is Readonly<{ [name: string]: Setting }> {
   if (!settings) {
     logger.configJsonIsNotPresent(defaultReturnValue);
     return false;
