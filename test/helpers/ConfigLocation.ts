@@ -5,6 +5,7 @@ import { ManualPollOptions } from "../../src/ConfigCatClientOptions";
 import { ManualPollConfigService } from "../../src/ManualPollConfigService";
 import { Config } from "../../src/ProjectConfig";
 import { HttpConfigFetcher } from "./HttpConfigFetcher";
+import { sdkType, sdkVersion } from "./utils";
 
 const configCache: { [location: string]: Promise<Config> } = {};
 
@@ -26,7 +27,7 @@ export abstract class ConfigLocation {
 export class CdnConfigLocation extends ConfigLocation {
   private $options?: ManualPollOptions;
   get options(): ManualPollOptions {
-    return this.$options ??= new ManualPollOptions(this.sdkKey, "ConfigCat-JS-Common", "0.0.0-test", {
+    return this.$options ??= new ManualPollOptions(this.sdkKey, sdkType, sdkVersion, {
       baseUrl: this.baseUrl ?? "https://cdn-eu.configcat.com"
     });
   }

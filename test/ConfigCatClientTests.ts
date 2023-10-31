@@ -20,6 +20,40 @@ import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBas
 import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClient", () => {
+  for (const [sdkKey, customBaseUrl, isValid] of <[string, boolean, boolean][]>[
+    ["sdk-key-90123456789012", false, false],
+    ["sdk-key-9012345678901/1234567890123456789012", false, false],
+    ["sdk-key-90123456789012/123456789012345678901", false, false],
+    ["sdk-key-90123456789012/12345678901234567890123", false, false],
+    ["sdk-key-901234567890123/1234567890123456789012", false, false],
+    ["sdk-key-90123456789012/1234567890123456789012", false, true],
+    ["configcat-sdk-1/sdk-key-90123456789012", false, false],
+    ["configcat-sdk-1/sdk-key-9012345678901/1234567890123456789012", false, false],
+    ["configcat-sdk-1/sdk-key-90123456789012/123456789012345678901", false, false],
+    ["configcat-sdk-1/sdk-key-90123456789012/12345678901234567890123", false, false],
+    ["configcat-sdk-1/sdk-key-901234567890123/1234567890123456789012", false, false],
+    ["configcat-sdk-1/sdk-key-90123456789012/1234567890123456789012", false, true],
+    ["configcat-sdk-2/sdk-key-90123456789012/1234567890123456789012", false, false],
+    ["configcat-proxy/", false, false],
+    ["configcat-proxy/", true, false],
+    ["configcat-proxy/sdk-key-90123456789012", false, false],
+    ["configcat-proxy/sdk-key-90123456789012", true, true],
+  ]) {
+    it(`SDK key format should be validated - sdkKey: ${sdkKey} | customBaseUrl: ${customBaseUrl}`, () => {
+      const options: IManualPollOptions = customBaseUrl ? { baseUrl: "https://my-configcat-proxy" } : {};
+      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+      if (isValid) {
+        ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, options, configCatKernel).dispose();
+      }
+      else {
+        assert.throws(() => {
+          ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, options, configCatKernel).dispose();
+        }, "Invalid 'sdkKey' value");
+      }
+    });
+  }
+
   it("Initialization With AutoPollOptions should create an instance, getValueAsync works", async () => {
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { logger: null }, null);
@@ -865,11 +899,11 @@ describe("ConfigCatClient", () => {
       // Act
 
       const client1 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, options, configCatKernel);
-      const messages1 = [...logger.messages];
+      const logEvents1 = [...logger.events];
 
       logger.reset();
       const client2 = ConfigCatClient.get(sdkKey, PollingMode.ManualPoll, passOptionsToSecondGet ? options : null, configCatKernel);
-      const messages2 = [...logger.messages];
+      const logEvents2 = [...logger.events];
 
       const instanceCount = ConfigCatClient["instanceCache"].getAliveCount();
 
@@ -880,13 +914,13 @@ describe("ConfigCatClient", () => {
 
       assert.equal(1, instanceCount);
       assert.strictEqual(client1, client2);
-      assert.isEmpty(messages1.filter(([, , msg]) => msg.indexOf("the specified options are ignored") >= 0));
+      assert.isEmpty(logEvents1.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
 
       if (passOptionsToSecondGet) {
-        assert.isNotEmpty(messages2.filter(([, , msg]) => msg.indexOf("the specified options are ignored") >= 0));
+        assert.isNotEmpty(logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
       }
       else {
-        assert.isEmpty(messages2.filter(([, , msg]) => msg.indexOf("the specified options are ignored") >= 0));
+        assert.isEmpty(logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
       }
 
       done();
@@ -1028,7 +1062,7 @@ describe("ConfigCatClient", () => {
     assert.equal(0, instanceCount2);
 
     if (isFinalizationRegistryAvailable) {
-      assert.equal(2, logger.messages.filter(([, , msg]) => msg.indexOf("finalize() called") >= 0).length);
+      assert.equal(2, logger.events.filter(([, , msg]) => msg.toString().indexOf("finalize() called") >= 0).length);
     }
   });
 

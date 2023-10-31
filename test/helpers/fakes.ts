@@ -8,14 +8,14 @@ import { ProjectConfig } from "../../src/ProjectConfig";
 import { delay } from "../../src/Utils";
 
 export class FakeLogger implements IConfigCatLogger {
-  messages: [LogLevel, LogEventId, string, any?][] = [];
+  events: [LogLevel, LogEventId, LogMessage, any?][] = [];
 
   constructor(public level = LogLevel.Info) { }
 
-  reset(): void { this.messages.splice(0); }
+  reset(): void { this.events.splice(0); }
 
   log(level: LogLevel, eventId: number, message: LogMessage, exception?: any): void {
-    this.messages.push([level, eventId, message.toString(), exception]);
+    this.events.push([level, eventId, message, exception]);
   }
 }
 

@@ -64,12 +64,12 @@ describe("ConfigCatCache", () => {
 
     assert.equal(ProjectConfig.empty, cachedConfig);
 
-    assert.equal(1, logger.messages.filter(([level, eventId, _, err]) =>
+    assert.equal(1, logger.events.filter(([level, eventId, _, err]) =>
       level === LogLevel.Error && eventId === 2200 && (err as Error).message === "Operation failed :(").length);
 
     // 2. Set should overwrite the local cache and log the error.
 
-    logger.messages.length = 0;
+    logger.events.length = 0;
 
     const configJson = "{\"p\": {\"u\": \"http://example.com\", \"r\": 0}}";
     const config = new ProjectConfig(configJson, new Config(configJson), ProjectConfig.generateTimestamp(), "\"ETAG\"");
@@ -78,18 +78,18 @@ describe("ConfigCatCache", () => {
 
     assert.equal(config, configCache["cachedConfig"]);
 
-    assert.equal(1, logger.messages.filter(([level, eventId, _, err]) =>
+    assert.equal(1, logger.events.filter(([level, eventId, _, err]) =>
       level === LogLevel.Error && eventId === 2201 && (err as Error).message === "Operation failed :(").length);
 
     // 3. Get should log the error and return the local cache which was set previously.
 
-    logger.messages.length = 0;
+    logger.events.length = 0;
 
     cachedConfig = await configCache.get(cacheKey);
 
     assert.equal(config, cachedConfig);
 
-    assert.equal(1, logger.messages.filter(([level, eventId, _, err]) =>
+    assert.equal(1, logger.events.filter(([level, eventId, _, err]) =>
       level === LogLevel.Error && eventId === 2200 && (err as Error).message === "Operation failed :(").length);
   });
 

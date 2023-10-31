@@ -99,7 +99,7 @@ function createUser(userRaw?: Readonly<{ [key: string]: string }>): User | undef
   return user;
 }
 
-function formatLogEvent(event: FakeLogger["messages"][0]) {
+function formatLogEvent(event: FakeLogger["events"][0]) {
   const [level, eventId, message, exception] = event;
 
   const levelString =
@@ -129,7 +129,7 @@ async function runTest(testSetName: string, configLocation: ConfigLocation, test
 
   const expectedLogFilePath = path.join(testDataBasePath, testSetName, testCase.expectedLog);
   const expectedLogText = normalizeLineEndings(await util.promisify(fs.readFile)(expectedLogFilePath, "utf8")).replace(/(\r|\n)*$/, "");
-  const actualLogText = fakeLogger.messages.map(e => formatLogEvent(e)).join("\n");
+  const actualLogText = fakeLogger.events.map(e => formatLogEvent(e)).join("\n");
 
   assert.strictEqual(actualLogText, expectedLogText);
 }
