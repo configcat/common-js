@@ -6,7 +6,7 @@
   "types": "lib/index.d.ts",
   "module": "lib/esm/index.js",
   "scripts": {
-    "coverage": "nyc npm run test",
+    "coverage": "cross-env NODE_OPTIONS=--max-old-space-size=16384 nyc npm run test",
     "build": "tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json",
     "prepare": "npm run build",
     "test": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
