@@ -18,3 +18,7 @@ export function createClientWithManualPoll(apiKey: string, configCatKernel: ICon
 export function createClientWithLazyLoad(apiKey: string, configCatKernel: IConfigCatKernel, options?: ILazyLoadingOptions): IConfigCatClient {
   return new ConfigCatClient(new LazyLoadOptions(apiKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.defaultCacheFactory, configCatKernel.eventEmitterFactory), configCatKernel);
 }
+
+export function normalizeLineEndings(text: string, eol = "\n"): string {
+  return text.replace(/\r\n?|\n/g, eol);
+}
