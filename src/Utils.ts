@@ -91,3 +91,17 @@ export function utf8Encode(text: string): string {
 
   return utf8text += text.slice(chunkStart, i);
 }
+
+export function parseFloatStrict(value: unknown): number {
+  // NOTE: parseFloat is too forgiving, it allows leading/trailing whitespace and ignores invalid characters after the number.
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value !== "string" || !value.length || /^\s|^0[^\d.e]|\s$/.test(value)) {
+    return NaN;
+  }
+
+  return +value;
+}

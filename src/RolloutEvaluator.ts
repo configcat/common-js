@@ -5,7 +5,7 @@ import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOptio
 import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
-import { errorToString, formatStringList, isArray, utf8Encode } from "./Utils";
+import { errorToString, formatStringList, isArray, parseFloatStrict, utf8Encode } from "./Utils";
 
 /** User Object. Contains user attributes which are used for evaluating targeting rules and percentage options. */
 export class User {
@@ -467,7 +467,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case UserComparator.NumberLessOrEquals:
       case UserComparator.NumberGreater:
       case UserComparator.NumberGreaterOrEquals:
-        number = parseFloat(userAttributeValue.replace(",", "."));
+        number = parseFloatStrict(userAttributeValue.replace(",", "."));
         if (!isFinite(number)) {
           return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid decimal number`);
         }
@@ -475,7 +475,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       case UserComparator.DateTimeBefore:
       case UserComparator.DateTimeAfter:
-        number = parseFloat(userAttributeValue.replace(",", "."));
+        number = parseFloatStrict(userAttributeValue.replace(",", "."));
         if (!isFinite(number)) {
           return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);
         }
