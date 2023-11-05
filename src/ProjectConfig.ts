@@ -413,7 +413,7 @@ export interface IUserCondition<TComparator extends UserComparator = UserCompara
 
 export type UserConditionUnion = { [K in UserComparator]: UserCondition<K> }[UserComparator];
 
-export class UserCondition<TComparator extends keyof UserConditionComparisonValueTypeMap = keyof UserConditionComparisonValueTypeMap> implements IUserCondition<TComparator> {
+export class UserCondition<TComparator extends UserComparator = UserComparator> implements IUserCondition<TComparator> {
   readonly type = "UserCondition";
   readonly comparisonAttribute: string;
   readonly comparator: TComparator;
