@@ -6,7 +6,7 @@
   "types": "lib/index.d.ts",
   "module": "lib/esm/index.js",
   "scripts": {
-    "coverage": "cross-env NODE_OPTIONS=--max-old-space-size=16384 nyc npm run test",
+    "coverage": "cross-env nyc npm run test",
     "build": "tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json",
     "prepare": "npm run build",
     "test": "cross-env TS_NODE_PROJECT=./tsconfig.mocha.json node --expose-gc node_modules/mocha/bin/_mocha --require ts-node/register 'test/**/*.ts' --exit --timeout 30000",
@@ -46,7 +46,7 @@
     "eslint-plugin-import": "^2.27.5",
     "mocha": "^10.2.0",
     "moq.ts": "^7.4.1",
-    "nyc": "^15.1.0",
+    "nyc": "^14.1.1",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",
     "tunnel": "^0.0.6",
@@ -70,8 +70,8 @@
       "src"
     ],
     "exclude": [
-      "src/Semver.ts",
-      "src/Sha1.ts"
+      "src/Hash.ts",
+      "src/Semver.ts"
     ]
   },
   "sideEffects": false
