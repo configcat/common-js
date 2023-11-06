@@ -12,6 +12,7 @@
     "../../src/ConfigFetcher": "../../src/ConfigFetcher.ts",
     "../../src/ConfigServiceBase": "../../src/ConfigServiceBase.ts",
     "../../src/DefaultEventEmitter": "../../src/DefaultEventEmitter.ts",
+    "../../src/EvaluateLogBuilder": "../../src/EvaluateLogBuilder.ts",
     "../../src/EventEmitter": "../../src/EventEmitter.ts",
     "../../src/FlagOverrides": "../../src/FlagOverrides.ts",
     "../../src/Hash": "../../src/Hash.ts",
