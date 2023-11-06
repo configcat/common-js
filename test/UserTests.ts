@@ -1,27 +1,61 @@
 import { assert } from "chai";
 import "mocha";
+import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
 import { User } from "../src/index";
+import { Config } from "../src/ProjectConfig";
+import { RolloutEvaluator, evaluate } from "../src/RolloutEvaluator";
 import { WellKnownUserObjectAttribute, getUserAttributes } from "../src/User";
 import { parseFloatStrict } from "../src/Utils";
+import { FakeLogger } from "./helpers/fakes";
 
 const identifierAttribute: WellKnownUserObjectAttribute = "Identifier";
 const emailAttribute: WellKnownUserObjectAttribute = "Email";
 const countryAttribute: WellKnownUserObjectAttribute = "Country";
 
+function createUser(attributeName: string, attributeValue: string) {
+  const user = new User("");
+  switch (attributeName) {
+    case identifierAttribute:
+      user.identifier = attributeValue;
+      break;
+    case emailAttribute:
+      user.email = attributeValue;
+      break;
+    case countryAttribute:
+      user.country = attributeValue;
+      break;
+    default:
+      user.custom[attributeName] = attributeValue;
+  }
+  return user;
+}
+
 describe("User Object", () => {
 
-  for (const [identifier, expectedValue] of <[string, string][]>[
-    [void 0, ""],
-    [null, ""],
-    ["", ""],
-    ["id", "id"],
-    ["\t", "\t"],
-    ["\u1F600", "\u1F600"],
+  for (const [attributeName, attributeValue, expectedValue] of <[string, string, string][]>[
+    [identifierAttribute, void 0, ""],
+    [identifierAttribute, null, ""],
+    [identifierAttribute, "", ""],
+    [identifierAttribute, "id", "id"],
+    [identifierAttribute, "\t", "\t"],
+    [identifierAttribute, "\u1F600", "\u1F600"],
+    [emailAttribute, void 0, void 0],
+    [emailAttribute, null, void 0],
+    [emailAttribute, "", ""],
+    [emailAttribute, "a@example.com", "a@example.com"],
+    [countryAttribute, void 0, void 0],
+    [countryAttribute, null, void 0],
+    [countryAttribute, "", ""],
+    [countryAttribute, "US", "US"],
+    ["Custom1", void 0, void 0],
+    ["Custom1", null, void 0],
+    ["Custom1", "", ""],
+    ["Custom1", "3.14", "3.14"],
   ]) {
-    it(`Create user - should set id - identifier: ${identifier}`, () => {
-      const user = new User(identifier);
+    it(`Create user - should set attribute value - ${attributeName}: ${attributeValue}`, () => {
+      const user = createUser(attributeName, attributeValue);
 
-      assert.strictEqual(getUserAttributes(user)[identifierAttribute], expectedValue);
+      assert.strictEqual(getUserAttributes(user)[attributeName], expectedValue);
     });
   }
 
@@ -153,6 +187,64 @@ describe("User Object", () => {
       }
 
       assert.strictEqual(actualAttributeValue, expectedAttributeValue);
+    });
+  }
+
+  for (const [attributeName, attributeValue, comparisonValue] of <[string, unknown, string][]>[
+    [identifierAttribute, false, "false"],
+    [emailAttribute, false, "false"],
+    [countryAttribute, false, "false"],
+    ["Custom1", false, "false"],
+    [identifierAttribute, 1.23, "1.23"],
+    [emailAttribute, 1.23, "1.23"],
+    [countryAttribute, 1.23, "1.23"],
+    ["Custom1", 1.23, "1.23"],
+  ]) {
+    it(`Non-string attribute values should be handled - attributeName: ${attributeName} | attributeValue: ${attributeValue}`, () => {
+      const configJson = {
+        "f": {
+          "test": {
+            "t": 0,
+            "r": [
+              {
+                "c": [
+                  {
+                    "u": { "a": attributeName, "c": 1, "l": [comparisonValue] }
+                  }
+                ],
+                "s": { "v": { "b": false } }
+              },
+              {
+                "c": [
+                  {
+                    "u": { "a": attributeName, "c": 0, "l": [comparisonValue] }
+                  }
+                ],
+                "s": { "v": { "b": true } }
+              },
+            ],
+            "v": { "b": false }
+          }
+        }
+      };
+
+      const config = new Config(configJson);
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = createUser(attributeName, attributeValue as any);
+      const evaluationDetails = evaluate(evaluator, config.settings, "test", null, user, null, logger);
+      const actualReturnValue = evaluationDetails.value;
+
+      assert.isTrue(actualReturnValue);
+
+      const warnings = fakeLogger.events.filter(([level]) => level === LogLevel.Warn);
+
+      assert.strictEqual(1, warnings.length);
+
+      const [, eventId] = warnings[0];
+      assert.strictEqual(4004, eventId);
     });
   }
 

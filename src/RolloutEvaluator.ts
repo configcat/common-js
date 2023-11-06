@@ -11,10 +11,31 @@ import { getUserAttributes } from "./User";
 import { errorToString, formatStringList, isArray, parseFloatStrict, utf8Encode } from "./Utils";
 
 export class EvaluateContext {
-  private $userAttributes?: { [key: string]: string } | null;
-  get userAttributes(): { [key: string]: string } | null {
+  private $userAttributes?: {
+    readonly user: User;
+    map?: Readonly<{ [key: string]: string }>;
+    typeMismatches?: string[];
+  };
+
+  get userAttributes(): Readonly<{ [key: string]: string }> | undefined {
     const attributes = this.$userAttributes;
-    return attributes !== void 0 ? attributes : (this.$userAttributes = this.user ? getUserAttributes(this.user) : null);
+    return attributes
+      ? attributes.map ??= getUserAttributes(attributes.user, attributes.typeMismatches = [])
+      : void 0;
+  }
+
+  getUserAttribute(attributeName: string, key: string, logger: LoggerWrapper): string | undefined {
+    const attributes = this.userAttributes;
+    if (attributes) {
+      const attributeValue = attributes[attributeName];
+      const typeMismatches = this.$userAttributes!.typeMismatches!;
+      let index: number;
+      if (attributeValue != null && (index = typeMismatches.indexOf(attributeName)) >= 0) {
+        logger.userObjectAttributeTypeIsInvalid(key, attributeName, attributeValue);
+        typeMismatches.splice(index, 1);
+      }
+      return attributeValue;
+    }
   }
 
   private $visitedFlags?: string[];
@@ -28,13 +49,20 @@ export class EvaluateContext {
   constructor(
     readonly key: string,
     readonly setting: Setting,
-    readonly user: User | undefined,
-    readonly settings: Readonly<{ [name: string]: Setting }>
+    readonly settings: Readonly<{ [name: string]: Setting }>,
   ) {
   }
 
+  static forMainFlag(key: string, setting: Setting, user: User | undefined, settings: Readonly<{ [name: string]: Setting }>): EvaluateContext {
+    const context = new EvaluateContext(key, setting, settings);
+    if (user) {
+      context.$userAttributes = { user };
+    }
+    return context;
+  }
+
   static forPrerequisiteFlag(key: string, setting: Setting, dependentFlagContext: EvaluateContext): EvaluateContext {
-    const context = new EvaluateContext(key, setting, dependentFlagContext.user, dependentFlagContext.settings);
+    const context = new EvaluateContext(key, setting, dependentFlagContext.settings);
     context.$userAttributes = dependentFlagContext.$userAttributes;
     context.$visitedFlags = dependentFlagContext.visitedFlags; // crucial to use the computed property here to make sure the list is created!
     context.logBuilder = dependentFlagContext.logBuilder;
@@ -74,7 +102,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       logBuilder.append(`Evaluating '${context.key}'`);
 
-      if (context.user) {
+      if (context.userAttributes) {
         logBuilder.append(` for User '${JSON.stringify(context.userAttributes)}'`);
       }
 
@@ -190,7 +218,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, targetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
     const logBuilder = context.logBuilder;
 
-    if (!context.user) {
+    if (!context.userAttributes) {
       logBuilder?.newLine("Skipping % options because the User Object is missing.");
 
       if (!context.isMissingUserObjectLogged) {
@@ -202,7 +230,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     const percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
-    const percentageOptionsAttributeValue = context.userAttributes![percentageOptionsAttributeName];
+    const percentageOptionsAttributeValue = context.getUserAttribute(percentageOptionsAttributeName, context.key, this.logger);
     if (percentageOptionsAttributeValue == null) {
       logBuilder?.newLine(`Skipping % options because the User.${percentageOptionsAttributeName} attribute is missing.`);
 
@@ -308,7 +336,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     const logBuilder = context.logBuilder;
     logBuilder?.appendUserCondition(condition);
 
-    if (!context.user) {
+    if (!context.userAttributes) {
       if (!context.isMissingUserObjectLogged) {
         this.logger.userObjectIsMissing(context.key);
         context.isMissingUserObjectLogged = true;
@@ -318,7 +346,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     const userAttributeName = condition.comparisonAttribute;
-    const userAttributeValue = context.userAttributes![userAttributeName];
+    const userAttributeValue = context.getUserAttribute(userAttributeName, context.key, this.logger);
     if (!userAttributeValue) { // besides null and undefined, empty string is considered missing value as well
       this.logger.userObjectAttributeIsMissingCondition(formatUserCondition(condition), context.key, userAttributeName);
       return missingUserAttributeError(userAttributeName);
@@ -647,7 +675,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     const logBuilder = context.logBuilder;
     logBuilder?.appendSegmentCondition(condition);
 
-    if (!context.user) {
+    if (!context.userAttributes) {
       if (!context.isMissingUserObjectLogged) {
         this.logger.userObjectIsMissing(context.key);
         context.isMissingUserObjectLogged = true;
@@ -816,7 +844,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  const evaluateResult = evaluator.evaluate(defaultValue, new EvaluateContext(key, setting, user, settings));
+  const evaluateResult = evaluator.evaluate(defaultValue, EvaluateContext.forMainFlag(key, setting, user, settings));
 
   return evaluationDetailsFromEvaluateResult<T>(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
 }
@@ -835,7 +863,7 @@ export function evaluateAll(evaluator: IRolloutEvaluator, settings: Readonly<{ [
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
-      const evaluateResult = evaluator.evaluate(null, new EvaluateContext(key, setting, user, settings));
+      const evaluateResult = evaluator.evaluate(null, EvaluateContext.forMainFlag(key, setting, user, settings));
       evaluationDetails = evaluationDetailsFromEvaluateResult(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
     }
     catch (err) {
