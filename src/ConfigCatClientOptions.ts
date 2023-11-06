@@ -10,7 +10,7 @@ import { sha1 } from "./Hash";
 import type { IProvidesHooks } from "./Hooks";
 import { Hooks } from "./Hooks";
 import { ProjectConfig } from "./ProjectConfig";
-import type { User } from "./RolloutEvaluator";
+import type { User } from "./User";
 
 /** Specifies the supported polling modes. */
 export enum PollingMode {

@@ -23,6 +23,7 @@
     "../../src/ProjectConfig": "../../src/ProjectConfig.ts",
     "../../src/RolloutEvaluator": "../../src/RolloutEvaluator.ts",
     "../../src/Semver": "../../src/Semver.ts",
+    "../../src/User": "../../src/User.ts",
     "../../src/Utils": "../../src/Utils.ts"
   }
 }

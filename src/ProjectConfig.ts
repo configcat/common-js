@@ -1,3 +1,5 @@
+import type { WellKnownUserObjectAttribute } from "./User";
+
 export class ProjectConfig {
   static readonly serializationFormatVersion = "v2";
 
@@ -164,8 +166,6 @@ export type SettingTypeMap = {
 export type SettingValue = SettingTypeMap[SettingType] | null | undefined;
 
 export type VariationIdValue = string | null | undefined;
-
-export type WellKnownUserObjectAttribute = "Identifier" | "Email" | "Country";
 
 /** A model object which contains a setting value along with related data. */
 export interface ISettingValueContainer<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> {

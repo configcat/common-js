@@ -1,8 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { User } from "../src/index";
-import { WellKnownUserObjectAttribute } from "../src/ProjectConfig";
-import { getUserAttributes } from "../src/RolloutEvaluator";
+import { WellKnownUserObjectAttribute, getUserAttributes } from "../src/User";
 import { parseFloatStrict } from "../src/Utils";
 
 const identifierAttribute: WellKnownUserObjectAttribute = "Identifier";

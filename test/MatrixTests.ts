@@ -5,7 +5,8 @@ import "mocha";
 import { LogLevel, SettingType, SettingValue, User } from "../src";
 import { createConsoleLogger } from "../src";
 import { LoggerWrapper } from "../src/ConfigCatLogger";
-import { RolloutEvaluator, evaluate, getUserAttributes } from "../src/RolloutEvaluator";
+import { RolloutEvaluator, evaluate } from "../src/RolloutEvaluator";
+import { getUserAttributes } from "../src/User";
 import { CdnConfigLocation, ConfigLocation } from "./helpers/ConfigLocation";
 
 const testDataBasePath = path.join("test", "data");

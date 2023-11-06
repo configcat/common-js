@@ -97,7 +97,7 @@ export { SettingKeyValue } from "./ConfigCatClient";
 
 export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
 
-export { User } from "./RolloutEvaluator";
+export { User } from "./User";
 
 export { OverrideBehaviour } from "./FlagOverrides";
 
