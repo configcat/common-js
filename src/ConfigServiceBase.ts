@@ -296,13 +296,11 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
-  protected onCacheSynced(cachedConfig: ProjectConfig): void {
-    this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));
-  }
-
-  protected async syncUpWithCache(): Promise<ProjectConfig> {
+  protected async syncUpWithCache(suppressEmitClientReady = false): Promise<ProjectConfig> {
     const cachedConfig = await this.options.cache.get(this.cacheKey);
-    this.onCacheSynced(cachedConfig);
+    if (!suppressEmitClientReady) {
+      this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));
+    }
     return cachedConfig;
   }
 }

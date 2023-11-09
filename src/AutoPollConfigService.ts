@@ -21,7 +21,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
     this.pollIntervalMs = options.pollIntervalSeconds * 1000;
 
-    const initialCacheSync = super.syncUpWithCache();
+    const initialCacheSync = super.syncUpWithCache(true);
 
     if (options.maxInitWaitTimeSeconds !== 0) {
       this.initialized = false;
@@ -36,7 +36,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         resolve();
       });
 
-      this.initialization.then(() => super.onCacheSynced(options.cache.getInMemory()));
+      this.initialization.then(() => options.hooks.emit("clientReady", this.getCacheState(options.cache.getInMemory())));
 
       if (options.maxInitWaitTimeSeconds > 0) {
         this.initTimerId = setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
@@ -45,17 +45,12 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     else {
       this.initialized = true;
       this.initialization = Promise.resolve();
-      initialCacheSync.then(cachedConfig => super.onCacheSynced(cachedConfig));
+      options.hooks.emit("clientReady", this.getCacheState(options.cache.getInMemory()));
     }
 
     if (!options.offline) {
       this.startRefreshWorker(initialCacheSync);
     }
-  }
-
-  protected onCacheSynced(): void {
-    // We override this method with a no-op to prevent the default behavior because
-    // we want to defer emitting clientReady until maxInitWaitTimeSeconds has passed. */
   }
 
   private async waitForInitializationAsync(): Promise<boolean> {
