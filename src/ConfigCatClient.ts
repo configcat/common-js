@@ -235,6 +235,7 @@ export class ConfigCatClient implements IConfigCatClient {
   protected configService?: IConfigService;
   protected evaluator: IRolloutEvaluator;
   private readonly options: OptionsBase;
+  private readonly hooks: Hooks;
   private defaultUser?: User;
   private readonly suppressFinalize: () => void;
 
@@ -283,6 +284,9 @@ export class ConfigCatClient implements IConfigCatClient {
       throw new Error("Invalid 'configCatKernel.configFetcher' value");
     }
 
+    // To avoid possible memory leaks, the components of the client should not hold a strong reference to the hooks object (see also SafeHooksWrapper).
+    this.hooks = options.yieldHooks();
+
     if (options.defaultUser) {
       this.setDefaultUser(options.defaultUser);
     }
@@ -297,7 +301,7 @@ export class ConfigCatClient implements IConfigCatClient {
         (() => { throw new Error("Invalid 'options' value"); })();
     }
     else {
-      this.options.hooks.emit("clientReady", ClientCacheState.HasLocalOverrideFlagDataOnly);
+      this.hooks.emit("clientReady", ClientCacheState.HasLocalOverrideFlagDataOnly);
     }
 
     this.suppressFinalize = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
@@ -330,7 +334,7 @@ export class ConfigCatClient implements IConfigCatClient {
       clientInstanceCache.remove(options.apiKey, this.cacheToken);
     }
 
-    ConfigCatClient.close(this.configService, options.logger, options.hooks);
+    ConfigCatClient.close(this.configService, options.logger, this.hooks);
     this.suppressFinalize();
   }
 
@@ -340,7 +344,7 @@ export class ConfigCatClient implements IConfigCatClient {
     let errors: any[] | undefined;
     for (const instance of removedInstances) {
       try {
-        ConfigCatClient.close(instance.configService, instance.options.logger, instance.options.hooks);
+        ConfigCatClient.close(instance.configService, instance.options.logger, instance.hooks);
         instance.suppressFinalize();
       }
       catch (err) {
@@ -375,7 +379,7 @@ export class ConfigCatClient implements IConfigCatClient {
       value = defaultValue as SettingTypeOf<T>;
     }
 
-    this.options.hooks.emit("flagEvaluated", evaluationDetails);
+    this.hooks.emit("flagEvaluated", evaluationDetails);
     return value;
   }
 
@@ -398,7 +402,7 @@ export class ConfigCatClient implements IConfigCatClient {
       evaluationDetails = evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorToString(err), err);
     }
 
-    this.options.hooks.emit("flagEvaluated", evaluationDetails);
+    this.hooks.emit("flagEvaluated", evaluationDetails);
     return evaluationDetails;
   }
 
@@ -441,7 +445,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     for (const evaluationDetail of evaluationDetailsArray) {
-      this.options.hooks.emit("flagEvaluated", evaluationDetail);
+      this.hooks.emit("flagEvaluated", evaluationDetail);
     }
 
     return result;
@@ -468,7 +472,7 @@ export class ConfigCatClient implements IConfigCatClient {
     }
 
     for (const evaluationDetail of evaluationDetailsArray) {
-      this.options.hooks.emit("flagEvaluated", evaluationDetail);
+      this.hooks.emit("flagEvaluated", evaluationDetail);
     }
 
     return evaluationDetailsArray;
@@ -628,19 +632,19 @@ export class ConfigCatClient implements IConfigCatClient {
 
   /** @inheritdoc */
   on<TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void): this {
-    this.options.hooks.on(eventName, listener as (...args: any[]) => void);
+    this.hooks.on(eventName, listener as (...args: any[]) => void);
     return this;
   }
 
   /** @inheritdoc */
   once<TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void): this {
-    this.options.hooks.once(eventName, listener as (...args: any[]) => void);
+    this.hooks.once(eventName, listener as (...args: any[]) => void);
     return this;
   }
 
   /** @inheritdoc */
   removeListener<TEventName extends keyof HookEvents>(eventName: TEventName, listener: (...args: HookEvents[TEventName]) => void): this {
-    this.options.hooks.removeListener(eventName, listener as (...args: any[]) => void);
+    this.hooks.removeListener(eventName, listener as (...args: any[]) => void);
     return this;
   }
 
@@ -649,23 +653,23 @@ export class ConfigCatClient implements IConfigCatClient {
 
   /** @inheritdoc */
   removeAllListeners(eventName?: keyof HookEvents): this {
-    this.options.hooks.removeAllListeners(eventName);
+    this.hooks.removeAllListeners(eventName);
     return this;
   }
 
   /** @inheritdoc */
   listeners(eventName: keyof HookEvents): Function[] {
-    return this.options.hooks.listeners(eventName);
+    return this.hooks.listeners(eventName);
   }
 
   /** @inheritdoc */
   listenerCount(eventName: keyof HookEvents): number {
-    return this.options.hooks.listenerCount(eventName);
+    return this.hooks.listenerCount(eventName);
   }
 
   /** @inheritdoc */
   eventNames(): Array<keyof HookEvents> {
-    return this.options.hooks.eventNames();
+    return this.hooks.eventNames();
   }
 }
 

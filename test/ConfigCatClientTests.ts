@@ -1055,11 +1055,53 @@ describe("ConfigCatClient", () => {
     // Assert
 
     assert.equal(2, instanceCount1);
-    assert.equal(0, instanceCount2);
 
     if (isFinalizationRegistryAvailable) {
+      assert.equal(0, instanceCount2);
       assert.equal(2, logger.messages.filter(([, , msg]) => msg.indexOf("finalize() called") >= 0).length);
     }
+    else {
+      // When finalization is not available, Auto Polling won't be stopped.
+      assert.equal(1, instanceCount2);
+    }
+  });
+
+  it("GC should be able to collect cached instances when hook handler closes over client instance and no strong references are left", async function() {
+    // Arrange
+
+    setupPolyfills();
+    if (!isWeakRefAvailable() || typeof FinalizationRegistry === "undefined" || typeof gc === "undefined") {
+      this.skip();
+    }
+
+    const sdkKey1 = "test1";
+
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+    function createClients() {
+      const client = ConfigCatClient.get(sdkKey1, PollingMode.ManualPoll, {}, configCatKernel);
+      client.on("configChanged", () => client.getValueAsync("flag", null));
+
+      return ConfigCatClient["instanceCache"].getAliveCount();
+    }
+
+    // Act
+
+    const instanceCount1 = createClients();
+
+    // We need to allow the event loop to run so the runtime can detect there's no more strong references to the created clients.
+    await allowEventLoop();
+    gc();
+
+    // We need to allow the finalizer callbacks to execute.
+    await allowEventLoop(10);
+
+    const instanceCount2 = ConfigCatClient["instanceCache"].getAliveCount();
+
+    // Assert
+
+    assert.equal(1, instanceCount1);
+    assert.equal(0, instanceCount2);
   });
 
   // For these tests we need to choose a ridiculously large poll interval/ cache TTL to make sure that config is fetched only once.
