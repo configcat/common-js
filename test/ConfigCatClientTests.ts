@@ -1079,7 +1079,7 @@ describe("ConfigCatClient", () => {
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
 
     function createClients() {
-      const client = ConfigCatClient.get(sdkKey1, PollingMode.ManualPoll, {}, configCatKernel);
+      const client = ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { maxInitWaitTimeSeconds: 0 }, configCatKernel);
       client.on("configChanged", () => client.getValueAsync("flag", null));
 
       return ConfigCatClient["instanceCache"].getAliveCount();
