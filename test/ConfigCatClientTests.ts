@@ -211,8 +211,8 @@ describe("ConfigCatClient", () => {
     assert.strictEqual(user, actual.user);
     assert.isDefined(actual.errorMessage);
     assert.isUndefined(actual.errorException);
-    assert.isUndefined(actual.matchedEvaluationRule);
-    assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    assert.isUndefined(actual.matchedTargetingRule);
+    assert.isUndefined(actual.matchedPercentageOption);
 
     assert.equal(1, flagEvaluatedEvents.length);
     assert.strictEqual(actual, flagEvaluatedEvents[0]);
@@ -252,8 +252,8 @@ describe("ConfigCatClient", () => {
     assert.strictEqual(user, actual.user);
     assert.isUndefined(actual.errorMessage);
     assert.isUndefined(actual.errorException);
-    assert.isUndefined(actual.matchedEvaluationRule);
-    assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    assert.isUndefined(actual.matchedTargetingRule);
+    assert.isUndefined(actual.matchedPercentageOption);
 
     assert.equal(1, flagEvaluatedEvents.length);
     assert.strictEqual(actual, flagEvaluatedEvents[0]);
@@ -294,10 +294,10 @@ describe("ConfigCatClient", () => {
     assert.strictEqual(user, actual.user);
     assert.isUndefined(actual.errorMessage);
     assert.isUndefined(actual.errorException);
-    assert.isDefined(actual.matchedEvaluationRule);
-    assert.strictEqual(actual.value, (actual.matchedEvaluationRule?.then as SettingValueContainer).value);
-    assert.strictEqual(actual.variationId, (actual.matchedEvaluationRule?.then as SettingValueContainer).variationId);
-    assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    assert.isDefined(actual.matchedTargetingRule);
+    assert.strictEqual(actual.value, (actual.matchedTargetingRule?.then as SettingValueContainer).value);
+    assert.strictEqual(actual.variationId, (actual.matchedTargetingRule?.then as SettingValueContainer).variationId);
+    assert.isUndefined(actual.matchedPercentageOption);
 
     assert.equal(1, flagEvaluatedEvents.length);
     assert.strictEqual(actual, flagEvaluatedEvents[0]);
@@ -337,10 +337,10 @@ describe("ConfigCatClient", () => {
     assert.strictEqual(user, actual.user);
     assert.isUndefined(actual.errorMessage);
     assert.isUndefined(actual.errorException);
-    assert.isUndefined(actual.matchedEvaluationRule);
-    assert.isDefined(actual.matchedEvaluationPercentageRule);
-    assert.strictEqual(actual.value, actual.matchedEvaluationPercentageRule?.value);
-    assert.strictEqual(actual.variationId, actual.matchedEvaluationPercentageRule?.variationId);
+    assert.isUndefined(actual.matchedTargetingRule);
+    assert.isDefined(actual.matchedPercentageOption);
+    assert.strictEqual(actual.value, actual.matchedPercentageOption?.value);
+    assert.strictEqual(actual.variationId, actual.matchedPercentageOption?.variationId);
 
     assert.equal(1, flagEvaluatedEvents.length);
     assert.strictEqual(actual, flagEvaluatedEvents[0]);
@@ -389,8 +389,8 @@ describe("ConfigCatClient", () => {
     assert.strictEqual(user, actual.user);
     assert.isDefined(actual.errorMessage);
     assert.strictEqual(err, actual.errorException);
-    assert.isUndefined(actual.matchedEvaluationRule);
-    assert.isUndefined(actual.matchedEvaluationPercentageRule);
+    assert.isUndefined(actual.matchedTargetingRule);
+    assert.isUndefined(actual.matchedPercentageOption);
 
     assert.equal(1, flagEvaluatedEvents.length);
     assert.strictEqual(actual, flagEvaluatedEvents[0]);
@@ -441,8 +441,8 @@ describe("ConfigCatClient", () => {
       assert.strictEqual(user, actualDetails.user);
       assert.isUndefined(actualDetails.errorMessage);
       assert.isUndefined(actualDetails.errorException);
-      assert.isUndefined(actualDetails.matchedEvaluationRule);
-      assert.isUndefined(actualDetails.matchedEvaluationPercentageRule);
+      assert.isUndefined(actualDetails.matchedTargetingRule);
+      assert.isUndefined(actualDetails.matchedPercentageOption);
 
       const flagEvaluatedDetails = flagEvaluatedEvents.find(details => details.key === key)!;
 
@@ -494,8 +494,8 @@ describe("ConfigCatClient", () => {
       assert.strictEqual(user, actualDetails.user);
       assert.isDefined(actualDetails.errorMessage);
       assert.strictEqual(err, actualDetails.errorException);
-      assert.isUndefined(actualDetails.matchedEvaluationRule);
-      assert.isUndefined(actualDetails.matchedEvaluationPercentageRule);
+      assert.isUndefined(actualDetails.matchedTargetingRule);
+      assert.isUndefined(actualDetails.matchedPercentageOption);
 
       const flagEvaluatedDetails = flagEvaluatedEvents.find(details => details.key === key)!;
 

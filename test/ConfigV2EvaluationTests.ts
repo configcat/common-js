@@ -3,7 +3,7 @@ import "mocha";
 import { FlagOverrides, IManualPollOptions, MapOverrideDataSource, OverrideBehaviour, SettingValue, User } from "../src";
 import { FormattableLogMessage, LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
 import { RolloutEvaluator, evaluate } from "../src/RolloutEvaluator";
-import { LocalFileConfigLocation } from "./helpers/ConfigLocation";
+import { CdnConfigLocation, LocalFileConfigLocation } from "./helpers/ConfigLocation";
 import { FakeLogger } from "./helpers/fakes";
 import { HttpConfigFetcher } from "./helpers/HttpConfigFetcher";
 import { createClientWithManualPoll, escapeRegExp, sdkType, sdkVersion } from "./helpers/utils";
@@ -94,6 +94,37 @@ describe("Setting evaluation (config v2)", () => {
       finally {
         client.dispose();
       }
+    });
+  }
+
+  // https://app.configcat.com/v2/e7a75611-4256-49a5-9320-ce158755e3ba/08dbc325-7f69-4fd4-8af4-cf9f24ec8ac9/08dbc325-9e4e-4f59-86b2-5da50924b6ca/08dbc325-9ebd-4587-8171-88f76a3004cb
+  for (const [sdkKey, key, userId, email, percentageBase, expectedReturnValue, expectedIsExpectedMatchedTargetingRuleSet, expectedIsExpectedMatchedPercentageOptionSet] of
+    <[string, string, string | null, string | null, string | null, string, boolean, boolean][]>[
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", null, null, null, "Cat", false, false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", null, null, "Cat", false, false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "a@example.com", null, "Dog", true, false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "a@configcat.com", null, "Cat", false, false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "a@configcat.com", "", "Frog", true, true],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "a@configcat.com", "US", "Fish", true, true],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "b@configcat.com", null, "Cat", false, false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "b@configcat.com", "", "Falcon", false, true],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/P4e3fAz_1ky2-Zg2e4cbkw", "stringMatchedTargetingRuleAndOrPercentageOption", "12345", "b@configcat.com", "US", "Spider", false, true],
+    ]) {
+    it(`IEvaluationDetails.matchedTargetingRule/matchedTargetingOption - sdkKey: ${sdkKey} | key: ${key} | userId: ${userId} | email: ${email} | percentageBase: ${percentageBase} `, async () => {
+      const configLocation = new CdnConfigLocation(sdkKey);
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = userId != null ? new User(userId, email!, void 0, { ["PercentageBase"]: percentageBase! }) : null;
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, null, user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+      assert.strictEqual(evaluationDetails.matchedTargetingRule !== void 0, expectedIsExpectedMatchedTargetingRuleSet);
+      assert.strictEqual(evaluationDetails.matchedPercentageOption !== void 0, expectedIsExpectedMatchedPercentageOptionSet);
     });
   }
 });

@@ -796,10 +796,10 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   errorException?: any;
 
   /** The targeting rule which was used to select the evaluated value (if any). */
-  matchedEvaluationRule?: ITargetingRule;
+  matchedTargetingRule?: ITargetingRule;
 
   /** The percentage option which was used to select the evaluated value (if any). */
-  matchedEvaluationPercentageRule?: IPercentageOption;
+  matchedPercentageOption?: IPercentageOption;
 }
 
 /* Helper functions */
@@ -812,8 +812,8 @@ function evaluationDetailsFromEvaluateResult<T extends SettingValue>(key: string
     fetchTime,
     user,
     isDefaultValue: false,
-    matchedEvaluationRule: evaluateResult.matchedTargetingRule,
-    matchedEvaluationPercentageRule: evaluateResult.matchedPercentageOption,
+    matchedTargetingRule: evaluateResult.matchedTargetingRule,
+    matchedPercentageOption: evaluateResult.matchedPercentageOption,
   };
 }
 
