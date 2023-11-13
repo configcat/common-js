@@ -99,7 +99,7 @@ export function parseFloatStrict(value: unknown): number {
     return value;
   }
 
-  if (typeof value !== "string" || !value.length || /^\s|^0[^\d.e]|\s$/.test(value)) {
+  if (typeof value !== "string" || !value.length || /^\s*$|^\s*0[^\d.e]/.test(value)) {
     return NaN;
   }
 
