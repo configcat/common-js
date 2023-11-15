@@ -162,6 +162,12 @@ export class FakeConfigFetcherWithTwoKeysAndRules extends FakeConfigFetcher {
   }
 }
 
+export class FakeConfigFetcherWithPercentageOptionsWithinTargetingRule extends FakeConfigFetcher {
+  static get configJson(): string {
+    return '{"f":{"debug":{"t":1,"r":[{"c":[{"u":{"a":"a","c":1,"l":["abcd"]}}],"s":{"v":{"s":"value"},"i":"6ada5ff2"}},{"c":[{"u":{"a":"a","c":0,"l":["abcd"]}}],"p":[{"p":50,"v":{"s":"value1"},"i":"d227b334"},{"p":50,"v":{"s":"value2"},"i":"622f5d07"}]}],"v":{"s":"def"},"i":"abcdefgh"}}}';
+  }
+}
+
 export class FakeConfigFetcherWithRules extends FakeConfigFetcher {
   static get configJson(): string {
     return '{"f":{"debug":{"t":1,"r":[{"c":[{"u":{"a":"eyeColor","c":0,"l":["red"]}}],"s":{"v":{"s":"redValue"},"i":"redVariationId"}},{"c":[{"u":{"a":"eyeColor","c":0,"l":["blue"]}}],"s":{"v":{"s":"blueValue"},"i":"blueVariationId"}}],"v":{"s":"defaultValue"},"i":"defaultVariationId"}}}';
@@ -184,7 +190,7 @@ export class FakeConfigFetcherWithAlwaysVariableEtag extends FakeConfigFetcher {
   }
 }
 
-export class FakeConfigFetcherWithPercentageRules extends FakeConfigFetcher {
+export class FakeConfigFetcherWithPercentageOptions extends FakeConfigFetcher {
   static get configJson(): string {
     return '{"f":{"string25Cat25Dog25Falcon25Horse":{"t":1,"p":[{"p":25,"v":{"s":"Cat"},"i":"CatVariationId"},{"p":25,"v":{"s":"Dog"},"i":"DogVariationId"},{"p":25,"v":{"s":"Falcon"},"i":"FalconVariationId"},{"p":25,"v":{"s":"Horse"},"i":"HorseVariationId"}],"v":{"s":"Chicken"},"i":"ChickenVariationId"}}}';
   }

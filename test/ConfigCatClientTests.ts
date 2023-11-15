@@ -17,7 +17,7 @@ import { EvaluateContext, IEvaluateResult, IEvaluationDetails, IRolloutEvaluator
 import { User } from "../src/User";
 import { delay } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
-import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercentageRules, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
+import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercentageOptions, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
 
 describe("ConfigCatClient", () => {
@@ -311,7 +311,7 @@ describe("ConfigCatClient", () => {
     const defaultValue = "N/A";
     const timestamp = new Date().getTime();
 
-    const configFetcherClass = FakeConfigFetcherWithPercentageRules;
+    const configFetcherClass = FakeConfigFetcherWithPercentageOptions;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, new Config(JSON.parse(configFetcherClass.configJson)), timestamp, "etag");
     const configCache = new FakeCache(cachedPc);
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new configFetcherClass(), sdkType: "common", sdkVersion: "1.0.0" };
@@ -620,7 +620,12 @@ describe("ConfigCatClient", () => {
       assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
       assert.equal(state, ClientReadyState.NoFlagData);
-      assert.equal(client.snapshot().getValue("debug", false), false);
+
+      const snapshot = client.snapshot();
+      assert.equal(snapshot.getValue("debug", false), false);
+      const evaluationDetails = snapshot.getValueDetails("debug", false);
+      assert.isTrue(evaluationDetails.isDefaultValue);
+      assert.equal(evaluationDetails.value, false);
     });
 
     it("AutoPoll - should wait for maxInitWaitTimeSeconds and return cached", async () => {
@@ -640,7 +645,12 @@ describe("ConfigCatClient", () => {
       assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
-      assert.equal(client.snapshot().getValue("debug", false), true);
+
+      const snapshot = client.snapshot();
+      assert.equal(snapshot.getValue("debug", false), true);
+      const evaluationDetails = snapshot.getValueDetails("debug", false);
+      assert.isFalse(evaluationDetails.isDefaultValue);
+      assert.equal(evaluationDetails.value, true);
     });
 
     it("LazyLoad - return cached", async () => {

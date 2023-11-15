@@ -302,15 +302,6 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  circularDependencyDetected(condition: string, key: string, dependencyCycle: string): LogMessage {
-    return this.log(
-      LogLevel.Warn, 3005,
-      FormattableLogMessage.from(
-        "CONDITION", "KEY", "DEPENDENCY_CYCLE"
-      )`Cannot evaluate condition (${condition}) for setting '${key}' (circular dependency detected between the following depending flags: ${dependencyCycle}). Please check your feature flag definition and eliminate the circular dependency.`
-    );
-  }
-
   configServiceCannotInitiateHttpCalls(): LogMessage {
     return this.log(
       LogLevel.Warn, 3200,

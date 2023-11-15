@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import "mocha";
-import { parseFloatStrict, utf8Encode } from "../src/Utils";
+import { formatStringList, parseFloatStrict, utf8Encode } from "../src/Utils";
 
 describe("Utils", () => {
 
@@ -56,4 +56,21 @@ describe("Utils", () => {
     });
   }
 
+  for (const [items, maxLength, addOmittedItemsText, separator, expectedOutput] of <[string[], number, boolean, string | undefined, string][]>[
+    [[], 0, false, void 0, ""],
+    [[], 1, true, void 0, ""],
+    [["a"], 0, false, void 0, "'a'"],
+    [["a"], 1, true, void 0, "'a'"],
+    [["a"], 1, true, " -> ", "'a'"],
+    [["a", "b", "c"], 0, false, void 0, "'a', 'b', 'c'"],
+    [["a", "b", "c"], 3, false, void 0, "'a', 'b', 'c'"],
+    [["a", "b", "c"], 2, false, void 0, "'a', 'b'"],
+    [["a", "b", "c"], 2, true, void 0, "'a', 'b', ...1 item(s) omitted"],
+    [["a", "b", "c"], 0, true, " -> ", "'a' -> 'b' -> 'c'"],
+  ]) {
+    it(`formatStringList - items: ${items} | maxLength: ${maxLength} | addOmittedItemsText: ${addOmittedItemsText}`, () => {
+      const actualOutput = formatStringList(items, maxLength, addOmittedItemsText ? count => `, ...${count} item(s) omitted` : void 0, separator);
+      assert.strictEqual(actualOutput, expectedOutput);
+    });
+  }
 });
