@@ -8,10 +8,11 @@ export class User {
    * Converts the specified `Date` value to the format expected by datetime comparison operators (BEFORE/AFTER).
    * @param date The `Date` value to convert.
    * @returns The User Object attribute value in the expected format.
+   * Please note that if a value other than `Date` is passed to the method, the return value will be `undefined`.
   */
-  static attributeValueFromDate(date: Date): string {
+  static attributeValueFromDate(date: Date): string | undefined {
     if (!(date instanceof Date)) {
-      throw new Error("Invalid 'date' value");
+      return;
     }
 
     const unixTimeSeconds = date.getTime() / 1000;
@@ -22,10 +23,11 @@ export class User {
    * Converts the specified `number` value to the format expected by number comparison operators.
    * @param number The `number` value to convert.
    * @returns The User Object attribute value in the expected format.
+   * Please note that if a value other than `number` is passed to the method, the return value will be `undefined`.
   */
-  static attributeValueFromNumber(number: number): string {
-    if (typeof number !== "number" || !isFinite(number)) {
-      throw new Error("Invalid 'date' value");
+  static attributeValueFromNumber(number: number): string | undefined {
+    if (typeof number !== "number" || isNaN(number)) {
+      return;
     }
 
     return number + "";
@@ -35,10 +37,11 @@ export class User {
    * Converts the specified `string` items to the format expected by array comparison operators (ARRAY CONTAINS ANY OF/ARRAY NOT CONTAINS ANY OF).
    * @param items The `string` items to convert.
    * @returns The User Object attribute value in the expected format.
+   * Please note that if items other than `string` values are passed to the method, the return value will be `undefined`.
   */
-  static attributeValueFromStringArray(...items: ReadonlyArray<string>): string {
+  static attributeValueFromStringArray(...items: ReadonlyArray<string>): string | undefined {
     if (!isStringArray(items)) {
-      throw new Error("Invalid 'items' value");
+      return;
     }
 
     return JSON.stringify(items);
@@ -52,7 +55,7 @@ export class User {
     /** Country of the user. */
     public country?: string,
     /** Custom attributes of the user for advanced targeting rule definitions (e.g. user role, subscription type, etc.) */
-    public custom: { [key: string]: string } = {}
+    public custom: { [key: string]: string | undefined } = {}
   ) {
   }
 }

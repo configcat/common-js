@@ -168,7 +168,7 @@ describe("User Object", () => {
     ["stringlist", "a,,b,c", "[\"a\",\"\",\"b\",\"c\"]"],
   ]) {
     it(`Attribute value helper methods should work - type: ${type} | value: ${value}`, () => {
-      let actualAttributeValue: string;
+      let actualAttributeValue: string | undefined;
       switch (type) {
         case "datetime":
           const date = new Date(value);
