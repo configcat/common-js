@@ -302,6 +302,16 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
+  userObjectAttributeIsAutoConverted(condition: string, key: string, attributeName: string, attributeValue: string): LogMessage {
+    return this.log(
+      LogLevel.Warn,
+      3005,
+      FormattableLogMessage.from(
+        "CONDITION", "KEY", "ATTRIBUTE_NAME", "ATTRIBUTE_VALUE"
+      )`Evaluation of condition (${condition}) for setting '${key}' may not produce the expected result (the User.${attributeName} attribute is not a string value, thus it was automatically converted to the string value '${attributeValue}'). Please make sure that using a non-string value was intended.`
+    );
+  }
+
   configServiceCannotInitiateHttpCalls(): LogMessage {
     return this.log(
       LogLevel.Warn, 3200,
@@ -328,16 +338,6 @@ export class LoggerWrapper implements IConfigCatLogger {
   }
 
   /* SDK-specific warning messages (4000-4999) */
-
-  userObjectAttributeTypeIsInvalid(key: string, attributeName: string, attributeValue: string): LogMessage {
-    return this.log(
-      LogLevel.Warn,
-      4004,
-      FormattableLogMessage.from(
-        "KEY", "ATTRIBUTE_NAME", "ATTRIBUTE_VALUE"
-      )`Evaluation of setting '${key}' may not produce the expected result (the User.${attributeName} attribute is not a string value, thus it was converted to '${attributeValue}' using the runtime's default conversion). User Object attribute values should be passed as strings. You can use the static helper methods of the \`User\` class to produce attribute values with the correct type and format.`
-    );
-  }
 
   /* Common info messages (5000-5999) */
 

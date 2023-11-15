@@ -6,36 +6,15 @@ import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOptio
 import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
-import type { User } from "./User";
+import type { User, UserAttributeValue } from "./User";
 import { getUserAttributes } from "./User";
 import { errorToString, formatStringList, isArray, parseFloatStrict, utf8Encode } from "./Utils";
 
 export class EvaluateContext {
-  private $userAttributes?: {
-    readonly user: User;
-    map?: Readonly<{ [key: string]: string }>;
-    typeMismatches?: string[];
-  };
-
-  get userAttributes(): Readonly<{ [key: string]: string }> | undefined {
+  private $userAttributes?: { [key: string]: UserAttributeValue } | null;
+  get userAttributes(): { [key: string]: UserAttributeValue } | null {
     const attributes = this.$userAttributes;
-    return attributes
-      ? attributes.map ??= getUserAttributes(attributes.user, attributes.typeMismatches = [])
-      : void 0;
-  }
-
-  getUserAttribute(attributeName: string, key: string, logger: LoggerWrapper): string | undefined {
-    const attributes = this.userAttributes;
-    if (attributes) {
-      const attributeValue = attributes[attributeName];
-      const typeMismatches = this.$userAttributes!.typeMismatches!;
-      let index: number;
-      if (attributeValue != null && (index = typeMismatches.indexOf(attributeName)) >= 0) {
-        logger.userObjectAttributeTypeIsInvalid(key, attributeName, attributeValue);
-        typeMismatches.splice(index, 1);
-      }
-      return attributeValue;
-    }
+    return attributes !== void 0 ? attributes : (this.$userAttributes = this.user ? getUserAttributes(this.user) : null);
   }
 
   private $visitedFlags?: string[];
@@ -49,21 +28,14 @@ export class EvaluateContext {
   constructor(
     readonly key: string,
     readonly setting: Setting,
+    readonly user: User | undefined,
     readonly settings: Readonly<{ [name: string]: Setting }>,
   ) {
   }
 
-  static forMainFlag(key: string, setting: Setting, user: User | undefined, settings: Readonly<{ [name: string]: Setting }>): EvaluateContext {
-    const context = new EvaluateContext(key, setting, settings);
-    if (user) {
-      context.$userAttributes = { user };
-    }
-    return context;
-  }
-
   static forPrerequisiteFlag(key: string, setting: Setting, dependentFlagContext: EvaluateContext): EvaluateContext {
-    const context = new EvaluateContext(key, setting, dependentFlagContext.settings);
-    context.$userAttributes = dependentFlagContext.$userAttributes;
+    const context = new EvaluateContext(key, setting, dependentFlagContext.user, dependentFlagContext.settings);
+    context.$userAttributes = dependentFlagContext.userAttributes;
     context.$visitedFlags = dependentFlagContext.visitedFlags; // crucial to use the computed property here to make sure the list is created!
     context.logBuilder = dependentFlagContext.logBuilder;
     return context;
@@ -231,7 +203,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     const percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
-    const percentageOptionsAttributeValue = context.getUserAttribute(percentageOptionsAttributeName, context.key, this.logger);
+    const percentageOptionsAttributeValue = context.userAttributes[percentageOptionsAttributeName];
     if (percentageOptionsAttributeValue == null) {
       logBuilder?.newLine(`Skipping % options because the User.${percentageOptionsAttributeName} attribute is missing.`);
 
@@ -245,7 +217,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     logBuilder?.newLine(`Evaluating % options based on the User.${percentageOptionsAttributeName} attribute:`);
 
-    const sha1Hash = sha1(context.key + percentageOptionsAttributeValue);
+    const sha1Hash = sha1(context.key + userAttributeValueToString(percentageOptionsAttributeValue));
     const hashValue = parseInt(sha1Hash.substring(0, 7), 16) % 100;
 
     logBuilder?.newLine(`- Computing hash in the [0..99] range from User.${percentageOptionsAttributeName} => ${hashValue} (this value is sticky and consistent across all SDKs)`);
@@ -347,71 +319,78 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     const userAttributeName = condition.comparisonAttribute;
-    const userAttributeValue = context.getUserAttribute(userAttributeName, context.key, this.logger);
-    if (!userAttributeValue) { // besides null and undefined, empty string is considered missing value as well
+    const userAttributeValue = context.userAttributes[userAttributeName];
+    if (userAttributeValue == null || userAttributeValue === "") { // besides null and undefined, empty string is considered missing value as well
       this.logger.userObjectAttributeIsMissingCondition(formatUserCondition(condition), context.key, userAttributeName);
       return missingUserAttributeError(userAttributeName);
     }
 
-    let version: ISemVer | null, number: number, array: ReadonlyArray<string> | null;
+    let text: string, versionOrError: ISemVer | string, numberOrError: number | string, arrayOrError: ReadonlyArray<string> | string;
     switch (condition.comparator) {
       case UserComparator.TextEquals:
       case UserComparator.TextNotEquals:
-        return this.evaluateTextEquals(userAttributeValue, condition.comparisonValue, condition.comparator === UserComparator.TextNotEquals);
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateTextEquals(text, condition.comparisonValue, condition.comparator === UserComparator.TextNotEquals);
 
       case UserComparator.SensitiveTextEquals:
       case UserComparator.SensitiveTextNotEquals:
-        return this.evaluateSensitiveTextEquals(userAttributeValue, condition.comparisonValue,
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateSensitiveTextEquals(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveTextNotEquals);
 
       case UserComparator.IsOneOf:
       case UserComparator.IsNotOneOf:
-        return this.evaluateIsOneOf(userAttributeValue, condition.comparisonValue, condition.comparator === UserComparator.IsNotOneOf);
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateIsOneOf(text, condition.comparisonValue, condition.comparator === UserComparator.IsNotOneOf);
 
       case UserComparator.SensitiveIsOneOf:
       case UserComparator.SensitiveIsNotOneOf:
-        return this.evaluateSensitiveIsOneOf(userAttributeValue, condition.comparisonValue,
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateSensitiveIsOneOf(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveIsNotOneOf);
 
       case UserComparator.TextStartsWithAnyOf:
       case UserComparator.TextNotStartsWithAnyOf:
-        return this.evaluateTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue, true, condition.comparator === UserComparator.TextNotStartsWithAnyOf);
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateTextSliceEqualsAnyOf(text, condition.comparisonValue, true, condition.comparator === UserComparator.TextNotStartsWithAnyOf);
 
       case UserComparator.SensitiveTextStartsWithAnyOf:
       case UserComparator.SensitiveTextNotStartsWithAnyOf:
-        return this.evaluateSensitiveTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue,
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateSensitiveTextSliceEqualsAnyOf(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, true, condition.comparator === UserComparator.SensitiveTextNotStartsWithAnyOf);
 
       case UserComparator.TextEndsWithAnyOf:
       case UserComparator.TextNotEndsWithAnyOf:
-        return this.evaluateTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue, false, condition.comparator === UserComparator.TextNotEndsWithAnyOf);
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateTextSliceEqualsAnyOf(text, condition.comparisonValue, false, condition.comparator === UserComparator.TextNotEndsWithAnyOf);
 
       case UserComparator.SensitiveTextEndsWithAnyOf:
       case UserComparator.SensitiveTextNotEndsWithAnyOf:
-        return this.evaluateSensitiveTextSliceEqualsAnyOf(userAttributeValue, condition.comparisonValue,
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateSensitiveTextSliceEqualsAnyOf(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, false, condition.comparator === UserComparator.SensitiveTextNotEndsWithAnyOf);
 
       case UserComparator.ContainsAnyOf:
       case UserComparator.NotContainsAnyOf:
-        return this.evaluateContainsAnyOf(userAttributeValue, condition.comparisonValue, condition.comparator === UserComparator.NotContainsAnyOf);
+        text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return this.evaluateContainsAnyOf(text, condition.comparisonValue, condition.comparator === UserComparator.NotContainsAnyOf);
 
       case UserComparator.SemVerIsOneOf:
       case UserComparator.SemVerIsNotOneOf:
-        version = parseSemVer(userAttributeValue.trim());
-        if (!version) {
-          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid semantic version`);
-        }
-        return this.evaluateSemVerIsOneOf(version, condition.comparisonValue, condition.comparator === UserComparator.SemVerIsNotOneOf);
+        versionOrError = getUserAttributeValueAsSemVer(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return typeof versionOrError !== "string"
+          ? this.evaluateSemVerIsOneOf(versionOrError, condition.comparisonValue, condition.comparator === UserComparator.SemVerIsNotOneOf)
+          : versionOrError;
 
       case UserComparator.SemVerLess:
       case UserComparator.SemVerLessOrEquals:
       case UserComparator.SemVerGreater:
       case UserComparator.SemVerGreaterOrEquals:
-        version = parseSemVer(userAttributeValue.trim());
-        if (!version) {
-          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid semantic version`);
-        }
-        return this.evaluateSemVerRelation(version, condition.comparator, condition.comparisonValue);
+        versionOrError = getUserAttributeValueAsSemVer(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return typeof versionOrError !== "string"
+          ? this.evaluateSemVerRelation(versionOrError, condition.comparator, condition.comparisonValue)
+          : versionOrError;
 
       case UserComparator.NumberEquals:
       case UserComparator.NumberNotEquals:
@@ -419,36 +398,32 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       case UserComparator.NumberLessOrEquals:
       case UserComparator.NumberGreater:
       case UserComparator.NumberGreaterOrEquals:
-        number = parseFloatStrict(userAttributeValue.replace(",", "."));
-        if (!isFinite(number)) {
-          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid decimal number`);
-        }
-        return this.evaluateNumberRelation(number, condition.comparator, condition.comparisonValue);
+        numberOrError = getUserAttributeValueAsNumber(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return typeof numberOrError !== "string"
+          ? this.evaluateNumberRelation(numberOrError, condition.comparator, condition.comparisonValue)
+          : numberOrError;
 
       case UserComparator.DateTimeBefore:
       case UserComparator.DateTimeAfter:
-        number = parseFloatStrict(userAttributeValue.replace(",", "."));
-        if (!isFinite(number)) {
-          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);
-        }
-        return this.evaluateDateTimeRelation(number, condition.comparisonValue, condition.comparator === UserComparator.DateTimeBefore);
+        numberOrError = getUserAttributeValueAsUnixTimeSeconds(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return typeof numberOrError !== "string"
+          ? this.evaluateDateTimeRelation(numberOrError, condition.comparisonValue, condition.comparator === UserComparator.DateTimeBefore)
+          : numberOrError;
 
       case UserComparator.ArrayContainsAnyOf:
       case UserComparator.ArrayNotContainsAnyOf:
-        array = parseArrayComparisonValue(userAttributeValue);
-        if (!array) {
-          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid JSON string array`);
-        }
-        return this.evaluateArrayContainsAnyOf(array, condition.comparisonValue, condition.comparator === UserComparator.ArrayNotContainsAnyOf);
+        arrayOrError = getUserAttributeValueAsStringArray(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return typeof arrayOrError !== "string"
+          ? this.evaluateArrayContainsAnyOf(arrayOrError, condition.comparisonValue, condition.comparator === UserComparator.ArrayNotContainsAnyOf)
+          : arrayOrError;
 
       case UserComparator.SensitiveArrayContainsAnyOf:
       case UserComparator.SensitiveArrayNotContainsAnyOf:
-        array = parseArrayComparisonValue(userAttributeValue);
-        if (!array) {
-          return handleInvalidUserAttribute(this.logger, condition, context.key, userAttributeName, `'${userAttributeValue}' is not a valid JSON string array`);
-        }
-        return this.evaluateSensitiveArrayContainsAnyOf(array, condition.comparisonValue,
-          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveArrayNotContainsAnyOf);
+        arrayOrError = getUserAttributeValueAsStringArray(userAttributeName, userAttributeValue, condition, context.key, this.logger);
+        return typeof arrayOrError !== "string"
+          ? this.evaluateSensitiveArrayContainsAnyOf(arrayOrError, condition.comparisonValue,
+            context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveArrayNotContainsAnyOf)
+          : arrayOrError;
 
       default:
         throw new Error(); // execution should never get here (unless there is an error in the config JSON)
@@ -742,14 +717,6 @@ export function isStringArray(value: unknown): value is string[] {
   return isArray(value) && !value.some(item => typeof item !== "string");
 }
 
-function parseArrayComparisonValue(value: string): ReadonlyArray<string> | null {
-  let parsedObject: unknown;
-  try { parsedObject = JSON.parse(value); }
-  catch { return null; }
-
-  return isStringArray(parsedObject) ? parsedObject : null;
-}
-
 function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {
   return hashComparisonValueSlice(utf8Encode(value), configJsonSalt, contextSalt);
 }
@@ -758,9 +725,71 @@ function hashComparisonValueSlice(sliceUtf8: string, configJsonSalt: string, con
   return sha256(sliceUtf8 + utf8Encode(configJsonSalt) + utf8Encode(contextSalt));
 }
 
-function handleInvalidUserAttribute(logger: LoggerWrapper, condition: UserConditionUnion, key: string, userAttributeName: string, reason: string) {
-  logger.userObjectAttributeIsInvalid(formatUserCondition(condition), key, reason, userAttributeName);
-  return invalidUserAttributeError(userAttributeName, reason);
+function userAttributeValueToString(userAttributeValue: UserAttributeValue) {
+  return typeof userAttributeValue === "string" ? userAttributeValue :
+    userAttributeValue instanceof Date ? (userAttributeValue.getTime() / 1000) + "" :
+    isStringArray(userAttributeValue) ? JSON.stringify(userAttributeValue) :
+    userAttributeValue + "";
+}
+
+function getUserAttributeValueAsText(attributeName: string, attributeValue: UserAttributeValue, condition: UserConditionUnion, key: string, logger: LoggerWrapper): string {
+  if (typeof attributeValue === "string") {
+    return attributeValue;
+  }
+
+  attributeValue = userAttributeValueToString(attributeValue);
+  logger.userObjectAttributeIsAutoConverted(formatUserCondition(condition), key, attributeName, attributeValue);
+  return attributeValue;
+}
+
+function getUserAttributeValueAsSemVer(attributeName: string, attributeValue: UserAttributeValue, condition: UserConditionUnion, key: string, logger: LoggerWrapper): ISemVer | string {
+  let version: ISemVer | null;
+  if (typeof attributeValue === "string" && (version = parseSemVer(attributeValue.trim()))) {
+    return version;
+  }
+  return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid semantic version`);
+}
+
+function getUserAttributeValueAsNumber(attributeName: string, attributeValue: UserAttributeValue, condition: UserConditionUnion, key: string, logger: LoggerWrapper): number | string {
+  const number =
+    typeof attributeValue === "number" ? attributeValue :
+    typeof attributeValue === "string" ? parseFloatStrict(attributeValue.replace(",", ".")) :
+    NaN;
+  if (!isNaN(number)) {
+    return number;
+  }
+  return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid decimal number`);
+}
+
+function getUserAttributeValueAsUnixTimeSeconds(attributeName: string, attributeValue: UserAttributeValue, condition: UserConditionUnion, key: string, logger: LoggerWrapper): number | string {
+  if (attributeValue instanceof Date) {
+    return attributeValue.getTime() / 1000;
+  }
+  const number =
+    typeof attributeValue === "number" ? attributeValue :
+    typeof attributeValue === "string" ? parseFloatStrict(attributeValue.replace(",", ".")) :
+    NaN;
+  if (!isNaN(number)) {
+    return number;
+  }
+  return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);
+}
+
+function getUserAttributeValueAsStringArray(attributeName: string, attributeValue: UserAttributeValue, condition: UserConditionUnion, key: string, logger: LoggerWrapper): ReadonlyArray<string> | string {
+  let stringArray = attributeValue;
+  if (typeof stringArray === "string") {
+    try { stringArray = JSON.parse(stringArray); }
+    catch (err) { /* intentional no-op */ }
+  }
+  if (isStringArray(stringArray)) {
+    return stringArray;
+  }
+  return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid string array`);
+}
+
+function handleInvalidUserAttribute(logger: LoggerWrapper, condition: UserConditionUnion, key: string, attributeName: string, reason: string) {
+  logger.userObjectAttributeIsInvalid(formatUserCondition(condition), key, reason, attributeName);
+  return invalidUserAttributeError(attributeName, reason);
 }
 
 /* Evaluation details */
@@ -851,7 +880,7 @@ export function evaluate<T extends SettingValue>(evaluator: IRolloutEvaluator, s
     return evaluationDetailsFromDefaultValue(key, defaultValue, getTimestampAsDate(remoteConfig), user, errorMessage);
   }
 
-  const evaluateResult = evaluator.evaluate(defaultValue, EvaluateContext.forMainFlag(key, setting, user, settings));
+  const evaluateResult = evaluator.evaluate(defaultValue, new EvaluateContext(key, setting, user, settings));
 
   return evaluationDetailsFromEvaluateResult<T>(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
 }
@@ -870,7 +899,7 @@ export function evaluateAll(evaluator: IRolloutEvaluator, settings: Readonly<{ [
   for (const [key, setting] of Object.entries(settings)) {
     let evaluationDetails: IEvaluationDetails;
     try {
-      const evaluateResult = evaluator.evaluate(null, EvaluateContext.forMainFlag(key, setting, user, settings));
+      const evaluateResult = evaluator.evaluate(null, new EvaluateContext(key, setting, user, settings));
       evaluationDetails = evaluationDetailsFromEvaluateResult(key, evaluateResult, getTimestampAsDate(remoteConfig), user);
     }
     catch (err) {
