@@ -236,10 +236,6 @@ export function formatPrerequisiteFlagComparator(comparator: PrerequisiteFlagCom
   }
 }
 
-export function formatPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition): string {
-  return new EvaluateLogBuilder().appendPrerequisiteFlagCondition(condition).toString();
-}
-
 export function formatSegmentComparator(comparator: SegmentComparator): string {
   switch (comparator) {
     case SegmentComparator.IsIn: return "IS IN SEGMENT";

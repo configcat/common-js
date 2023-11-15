@@ -42,7 +42,6 @@ describe("Evaluation log", () => {
   describeTestSet("segment");
   describeTestSet("prerequisite_flag");
   describeTestSet("comparators");
-  describeTestSet("circular_dependency");
   describeTestSet("epoch_date_validation");
   describeTestSet("number_validation");
   describeTestSet("semver_validation");

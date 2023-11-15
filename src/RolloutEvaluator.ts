@@ -1,6 +1,6 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import { LogLevel } from "./ConfigCatLogger";
-import { EvaluateLogBuilder, formatPrerequisiteFlagCondition, formatSegmentComparator, formatUserCondition, valueToString } from "./EvaluateLogBuilder";
+import { EvaluateLogBuilder, formatSegmentComparator, formatUserCondition, valueToString } from "./EvaluateLogBuilder";
 import { sha1, sha256 } from "./Hash";
 import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, PrerequisiteFlagCondition, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserConditionUnion, VariationIdValue } from "./ProjectConfig";
 import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
@@ -85,7 +85,6 @@ const targetingRuleIgnoredMessage = "The current targeting rule is ignored and t
 const missingUserObjectError = "cannot evaluate, User Object is missing";
 const missingUserAttributeError = (attributeName: string) => `cannot evaluate, the User.${attributeName} attribute is missing`;
 const invalidUserAttributeError = (attributeName: string, reason: string) => `cannot evaluate, the User.${attributeName} attribute is invalid (${reason})`;
-const circularDependencyError = "cannot evaluate, circular dependency detected";
 
 export class RolloutEvaluator implements IRolloutEvaluator {
   constructor(private readonly logger: LoggerWrapper) {
@@ -111,9 +110,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     let returnValue: SettingValue;
     try {
-      const result = this.evaluateSetting(context);
-      returnValue = result.selectedValue.value;
-      let isAllowedReturnValue: boolean;
+      let result: IEvaluateResult, isValidReturnValue: boolean;
 
       if (defaultValue != null) {
         // NOTE: We've already checked earlier in the call chain that the defaultValue is of an allowed type (see also ensureAllowedDefaultValue).
@@ -124,23 +121,27 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           throw new TypeError(
             "The type of a setting must match the type of the specified default value. "
             + `Setting's type was ${SettingType[settingType]} but the default value's type was ${typeof defaultValue}. `
-            + `Please use a default value which corresponds to the setting type ${SettingType[settingType]}.`);
+            + `Please use a default value which corresponds to the setting type ${SettingType[settingType]}. `
+            + "Learn more: https://configcat.com/docs/sdk-reference/js/#setting-type-mapping");
         }
+
+        result = this.evaluateSetting(context);
+        returnValue = result.selectedValue.value;
 
         // When a default value other than null or undefined is specified, the return value must have the same type as the default value
         // so that the consistency between TS (compile-time) and JS (run-time) return value types is maintained.
-        isAllowedReturnValue = typeof returnValue === typeof defaultValue;
+        isValidReturnValue = typeof returnValue === typeof defaultValue;
       }
       else {
+        result = this.evaluateSetting(context);
+        returnValue = result.selectedValue.value;
+
         // When the specified default value is null or undefined, the return value can be of whatever allowed type (boolean, string, number).
-        isAllowedReturnValue = isAllowedValue(returnValue);
+        isValidReturnValue = isAllowedValue(returnValue);
       }
 
-      if (!isAllowedReturnValue) {
-        throw new TypeError(
-          returnValue === null ? "Setting value is null." :
-          returnValue === void 0 ? "Setting value is undefined." :
-          `Setting value '${returnValue}' is of an unsupported type (${typeof returnValue}).`);
+      if (!isValidReturnValue) {
+        handleInvalidReturnValue(returnValue);
       }
 
       return result;
@@ -298,7 +299,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
         case "PrerequisiteFlagCondition":
           result = this.evaluatePrerequisiteFlagCondition(condition, context);
-          newLineBeforeThen = !isEvaluationError(result) || result !== circularDependencyError || conditions.length > 1;
+          newLineBeforeThen = true;
           break;
 
         case "SegmentCondition":
@@ -631,10 +632,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     if (context.visitedFlags.indexOf(prerequisiteFlagKey) >= 0) {
       context.visitedFlags.push(prerequisiteFlagKey);
       const dependencyCycle = formatStringList(context.visitedFlags, void 0, void 0, " -> ");
-      this.logger.circularDependencyDetected(formatPrerequisiteFlagCondition(condition), context.key, dependencyCycle);
-
-      context.visitedFlags.splice(-2);
-      return circularDependencyError;
+      throw new Error(`Circular dependency detected between the following depending flags: ${dependencyCycle}.`);
     }
 
     const prerequisiteFlagContext = EvaluateContext.forPrerequisiteFlag(prerequisiteFlagKey, prerequisiteFlag, context);
@@ -648,14 +646,23 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     context.visitedFlags.pop();
 
     const prerequisiteFlagValue = prerequisiteFlagEvaluateResult.selectedValue.value;
-    let result = isAllowedValue(prerequisiteFlagValue);
+    if (typeof prerequisiteFlagValue !== typeof condition.comparisonValue) {
+      if (isAllowedValue(prerequisiteFlagValue)) {
+        throw new Error(`Type mismatch between comparison value '${condition.comparisonValue}' and prerequisite flag '${prerequisiteFlagKey}'.`);
+      }
+      else {
+        handleInvalidReturnValue(prerequisiteFlagValue);
+      }
+    }
+
+    let result: boolean;
 
     switch (condition.comparator) {
       case PrerequisiteFlagComparator.Equals:
-        result &&= prerequisiteFlagValue === condition.comparisonValue;
+        result = prerequisiteFlagValue === condition.comparisonValue;
         break;
       case PrerequisiteFlagComparator.NotEquals:
-        result &&= prerequisiteFlagValue !== condition.comparisonValue;
+        result = prerequisiteFlagValue !== condition.comparisonValue;
         break;
       default:
         throw new Error(); // execution should never get here (unless there is an error in the config JSON)
@@ -899,6 +906,13 @@ function isCompatibleValue(value: SettingValue, settingType: SettingType): boole
     case SettingType.Double: return typeof value === "number";
     default: return false;
   }
+}
+
+function handleInvalidReturnValue(value: unknown): never {
+  throw new TypeError(
+    value === null ? "Setting value is null." :
+    value === void 0 ? "Setting value is undefined." :
+    `Setting value '${value}' is of an unsupported type (${typeof value}).`);
 }
 
 export function getTimestampAsDate(projectConfig: ProjectConfig | null): Date | undefined {

@@ -848,7 +848,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions with expired cache - getValue should take care of maxInitWaitTimeSeconds", done => {
 
     const configFetcher = new FakeConfigFetcher(500);
-    const configJson = "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
+    const configJson = "{\"f\": { \"debug\": { \"v\": { \"b\": false }, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
     const configCache = new FakeCache(new ProjectConfig(configJson, new Config(JSON.parse(configJson)), new Date().getTime() - 10000000, "etag2"));
     const configCatKernel: FakeConfigCatKernel = { configFetcher, defaultCacheFactory: () => configCache, sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 10 });
@@ -862,7 +862,7 @@ describe("ConfigCatClient", () => {
   it("Initialization With AutoPollOptions with expired cache - getValueAsync should take care of maxInitWaitTimeSeconds", async () => {
 
     const configFetcher = new FakeConfigFetcher(500);
-    const configJson = "{\"f\": { \"debug\": { \"v\": false, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
+    const configJson = "{\"f\": { \"debug\": { \"v\": { \"b\": false }, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
     const configCache = new FakeCache(new ProjectConfig(configJson, new Config(JSON.parse(configJson)), new Date().getTime() - 10000000, "etag2"));
     const configCatKernel: FakeConfigCatKernel = { configFetcher, defaultCacheFactory: () => configCache, sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 10 });

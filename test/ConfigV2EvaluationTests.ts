@@ -1,57 +1,118 @@
 import { assert } from "chai";
 import "mocha";
 import { FlagOverrides, IManualPollOptions, MapOverrideDataSource, OverrideBehaviour, SettingValue, User } from "../src";
-import { FormattableLogMessage, LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
-import { RolloutEvaluator, evaluate } from "../src/RolloutEvaluator";
+import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
+import { RolloutEvaluator, evaluate, isAllowedValue } from "../src/RolloutEvaluator";
+import { errorToString } from "../src/Utils";
 import { CdnConfigLocation, LocalFileConfigLocation } from "./helpers/ConfigLocation";
 import { FakeLogger } from "./helpers/fakes";
 import { HttpConfigFetcher } from "./helpers/HttpConfigFetcher";
-import { createClientWithManualPoll, escapeRegExp, sdkType, sdkVersion } from "./helpers/utils";
+import { createClientWithManualPoll, sdkType, sdkVersion } from "./helpers/utils";
 
 describe("Setting evaluation (config v2)", () => {
 
-  it("Circular dependency detection", async () => {
-    const configLocation = new LocalFileConfigLocation("test", "data", "test_circulardependency_v6.json");
-    const config = await configLocation.fetchConfigAsync();
+  for (const [key, dependencyCycle] of <[string, string][]>[
+    ["key1", "'key1' -> 'key1'"],
+    ["key2", "'key2' -> 'key3' -> 'key2'"],
+    ["key4", "'key4' -> 'key3' -> 'key2' -> 'key3'"],
+  ]) {
+    it("Prerequisite flag circular dependency detection", async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "test_circulardependency_v6.json");
+      const config = await configLocation.fetchConfigAsync();
 
-    const fakeLogger = new FakeLogger();
-    const logger = new LoggerWrapper(fakeLogger);
-    const evaluator = new RolloutEvaluator(logger);
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
 
-    const key = "key1";
-    evaluate(evaluator, config.settings, key, null, void 0, null, logger);
+      try {
+        evaluate(evaluator, config.settings, key, null, void 0, null, logger);
+        assert.fail("evaluate should throw.")
+      }
+      catch (err) {
+        const errMsg = errorToString(err);
+        assert.include(errMsg, "Circular dependency detected");
+        assert.include(errMsg, dependencyCycle);
+      }
+    });
+  }
 
-    const logEvents = fakeLogger.events;
-    assert.strictEqual(4, logEvents.length);
+  for (const [key, prerequisiteFlagKey, prerequisiteFlagValue, expectedValue] of <[string, string, unknown, string | null][]>[
+    ["stringDependsOnBool", "mainBoolFlag", true, "Dog"],
+    ["stringDependsOnBool", "mainBoolFlag", false, "Cat"],
+    ["stringDependsOnBool", "mainBoolFlag", "1", null],
+    ["stringDependsOnBool", "mainBoolFlag", 1, null],
+    ["stringDependsOnBool", "mainBoolFlag", [true], null],
+    ["stringDependsOnBool", "mainBoolFlag", null, null],
+    ["stringDependsOnBool", "mainBoolFlag", void 0, null],
+    ["stringDependsOnString", "mainStringFlag", "private", "Dog"],
+    ["stringDependsOnString", "mainStringFlag", "Private", "Cat"],
+    ["stringDependsOnString", "mainStringFlag", true, null],
+    ["stringDependsOnString", "mainStringFlag", 1, null],
+    ["stringDependsOnString", "mainStringFlag", ["private"], null],
+    ["stringDependsOnString", "mainStringFlag", null, null],
+    ["stringDependsOnString", "mainStringFlag", void 0, null],
+    ["stringDependsOnInt", "mainIntFlag", 2, "Dog"],
+    ["stringDependsOnInt", "mainIntFlag", 1, "Cat"],
+    ["stringDependsOnInt", "mainIntFlag", "2", null],
+    ["stringDependsOnInt", "mainIntFlag", true, null],
+    ["stringDependsOnInt", "mainIntFlag", [2], null],
+    ["stringDependsOnInt", "mainIntFlag", null, null],
+    ["stringDependsOnInt", "mainIntFlag", void 0, null],
+    ["stringDependsOnDouble", "mainDoubleFlag", 0.1, "Dog"],
+    ["stringDependsOnDouble", "mainDoubleFlag", 0.11, "Cat"],
+    ["stringDependsOnDouble", "mainDoubleFlag", "0.1", null],
+    ["stringDependsOnDouble", "mainDoubleFlag", true, null],
+    ["stringDependsOnDouble", "mainDoubleFlag", [0.1], null],
+    ["stringDependsOnDouble", "mainDoubleFlag", null, null],
+    ["stringDependsOnDouble", "mainDoubleFlag", void 0, null],
+  ]) {
+    it(`Prerequisite flag comparison value type mismatch - key: ${key} | prerequisiteFlagKey: ${prerequisiteFlagKey} | prerequisiteFlagValue: ${prerequisiteFlagValue}`, async () => {
+      const overrideMap: { [name: string]: NonNullable<SettingValue> } = {
+        [prerequisiteFlagKey]: prerequisiteFlagValue as unknown as NonNullable<SettingValue>
+      };
 
-    assert.strictEqual(3, logEvents.filter(([, eventId]) => eventId === 3005).length);
+      const fakeLogger = new FakeLogger();
+      const options: IManualPollOptions = {
+        flagOverrides: new FlagOverrides(new MapOverrideDataSource(overrideMap), OverrideBehaviour.LocalOverRemote),
+        logger: fakeLogger
+      };
 
-    assert.isTrue(logEvents.some(([level, , msg]) => level === LogLevel.Warn && msg instanceof FormattableLogMessage
-      && msg.argValues[1] === "key1"
-      && msg.argValues[2] === "'key1' -> 'key1'"));
+      // https://app.configcat.com/v2/e7a75611-4256-49a5-9320-ce158755e3ba/08dbc325-7f69-4fd4-8af4-cf9f24ec8ac9/08dbc325-9b74-45cb-86d0-4d61c25af1aa/08dbc325-9ebd-4587-8171-88f76a3004cb
+      const client = createClientWithManualPoll("configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/JoGwdqJZQ0K2xDy7LnbyOg",
+        { sdkType, sdkVersion, configFetcher: new HttpConfigFetcher() }, options);
 
-    assert.isTrue(logEvents.some(([level, , msg]) => level === LogLevel.Warn && msg instanceof FormattableLogMessage
-      && msg.argValues[1] === "key2"
-      && msg.argValues[2] === "'key1' -> 'key2' -> 'key1'"));
+      try {
+        await client.forceRefreshAsync();
+        const actualValue = await client.getValueAsync(key, null);
 
-    assert.isTrue(logEvents.some(([level, , msg]) => level === LogLevel.Warn && msg instanceof FormattableLogMessage
-      && msg.argValues[1] === "key3"
-      && msg.argValues[2] === "'key1' -> 'key3' -> 'key3'"));
+        assert.strictEqual(expectedValue, actualValue);
 
-    const evaluateLogEvent = logEvents.find(([level, eventId]) => level === LogLevel.Info && eventId === 5000);
-    assert.isDefined(evaluateLogEvent);
+        if (actualValue == null) {
+          const errors = fakeLogger.events.filter(([level]) => level === LogLevel.Error);
+          assert.strictEqual(1, errors.length);
+          const [, eventId, , err] = errors[0];
+          assert.strictEqual(1002, eventId);
 
-    const msg = evaluateLogEvent![2].toString();
-
-    assert.match(msg, new RegExp(escapeRegExp("THEN 'key1-prereq1' => cannot evaluate, circular dependency detected\n")
-      + "\\s+" + escapeRegExp("The current targeting rule is ignored and the evaluation continues with the next rule.")));
-
-    assert.match(msg, new RegExp(escapeRegExp("THEN 'key2-prereq1' => cannot evaluate, circular dependency detected\n")
-      + "\\s+" + escapeRegExp("The current targeting rule is ignored and the evaluation continues with the next rule.")));
-
-    assert.match(msg, new RegExp(escapeRegExp("THEN 'key3-prereq1' => cannot evaluate, circular dependency detected\n")
-      + "\\s+" + escapeRegExp("The current targeting rule is ignored and the evaluation continues with the next rule.")));
-  });
+          const errMsg = errorToString(err);
+          if (prerequisiteFlagValue === null) {
+            assert.include(errMsg, "Setting value is null");
+          }
+          else if (prerequisiteFlagValue === void 0) {
+            assert.include(errMsg, "Setting value is undefined");
+          }
+          else if (!isAllowedValue(prerequisiteFlagValue)) {
+            assert.match(errMsg, /Setting value '[^']+' is of an unsupported type/);
+          }
+          else {
+            assert.match(errMsg, /Type mismatch between comparison value '[^']+' and prerequisite flag '[^']+'/);
+          }
+        }
+      }
+      finally {
+        client.dispose();
+      }
+    });
+  }
 
   for (const [key, userId, email, overrideBehaviour, expectedValue] of <[string, string, string, OverrideBehaviour, string][]>[
     ["stringDependsOnString", "1", "john@sensitivecompany.com", null, "Dog"],
@@ -71,7 +132,7 @@ describe("Setting evaluation (config v2)", () => {
     ["stringDependsOnInt", "2", "john@notsensitivecompany.com", OverrideBehaviour.LocalOverRemote, "Falcon"],
     ["stringDependsOnInt", "2", "john@notsensitivecompany.com", OverrideBehaviour.LocalOnly, "Falcon"],
   ]) {
-    it(`Prerequisite flag override - key: ${key} | userId: ${userId} | email: ${email} | overrideBehavior: ${overrideBehaviour} `, async () => {
+    it(`Prerequisite flag override - key: ${key} | userId: ${userId} | email: ${email} | overrideBehavior: ${overrideBehaviour}`, async () => {
       const overrideMap: { [name: string]: NonNullable<SettingValue> } = {
         ["mainStringFlag"]: "private", // to check the case where a prerequisite flag is overridden (dependent flag: 'stringDependsOnString')
         ["stringDependsOnInt"]: "Falcon" // to check the case where a dependent flag is overridden (prerequisite flag: 'mainIntFlag')
