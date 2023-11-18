@@ -567,7 +567,8 @@ export class ConfigCatClient implements IConfigCatClient {
   }
 
   waitForReady(): Promise<ClientCacheState> {
-    return this.options.readyPromise;
+    const configService = this.configService;
+    return configService ? configService.readyPromise : Promise.resolve(ClientCacheState.HasLocalOverrideFlagDataOnly);
   }
 
   snapshot(): IConfigCatClientSnapshot {

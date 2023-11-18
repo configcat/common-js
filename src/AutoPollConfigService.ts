@@ -14,14 +14,13 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   private workerTimerId?: ReturnType<typeof setTimeout>;
   private readonly initTimerId?: ReturnType<typeof setTimeout>;
   private readonly pollIntervalMs: number;
+  readonly readyPromise: Promise<ClientCacheState>;
 
   constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
 
     super(configFetcher, options);
 
     this.pollIntervalMs = options.pollIntervalSeconds * 1000;
-
-    const initialCacheSync = super.syncUpWithCache(true);
 
     if (options.maxInitWaitTimeSeconds !== 0) {
       this.initialized = false;
@@ -36,8 +35,6 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
         resolve();
       });
 
-      this.initialization.then(() => options.hooks.emit("clientReady", this.getCacheState(options.cache.getInMemory())));
-
       if (options.maxInitWaitTimeSeconds > 0) {
         this.initTimerId = setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
       }
@@ -45,11 +42,13 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     else {
       this.initialized = true;
       this.initialization = Promise.resolve();
-      options.hooks.emit("clientReady", this.getCacheState(options.cache.getInMemory()));
     }
 
+    let initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig>;
+    [this.readyPromise, initialCacheSyncUp] = this.setupClientReady();
+
     if (!options.offline) {
-      this.startRefreshWorker(initialCacheSync);
+      this.startRefreshWorker(initialCacheSyncUp);
     }
   }
 
@@ -125,12 +124,12 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     this.stopRefreshWorker();
   }
 
-  private async startRefreshWorker(initialCacheSync?: Promise<ProjectConfig>) {
+  private async startRefreshWorker(initialCacheSyncUp?: ProjectConfig | Promise<ProjectConfig>) {
     this.options.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
 
     const delayMs = this.pollIntervalMs;
 
-    const latestConfig = await (initialCacheSync ?? this.options.cache.get(this.cacheKey));
+    const latestConfig = await (initialCacheSyncUp ?? this.options.cache.get(this.cacheKey));
     if (latestConfig.isExpired(this.pollIntervalMs)) {
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:
@@ -182,5 +181,13 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
 
     return ClientCacheState.HasUpToDateFlagData;
+  }
+
+  protected async waitForReadyAsync(): Promise<ClientCacheState> {
+    // NOTE: In Auto Polling mode, maxInitWaitTime takes precedence over waiting for initial cache sync-up, that is,
+    // ClientReady is always raised after maxInitWaitTime has passed, regardless of whether initial cache sync-up has finished or not.
+
+    await this.waitForInitializationAsync();
+    return this.getCacheState(this.options.cache.getInMemory());
   }
 }

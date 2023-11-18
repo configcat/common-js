@@ -2,7 +2,6 @@ import type { IConfigCache, IConfigCatCache } from "./ConfigCatCache";
 import { ExternalConfigCache, InMemoryConfigCache } from "./ConfigCatCache";
 import type { IConfigCatLogger } from "./ConfigCatLogger";
 import { ConfigCatConsoleLogger, LoggerWrapper } from "./ConfigCatLogger";
-import type { ClientCacheState } from "./ConfigServiceBase";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
 import { NullEventEmitter } from "./EventEmitter";
@@ -159,8 +158,6 @@ export abstract class OptionsBase {
 
   hooks: SafeHooksWrapper;
 
-  readyPromise: Promise<ClientCacheState>;
-
   constructor(apiKey: string, clientVersion: string, options?: IOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
     eventEmitterFactory?: (() => IEventEmitter) | null) {
@@ -192,8 +189,6 @@ export abstract class OptionsBase {
         return this.hooksWeakRef.deref()?.emit(eventName, ...args) ?? false;
       }
     };
-
-    this.readyPromise = new Promise(resolve => hooksWeakRef.deref()?.once("clientReady", resolve));
 
     let logger: IConfigCatLogger | null | undefined;
     let cache: IConfigCatCache | null | undefined;

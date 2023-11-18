@@ -1293,6 +1293,7 @@ describe("ConfigCatClient", () => {
       // 2. Fetch fails
       const originalConfigService = client["configService"] as ConfigServiceBase<OptionsBase>;
       client["configService"] = new class implements IConfigService {
+        readonly readyPromise = Promise.resolve(ClientCacheState.NoFlagData);
         getConfig(): Promise<ProjectConfig> { return Promise.resolve(ProjectConfig.empty); }
         refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> { return Promise.reject(expectedErrorException); }
         get isOffline(): boolean { return false; }
@@ -1369,6 +1370,7 @@ describe("ConfigCatClient", () => {
     const client = new ConfigCatClient(options, configCatKernel);
 
     client["configService"] = new class implements IConfigService {
+      readonly readyPromise = Promise.resolve(ClientCacheState.NoFlagData);
       getConfig(): Promise<ProjectConfig> { return Promise.resolve(ProjectConfig.empty); }
       refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> { throw errorException; }
       get isOffline(): boolean { return false; }

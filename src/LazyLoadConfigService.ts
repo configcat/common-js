@@ -8,13 +8,14 @@ import type { ProjectConfig } from "./ProjectConfig";
 export class LazyLoadConfigService extends ConfigServiceBase<LazyLoadOptions> implements IConfigService {
 
   private readonly cacheTimeToLiveMs: number;
+  readonly readyPromise: Promise<ClientCacheState>;
 
   constructor(configFetcher: IConfigFetcher, options: LazyLoadOptions) {
 
     super(configFetcher, options);
 
     this.cacheTimeToLiveMs = options.cacheTimeToLiveSeconds * 1000;
-    super.syncUpWithCache();
+    [this.readyPromise] = this.setupClientReady();
   }
 
   async getConfig(): Promise<ProjectConfig> {
