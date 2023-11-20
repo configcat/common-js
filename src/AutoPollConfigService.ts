@@ -9,10 +9,9 @@ import { delay } from "./Utils";
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
 
   private initialized: boolean;
-  private readonly initialization: Promise<void>;
+  private readonly initializationPromise: Promise<boolean>;
   private signalInitialization: () => void = () => { /* Intentional no-op. */ };
   private workerTimerId?: ReturnType<typeof setTimeout>;
-  private readonly initTimerId?: ReturnType<typeof setTimeout>;
   private readonly pollIntervalMs: number;
   readonly readyPromise: Promise<ClientCacheState>;
 
@@ -22,46 +21,46 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
     this.pollIntervalMs = options.pollIntervalSeconds * 1000;
 
+    const initialCacheSyncUp = this.syncUpWithCache();
+
     if (options.maxInitWaitTimeSeconds !== 0) {
       this.initialized = false;
 
       // This promise will be resolved when
       // 1. the cache contains a valid config at startup (see startRefreshWorker) or
-      // 2. config json is fetched the first time, regardless of success or failure (see onConfigUpdated) or
-      // 3. maxInitWaitTimeSeconds > 0 and maxInitWaitTimeSeconds has passed (see the setTimeout call below).
-      this.initialization = new Promise(resolve => this.signalInitialization = () => {
-        this.initialized = true;
-        clearTimeout(this.initTimerId);
-        resolve();
-      });
+      // 2. config json is fetched the first time, regardless of success or failure (see onConfigUpdated).
+      const initSignalPromise = new Promise<void>(resolve => this.signalInitialization = resolve);
 
-      if (options.maxInitWaitTimeSeconds > 0) {
-        this.initTimerId = setTimeout(() => this.signalInitialization(), options.maxInitWaitTimeSeconds * 1000);
-      }
+      // This promise will be resolved when either initialization ready is signalled by signalInitialization() or maxInitWaitTimeSeconds pass.
+      this.initializationPromise = this.waitForInitializationAsync(initSignalPromise).then(success => {
+        this.initialized = true;
+        return success;
+      });
     }
     else {
       this.initialized = true;
-      this.initialization = Promise.resolve();
+      this.initializationPromise = Promise.resolve(false);
     }
 
-    let initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig>;
-    [this.readyPromise, initialCacheSyncUp] = this.setupClientReady();
+    this.readyPromise = this.getReadyPromise(this.initializationPromise, async initializationPromise => {
+      await initializationPromise;
+      return this.getCacheState(this.options.cache.getInMemory());
+    });
 
     if (!options.offline) {
       this.startRefreshWorker(initialCacheSyncUp);
     }
   }
 
-  private async waitForInitializationAsync(): Promise<boolean> {
+  private async waitForInitializationAsync(initSignalPromise: Promise<void>): Promise<boolean> {
     if (this.options.maxInitWaitTimeSeconds < 0) {
-      await this.initialization;
+      await initSignalPromise;
       return true;
     }
 
     const delayCleanup: { clearTimer?: () => void } = {};
-    // Simply awaiting the initialization promise would also work but we limit waiting to maxInitWaitTimeSeconds for maximum safety.
     const success = await Promise.race([
-      this.initialization.then(() => true),
+      initSignalPromise.then(() => true),
       delay(this.options.maxInitWaitTimeSeconds * 1000, delayCleanup).then(() => false)
     ]);
     delayCleanup.clearTimer!();
@@ -84,7 +83,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       }
 
       this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired, waiting for initialization.");
-      await this.waitForInitializationAsync();
+      await this.initializationPromise;
     }
 
     cachedConfig = await this.options.cache.get(this.cacheKey);
@@ -181,13 +180,5 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     }
 
     return ClientCacheState.HasUpToDateFlagData;
-  }
-
-  protected async waitForReadyAsync(): Promise<ClientCacheState> {
-    // NOTE: In Auto Polling mode, maxInitWaitTime takes precedence over waiting for initial cache sync-up, that is,
-    // ClientReady is always raised after maxInitWaitTime has passed, regardless of whether initial cache sync-up has finished or not.
-
-    await this.waitForInitializationAsync();
-    return this.getCacheState(this.options.cache.getInMemory());
   }
 }

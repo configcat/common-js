@@ -300,19 +300,13 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
-  protected async waitForReadyAsync(initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig>): Promise<ClientCacheState> {
-    return this.getCacheState(await initialCacheSyncUp);
+  protected syncUpWithCache(): ProjectConfig | Promise<ProjectConfig> {
+    return this.options.cache.get(this.cacheKey);
   }
 
-  protected setupClientReady(): [Promise<ClientCacheState>, ProjectConfig | Promise<ProjectConfig>] {
-    const initialCacheSyncUp = this.options.cache.get(this.cacheKey);
-
-    const readyPromise = (async (initialCacheSyncUp) => {
-      const cacheState = await this.waitForReadyAsync(initialCacheSyncUp);
-      this.options.hooks.emit("clientReady", cacheState);
-      return cacheState;
-    })(initialCacheSyncUp);
-
-    return [readyPromise, initialCacheSyncUp];
+  protected async getReadyPromise<TState>(state: TState, waitForReadyAsync: (state: TState) => Promise<ClientCacheState>): Promise<ClientCacheState> {
+    const cacheState = await waitForReadyAsync(state);
+    this.options.hooks.emit("clientReady", cacheState);
+    return cacheState;
   }
 }

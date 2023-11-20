@@ -1142,7 +1142,7 @@ describe("ConfigCatClient", () => {
       client.setOnline();
 
       if (configService instanceof AutoPollConfigService) {
-        assert.isTrue(await configService["waitForInitializationAsync"]());
+        assert.isTrue(await configService["initializationPromise"]);
         expectedFetchTimes++;
       }
 
@@ -1200,7 +1200,7 @@ describe("ConfigCatClient", () => {
       assert.isFalse(client.isOffline);
 
       if (configService instanceof AutoPollConfigService) {
-        assert.isTrue(await configService["waitForInitializationAsync"]());
+        assert.isTrue(await configService["initializationPromise"]);
         expectedFetchTimes++;
       }
 
