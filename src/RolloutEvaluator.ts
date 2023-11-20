@@ -751,11 +751,12 @@ function getUserAttributeValueAsSemVer(attributeName: string, attributeValue: Us
 }
 
 function getUserAttributeValueAsNumber(attributeName: string, attributeValue: UserAttributeValue, condition: UserConditionUnion, key: string, logger: LoggerWrapper): number | string {
-  const number =
-    typeof attributeValue === "number" ? attributeValue :
-    typeof attributeValue === "string" ? parseFloatStrict(attributeValue.replace(",", ".")) :
-    NaN;
-  if (!isNaN(number)) {
+  if (typeof attributeValue === "number") {
+    return attributeValue;
+  }
+  let number: number;
+  if (typeof attributeValue === "string"
+    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue === "NaN")) {
     return number;
   }
   return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid decimal number`);
@@ -765,11 +766,12 @@ function getUserAttributeValueAsUnixTimeSeconds(attributeName: string, attribute
   if (attributeValue instanceof Date) {
     return attributeValue.getTime() / 1000;
   }
-  const number =
-    typeof attributeValue === "number" ? attributeValue :
-    typeof attributeValue === "string" ? parseFloatStrict(attributeValue.replace(",", ".")) :
-    NaN;
-  if (!isNaN(number)) {
+  if (typeof attributeValue === "number") {
+    return attributeValue;
+  }
+  let number: number;
+  if (typeof attributeValue === "string"
+    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue === "NaN")) {
     return number;
   }
   return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);
