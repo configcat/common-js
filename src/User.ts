@@ -21,7 +21,7 @@ export class User {
      * @remarks
      * The set of allowed attribute values depends on the comparison type of the condition which references the User Object attribute.
      * `string` values are supported by all comparison types (in some cases they need to be provided in a specific format though).
-     * Some of the comparison types work with other types of values, as descibed below.
+     * Some of the comparison types work with other types of values, as described below.
      *
      * Text-based comparisons (EQUALS, IS ONE OF, etc.)<br/>
      * * accept `string` values,<br/>
