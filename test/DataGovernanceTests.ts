@@ -2,7 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
-import { ConfigServiceBase } from "../src/ConfigServiceBase";
+import { ClientCacheState, ConfigServiceBase } from "../src/ConfigServiceBase";
 import { ClientReadyState } from "../src/Hooks";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
 
@@ -268,6 +268,8 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
   constructor(dataGovernance?: DataGovernance, baseUrl?: string) {
     super(new FakeConfigFetcher(), new FakeOptions(baseUrl, dataGovernance));
   }
+
+  get readyPromise(): Promise<ClientCacheState> { throw new Error("Getter not implemented."); }
 
   getConfig(): Promise<ProjectConfig> { return Promise.resolve(ProjectConfig.empty); }
 

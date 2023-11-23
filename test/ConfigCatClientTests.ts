@@ -561,12 +561,36 @@ describe("ConfigCatClient", () => {
     const startDate: number = new Date().getTime();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
-    const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+    const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-    assert.isAtLeast(ellapsedMilliseconds, 500);
-    assert.isAtMost(ellapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
+    assert.isAtLeast(elapsedMilliseconds, 500);
+    assert.isAtMost(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
     assert.equal(actualValue, true);
   });
+
+  for (const statusCode of [403, 404, 500, null]) {
+    it(`Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueDetailsAsync should not wait maxInitWaitTimeSeconds even if fetch result is ${statusCode ?? "network error"}`, async () => {
+
+      const maxInitWaitTimeSeconds = 2;
+
+      const configFetchDelay = maxInitWaitTimeSeconds * 1000 / 4;
+      const configFetcher = new FakeConfigFetcherBase(null, configFetchDelay, () =>
+        statusCode ? { statusCode, reasonPhrase: "x" } : (() => { throw "network error"; })());
+
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
+
+      const startDate: number = new Date().getTime();
+      const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+      const actualDetails = await client.getValueDetailsAsync("debug", false);
+      const elapsedMilliseconds: number = new Date().getTime() - startDate;
+
+      assert.isAtLeast(elapsedMilliseconds, 500);
+      assert.isAtMost(elapsedMilliseconds, configFetchDelay * 2);
+      assert.equal(actualDetails.isDefaultValue, true);
+      assert.equal(actualDetails.value, false);
+    });
+  }
 
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait for maxInitWaitTimeSeconds only and return default value", async () => {
 
@@ -578,10 +602,10 @@ describe("ConfigCatClient", () => {
     const startDate: number = new Date().getTime();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
-    const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+    const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-    assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
-    assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+    assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
+    assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
     assert.equal(actualValue, false);
   });
 
@@ -608,16 +632,17 @@ describe("ConfigCatClient", () => {
 
     it("AutoPoll - should wait for maxInitWaitTimeSeconds", async () => {
 
-      const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(), sdkType: "common", sdkVersion: "1.0.0" };
-      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: maxInitWaitTimeSeconds }, null);
+      const configFetcher = new FakeConfigFetcherWithNullNewConfig(maxInitWaitTimeSeconds * 2 * 1000);
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
       const startDate: number = new Date().getTime();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-      assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
-      assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+      assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
+      assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
       assert.equal(state, ClientReadyState.NoFlagData);
 
@@ -630,7 +655,13 @@ describe("ConfigCatClient", () => {
 
     it("AutoPoll - should wait for maxInitWaitTimeSeconds and return cached", async () => {
 
-      const configCatKernel: FakeConfigCatKernel = { configFetcher: configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
+      const configFetcher = new FakeConfigFetcherBase("{}", maxInitWaitTimeSeconds * 2 * 1000, (lastConfig, lastETag) => ({
+        statusCode: 500,
+        reasonPhrase: "",
+        eTag: (lastETag as any | 0) + 1 + "",
+        body: lastConfig
+      } as IFetchResponse));
+      const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", {
         maxInitWaitTimeSeconds: maxInitWaitTimeSeconds,
         cache: new FakeExternalCacheWithInitialData(120_000)
@@ -639,10 +670,10 @@ describe("ConfigCatClient", () => {
       const startDate: number = new Date().getTime();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      const ellapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-      assert.isAtLeast(ellapsedMilliseconds, maxInitWaitTimeSeconds);
-      assert.isAtMost(ellapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
+      assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
+      assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
       assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
 
@@ -1070,11 +1101,53 @@ describe("ConfigCatClient", () => {
     // Assert
 
     assert.equal(2, instanceCount1);
-    assert.equal(0, instanceCount2);
 
     if (isFinalizationRegistryAvailable) {
+      assert.equal(0, instanceCount2);
       assert.equal(2, logger.events.filter(([, , msg]) => msg.toString().indexOf("finalize() called") >= 0).length);
     }
+    else {
+      // When finalization is not available, Auto Polling won't be stopped.
+      assert.equal(1, instanceCount2);
+    }
+  });
+
+  it("GC should be able to collect cached instances when hook handler closes over client instance and no strong references are left", async function() {
+    // Arrange
+
+    setupPolyfills();
+    if (!isWeakRefAvailable() || typeof FinalizationRegistry === "undefined" || typeof gc === "undefined") {
+      this.skip();
+    }
+
+    const sdkKey1 = "test1-7890123456789012/1234567890123456789012";
+
+    const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(), sdkType: "common", sdkVersion: "1.0.0" };
+
+    function createClients() {
+      const client = ConfigCatClient.get(sdkKey1, PollingMode.AutoPoll, { maxInitWaitTimeSeconds: 0 }, configCatKernel);
+      client.on("configChanged", () => client.getValueAsync("flag", null));
+
+      return ConfigCatClient["instanceCache"].getAliveCount();
+    }
+
+    // Act
+
+    const instanceCount1 = createClients();
+
+    // We need to allow the event loop to run so the runtime can detect there's no more strong references to the created clients.
+    await allowEventLoop();
+    gc();
+
+    // We need to allow the finalizer callbacks to execute.
+    await allowEventLoop(10);
+
+    const instanceCount2 = ConfigCatClient["instanceCache"].getAliveCount();
+
+    // Assert
+
+    assert.equal(1, instanceCount1);
+    assert.equal(0, instanceCount2);
   });
 
   // For these tests we need to choose a ridiculously large poll interval/ cache TTL to make sure that config is fetched only once.
@@ -1115,7 +1188,7 @@ describe("ConfigCatClient", () => {
       client.setOnline();
 
       if (configService instanceof AutoPollConfigService) {
-        assert.isTrue(await configService["waitForInitializationAsync"]());
+        assert.isTrue(await configService["initializationPromise"]);
         expectedFetchTimes++;
       }
 
@@ -1173,7 +1246,7 @@ describe("ConfigCatClient", () => {
       assert.isFalse(client.isOffline);
 
       if (configService instanceof AutoPollConfigService) {
-        assert.isTrue(await configService["waitForInitializationAsync"]());
+        assert.isTrue(await configService["initializationPromise"]);
         expectedFetchTimes++;
       }
 
@@ -1266,6 +1339,7 @@ describe("ConfigCatClient", () => {
       // 2. Fetch fails
       const originalConfigService = client["configService"] as ConfigServiceBase<OptionsBase>;
       client["configService"] = new class implements IConfigService {
+        readonly readyPromise = Promise.resolve(ClientCacheState.NoFlagData);
         getConfig(): Promise<ProjectConfig> { return Promise.resolve(ProjectConfig.empty); }
         refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> { return Promise.reject(expectedErrorException); }
         get isOffline(): boolean { return false; }
@@ -1342,6 +1416,7 @@ describe("ConfigCatClient", () => {
     const client = new ConfigCatClient(options, configCatKernel);
 
     client["configService"] = new class implements IConfigService {
+      readonly readyPromise = Promise.resolve(ClientCacheState.NoFlagData);
       getConfig(): Promise<ProjectConfig> { return Promise.resolve(ProjectConfig.empty); }
       refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> { throw errorException; }
       get isOffline(): boolean { return false; }

@@ -42,6 +42,8 @@ export enum ClientCacheState {
 }
 
 export interface IConfigService {
+  readonly readyPromise: Promise<ClientCacheState>;
+
   getConfig(): Promise<ProjectConfig>;
 
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]>;
@@ -69,6 +71,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   private pendingFetch: Promise<FetchResult> | null = null;
 
   protected readonly cacheKey: string;
+
+  abstract readonly readyPromise: Promise<ClientCacheState>;
 
   constructor(
     protected readonly configFetcher: IConfigFetcher,
@@ -106,24 +110,26 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   protected async refreshConfigCoreAsync(latestConfig: ProjectConfig): Promise<[FetchResult, ProjectConfig]> {
     const fetchResult = await this.fetchAsync(latestConfig);
 
+    let configChanged = false;
     const success = fetchResult.status === FetchStatus.Fetched;
     if (success
         || fetchResult.config.timestamp > latestConfig.timestamp && (!fetchResult.config.isEmpty || latestConfig.isEmpty)) {
       await this.options.cache.set(this.cacheKey, fetchResult.config);
 
-      this.onConfigUpdated(fetchResult.config);
-
-      if (success && !ProjectConfig.equals(fetchResult.config, latestConfig)) {
-        this.onConfigChanged(fetchResult.config);
-      }
-
+      configChanged = success && !ProjectConfig.equals(fetchResult.config, latestConfig);
       latestConfig = fetchResult.config;
+    }
+
+    this.onConfigFetched(fetchResult.config);
+
+    if (configChanged) {
+      this.onConfigChanged(fetchResult.config);
     }
 
     return [fetchResult, latestConfig];
   }
 
-  protected onConfigUpdated(newConfig: ProjectConfig): void { }
+  protected onConfigFetched(newConfig: ProjectConfig): void { }
 
   protected onConfigChanged(newConfig: ProjectConfig): void {
     this.options.logger.debug("config changed");
@@ -294,13 +300,13 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
-  protected onCacheSynced(cachedConfig: ProjectConfig): void {
-    this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));
+  protected syncUpWithCache(): ProjectConfig | Promise<ProjectConfig> {
+    return this.options.cache.get(this.cacheKey);
   }
 
-  protected async syncUpWithCache(): Promise<ProjectConfig> {
-    const cachedConfig = await this.options.cache.get(this.cacheKey);
-    this.onCacheSynced(cachedConfig);
-    return cachedConfig;
+  protected async getReadyPromise<TState>(state: TState, waitForReadyAsync: (state: TState) => Promise<ClientCacheState>): Promise<ClientCacheState> {
+    const cacheState = await waitForReadyAsync(state);
+    this.options.hooks.emit("clientReady", cacheState);
+    return cacheState;
   }
 }

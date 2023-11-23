@@ -6,11 +6,14 @@ import type { ProjectConfig } from "./ProjectConfig";
 
 export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions> implements IConfigService {
 
+  readonly readyPromise: Promise<ClientCacheState>;
+
   constructor(configFetcher: IConfigFetcher, options: ManualPollOptions) {
 
     super(configFetcher, options);
 
-    super.syncUpWithCache();
+    const initialCacheSyncUp = this.syncUpWithCache();
+    this.readyPromise = this.getReadyPromise(initialCacheSyncUp, async initialCacheSyncUp => this.getCacheState(await initialCacheSyncUp));
   }
 
   getCacheState(cachedConfig: ProjectConfig): ClientCacheState {
