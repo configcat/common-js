@@ -1,4 +1,4 @@
-import type { Hooks } from "./Hooks";
+import type { SafeHooksWrapper } from "./Hooks";
 import { errorToString } from "./Utils";
 
 /**
@@ -81,7 +81,7 @@ export class LoggerWrapper implements IConfigCatLogger {
 
   constructor(
     private readonly logger: IConfigCatLogger,
-    private readonly hooks?: Hooks) {
+    private readonly hooks?: SafeHooksWrapper) {
   }
 
   private isLogLevelEnabled(logLevel: LogLevel): boolean {

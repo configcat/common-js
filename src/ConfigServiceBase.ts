@@ -42,6 +42,8 @@ export enum ClientCacheState {
 }
 
 export interface IConfigService {
+  readonly readyPromise: Promise<ClientCacheState>;
+
   getConfig(): Promise<ProjectConfig>;
 
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]>;
@@ -69,6 +71,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   private pendingFetch: Promise<FetchResult> | null = null;
 
   protected readonly cacheKey: string;
+
+  abstract readonly readyPromise: Promise<ClientCacheState>;
 
   constructor(
     protected readonly configFetcher: IConfigFetcher,
@@ -296,11 +300,13 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
-  protected async syncUpWithCache(suppressEmitClientReady = false): Promise<ProjectConfig> {
-    const cachedConfig = await this.options.cache.get(this.cacheKey);
-    if (!suppressEmitClientReady) {
-      this.options.hooks.emit("clientReady", this.getCacheState(cachedConfig));
-    }
-    return cachedConfig;
+  protected syncUpWithCache(): ProjectConfig | Promise<ProjectConfig> {
+    return this.options.cache.get(this.cacheKey);
+  }
+
+  protected async getReadyPromise<TState>(state: TState, waitForReadyAsync: (state: TState) => Promise<ClientCacheState>): Promise<ClientCacheState> {
+    const cacheState = await waitForReadyAsync(state);
+    this.options.hooks.emit("clientReady", cacheState);
+    return cacheState;
   }
 }

@@ -2,12 +2,13 @@ import type { IConfigCache, IConfigCatCache } from "./ConfigCatCache";
 import { ExternalConfigCache, InMemoryConfigCache } from "./ConfigCatCache";
 import type { IConfigCatLogger } from "./ConfigCatLogger";
 import { ConfigCatConsoleLogger, LoggerWrapper } from "./ConfigCatLogger";
-import type { ClientCacheState } from "./ConfigServiceBase";
 import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
+import { NullEventEmitter } from "./EventEmitter";
 import type { FlagOverrides } from "./FlagOverrides";
-import type { IProvidesHooks } from "./Hooks";
+import type { HookEvents, IProvidesHooks, SafeHooksWrapper } from "./Hooks";
 import { Hooks } from "./Hooks";
+import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
 import { ProjectConfig } from "./ProjectConfig";
 import type { User } from "./RolloutEvaluator";
 import { sha1 } from "./Sha1";
@@ -155,9 +156,7 @@ export abstract class OptionsBase {
 
   offline: boolean = false;
 
-  hooks: Hooks;
-
-  readyPromise: Promise<ClientCacheState>;
+  hooks: SafeHooksWrapper;
 
   constructor(apiKey: string, clientVersion: string, options?: IOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
@@ -181,8 +180,15 @@ export abstract class OptionsBase {
     }
 
     const eventEmitter = eventEmitterFactory?.() ?? new DefaultEventEmitter();
-    this.hooks = new Hooks(eventEmitter);
-    this.readyPromise = new Promise(resolve => this.hooks.once("clientReady", resolve));
+    const hooks = new Hooks(eventEmitter);
+    const hooksWeakRef = new (isWeakRefAvailable() ? WeakRef : getWeakRefStub())(hooks);
+    this.hooks = <SafeHooksWrapper & { hooksWeakRef: WeakRef<Hooks> }>{
+      hooks, // stored only temporarily, will be deleted by `yieldHooks()`
+      hooksWeakRef,
+      emit<TEventName extends keyof HookEvents>(eventName: TEventName, ...args: HookEvents[TEventName]): boolean {
+        return this.hooksWeakRef.deref()?.emit(eventName, ...args) ?? false;
+      }
+    };
 
     let logger: IConfigCatLogger | null | undefined;
     let cache: IConfigCatCache | null | undefined;
@@ -220,7 +226,7 @@ export abstract class OptionsBase {
         this.offline = options.offline;
       }
 
-      options.setupHooks?.(this.hooks);
+      options.setupHooks?.(hooks);
     }
 
     this.logger = new LoggerWrapper(logger ?? new ConfigCatConsoleLogger(), this.hooks);
@@ -228,6 +234,13 @@ export abstract class OptionsBase {
     this.cache = cache
       ? new ExternalConfigCache(cache, this.logger)
       : (defaultCacheFactory ? defaultCacheFactory(this) : new InMemoryConfigCache());
+  }
+
+  yieldHooks(): Hooks {
+    const hooksWrapper = this.hooks as unknown as { hooks?: Hooks };
+    const hooks = hooksWrapper.hooks;
+    delete hooksWrapper.hooks;
+    return hooks ?? new Hooks(new NullEventEmitter());
   }
 
   getUrl(): string {
