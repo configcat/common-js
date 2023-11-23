@@ -740,7 +740,7 @@ describe("ConfigServiceBaseTests", () => {
 });
 
 function createProjectConfig(eTag = "etag"): ProjectConfig {
-  const configJson = "{\"f\": { \"debug\": { \"v\": true, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
+  const configJson = "{\"f\": { \"debug\": { \"v\": { \"b\": true }, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
   return new ProjectConfig(
     configJson,
     new Config(JSON.parse(configJson)),

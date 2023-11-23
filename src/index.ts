@@ -82,9 +82,12 @@ export { FormattableLogMessage } from "./ConfigCatLogger";
 
 export type { IConfigCatCache } from "./ConfigCatCache";
 
-export type { IConfig, ISetting, ITargetingRule, IPercentageOption, SettingValue, VariationIdValue } from "./ProjectConfig";
+export type {
+  IConfig, ISegment, SettingTypeMap, SettingValue, VariationIdValue, ISettingValueContainer, ISettingUnion, ISetting, ITargetingRule, IPercentageOption,
+  ConditionTypeMap, IConditionUnion, ICondition, UserConditionComparisonValueTypeMap, IUserConditionUnion, IUserCondition, IPrerequisiteFlagCondition, ISegmentCondition
+} from "./ProjectConfig";
 
-export { SettingType, Comparator } from "./ProjectConfig";
+export { SettingType, UserComparator, PrerequisiteFlagComparator, SegmentComparator } from "./ProjectConfig";
 
 export type { IConfigCatClient };
 
@@ -94,7 +97,9 @@ export { SettingKeyValue } from "./ConfigCatClient";
 
 export type { IEvaluationDetails, SettingTypeOf } from "./RolloutEvaluator";
 
-export { User } from "./RolloutEvaluator";
+export type { UserAttributeValue } from "./User";
+
+export { User } from "./User";
 
 export { OverrideBehaviour } from "./FlagOverrides";
 

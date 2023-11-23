@@ -12,10 +12,11 @@ import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
 import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
-import type { IConfig, ProjectConfig, RolloutPercentageItem, RolloutRule, Setting, SettingValue } from "./ProjectConfig";
-import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf, User } from "./RolloutEvaluator";
+import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue } from "./ProjectConfig";
+import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, isAllowedValue } from "./RolloutEvaluator";
-import { errorToString } from "./Utils";
+import type { User } from "./User";
+import { errorToString, isArray, throwError } from "./Utils";
 
 /** ConfigCat SDK client. */
 export interface IConfigCatClient extends IProvidesHooks {
@@ -242,17 +243,22 @@ export class ConfigCatClient implements IConfigCatClient {
   private static get instanceCache() { return clientInstanceCache; }
 
   static get<TMode extends PollingMode>(sdkKey: string, pollingMode: TMode, options: OptionsForPollingMode<TMode> | undefined | null, configCatKernel: IConfigCatKernel): IConfigCatClient {
+    const invalidSdkKeyError = "Invalid 'sdkKey' value";
     if (!sdkKey) {
-      throw new Error("Invalid 'sdkKey' value");
+      throw new Error(invalidSdkKeyError);
     }
 
     const optionsClass =
       pollingMode === PollingMode.AutoPoll ? AutoPollOptions :
       pollingMode === PollingMode.ManualPoll ? ManualPollOptions :
       pollingMode === PollingMode.LazyLoad ? LazyLoadOptions :
-      (() => { throw new Error("Invalid 'pollingMode' value"); })();
+      throwError(new Error("Invalid 'pollingMode' value"));
 
     const actualOptions = new optionsClass(sdkKey, configCatKernel.sdkType, configCatKernel.sdkVersion, options, configCatKernel.defaultCacheFactory, configCatKernel.eventEmitterFactory);
+
+    if (actualOptions.flagOverrides?.behaviour !== OverrideBehaviour.LocalOnly && !isValidSdkKey(sdkKey, actualOptions.baseUrlOverriden)) {
+      throw new Error(invalidSdkKeyError);
+    }
 
     const [instance, instanceAlreadyCreated] = clientInstanceCache.getOrCreate(actualOptions, configCatKernel);
 
@@ -298,7 +304,7 @@ export class ConfigCatClient implements IConfigCatClient {
         options instanceof AutoPollOptions ? new AutoPollConfigService(configCatKernel.configFetcher, options) :
         options instanceof ManualPollOptions ? new ManualPollConfigService(configCatKernel.configFetcher, options) :
         options instanceof LazyLoadOptions ? new LazyLoadConfigService(configCatKernel.configFetcher, options) :
-        (() => { throw new Error("Invalid 'options' value"); })();
+        throwError(new Error("Invalid 'options' value"));
     }
     else {
       this.hooks.emit("clientReady", ClientCacheState.HasLocalOverrideFlagDataOnly);
@@ -493,22 +499,30 @@ export class ConfigCatClient implements IConfigCatClient {
           return new SettingKeyValue(settingKey, setting.value);
         }
 
-        const rolloutRules = settings[settingKey].targetingRules;
-        if (rolloutRules && rolloutRules.length > 0) {
-          for (let i = 0; i < rolloutRules.length; i++) {
-            const rolloutRule: RolloutRule = rolloutRules[i];
-            if (variationId === rolloutRule.variationId) {
-              return new SettingKeyValue(settingKey, rolloutRule.value);
+        const targetingRules = settings[settingKey].targetingRules;
+        if (targetingRules && targetingRules.length > 0) {
+          for (let i = 0; i < targetingRules.length; i++) {
+            const then = targetingRules[i].then;
+            if (isArray(then)) {
+              for (let j = 0; j < then.length; j++) {
+                const percentageOption: PercentageOption = then[j];
+                if (variationId === percentageOption.variationId) {
+                  return new SettingKeyValue(settingKey, percentageOption.value);
+                }
+              }
+            }
+            else if (variationId === then.variationId) {
+              return new SettingKeyValue(settingKey, then.value);
             }
           }
         }
 
-        const percentageItems = settings[settingKey].percentageOptions;
-        if (percentageItems && percentageItems.length > 0) {
-          for (let i = 0; i < percentageItems.length; i++) {
-            const percentageItem: RolloutPercentageItem = percentageItems[i];
-            if (variationId === percentageItem.variationId) {
-              return new SettingKeyValue(settingKey, percentageItem.value);
+        const percentageOptions = settings[settingKey].percentageOptions;
+        if (percentageOptions && percentageOptions.length > 0) {
+          for (let i = 0; i < percentageOptions.length; i++) {
+            const percentageOption: PercentageOption = percentageOptions[i];
+            if (variationId === percentageOption.variationId) {
+              return new SettingKeyValue(settingKey, percentageOption.value);
             }
           }
         }
@@ -751,6 +765,23 @@ export class SettingKeyValue<TValue = SettingValue> {
     public settingValue: TValue) { }
 }
 
+function isValidSdkKey(sdkKey: string, customBaseUrl: boolean) {
+  const proxyPrefix = "configcat-proxy/";
+
+  // NOTE: String.prototype.startsWith was introduced after ES5. We'd rather work around it instead of polyfilling it.
+  if (customBaseUrl && sdkKey.length > proxyPrefix.length && sdkKey.lastIndexOf(proxyPrefix, 0) === 0) {
+    return true;
+  }
+
+  const components = sdkKey.split("/");
+  const keyLength = 22;
+  switch (components.length) {
+    case 2: return components[0].length === keyLength && components[1].length === keyLength;
+    case 3: return components[0] === "configcat-sdk-1" && components[1].length === keyLength && components[2].length === keyLength;
+    default: return false;
+  }
+}
+
 function validateKey(key: string): void {
   if (!key) {
     throw new Error("Invalid 'key' value");
@@ -758,7 +789,7 @@ function validateKey(key: string): void {
 }
 
 function ensureAllowedDefaultValue(value: SettingValue): void {
-  if (!isAllowedValue(value)) {
+  if (value != null && !isAllowedValue(value)) {
     throw new TypeError("The default value must be boolean, number, string, null or undefined.");
   }
 }

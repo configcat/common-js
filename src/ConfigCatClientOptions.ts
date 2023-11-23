@@ -6,12 +6,12 @@ import { DefaultEventEmitter } from "./DefaultEventEmitter";
 import type { IEventEmitter } from "./EventEmitter";
 import { NullEventEmitter } from "./EventEmitter";
 import type { FlagOverrides } from "./FlagOverrides";
+import { sha1 } from "./Hash";
 import type { HookEvents, IProvidesHooks, SafeHooksWrapper } from "./Hooks";
 import { Hooks } from "./Hooks";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
 import { ProjectConfig } from "./ProjectConfig";
-import type { User } from "./RolloutEvaluator";
-import { sha1 } from "./Sha1";
+import type { User } from "./User";
 
 /** Specifies the supported polling modes. */
 export enum PollingMode {
@@ -130,7 +130,7 @@ export type OptionsForPollingMode<TMode extends PollingMode> =
 
 export abstract class OptionsBase {
 
-  private static readonly configFileName = "config_v5.json";
+  private static readonly configFileName = "config_v6.json";
 
   logger: LoggerWrapper;
 
@@ -266,11 +266,11 @@ export class AutoPollOptions extends OptionsBase {
 
     if (options) {
 
-      if (options.pollIntervalSeconds !== void 0 && options.pollIntervalSeconds !== null) {
+      if (options.pollIntervalSeconds != null) {
         this.pollIntervalSeconds = options.pollIntervalSeconds;
       }
 
-      if (options.maxInitWaitTimeSeconds !== void 0 && options.maxInitWaitTimeSeconds !== null) {
+      if (options.maxInitWaitTimeSeconds != null) {
         this.maxInitWaitTimeSeconds = options.maxInitWaitTimeSeconds;
       }
     }
@@ -309,7 +309,7 @@ export class LazyLoadOptions extends OptionsBase {
     super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
 
     if (options) {
-      if (options.cacheTimeToLiveSeconds !== void 0 && options.cacheTimeToLiveSeconds !== null) {
+      if (options.cacheTimeToLiveSeconds != null) {
         this.cacheTimeToLiveSeconds = options.cacheTimeToLiveSeconds;
       }
     }

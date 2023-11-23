@@ -1,1 +1,119 @@
-{"p":{"u":"https://cdn-global.configcat.com","r":0},"f":{"isAwesomeFeatureEnabled":{"v":true,"i":"ca36009d","t":0,"p":[{"o":0,"v":true,"p":0,"i":"ca36009d"},{"o":1,"v":false,"p":100,"i":"2bdcee75"}],"r":[{"o":0,"a":"Identifier","t":0,"c":"gdf","v":false,"i":"2bdcee75"},{"o":1,"a":"Identifier","t":0,"c":"dfgdf","v":false,"i":"2bdcee75"}]},"isPOCFeatureEnabled":{"v":false,"i":"430bded3","t":0,"p":[],"r":[{"o":0,"a":"Email","t":2,"c":"@something.com","v":false,"i":"430bded3"},{"o":1,"a":"Email","t":2,"c":"@example.com","v":true,"i":"9f21c24c"}]}}}
+{
+  "p": {
+    "u": "https://cdn-global.configcat.com",
+    "r": 0,
+    "s": "unEpMhsXD/Zv9MH0gkBqS0Hr97LCGUKpHHOhEfzTcY4="
+  },
+  "f": {
+    "isAwesomeFeatureEnabled": {
+      "t": 0,
+      "r": [
+        {
+          "c": [
+            {
+              "u": {
+                "a": "Identifier",
+                "c": 0,
+                "l": [
+                  "gdf"
+                ]
+              }
+            }
+          ],
+          "s": {
+            "v": {
+              "b": false
+            },
+            "i": "2bdcee75"
+          }
+        },
+        {
+          "c": [
+            {
+              "u": {
+                "a": "Identifier",
+                "c": 0,
+                "l": [
+                  "dfgdf"
+                ]
+              }
+            }
+          ],
+          "s": {
+            "v": {
+              "b": false
+            },
+            "i": "2bdcee75"
+          }
+        }
+      ],
+      "p": [
+        {
+          "p": 0,
+          "v": {
+            "b": true
+          },
+          "i": "ca36009d"
+        },
+        {
+          "p": 100,
+          "v": {
+            "b": false
+          },
+          "i": "2bdcee75"
+        }
+      ],
+      "v": {
+        "b": true
+      },
+      "i": "ca36009d"
+    },
+    "isPOCFeatureEnabled": {
+      "t": 0,
+      "r": [
+        {
+          "c": [
+            {
+              "u": {
+                "a": "Email",
+                "c": 2,
+                "l": [
+                  "@something.com"
+                ]
+              }
+            }
+          ],
+          "s": {
+            "v": {
+              "b": false
+            },
+            "i": "430bded3"
+          }
+        },
+        {
+          "c": [
+            {
+              "u": {
+                "a": "Email",
+                "c": 2,
+                "l": [
+                  "@example.com"
+                ]
+              }
+            }
+          ],
+          "s": {
+            "v": {
+              "b": true
+            },
+            "i": "9f21c24c"
+          }
+        }
+      ],
+      "v": {
+        "b": false
+      },
+      "i": "430bded3"
+    }
+  }
+}

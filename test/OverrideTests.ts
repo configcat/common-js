@@ -5,6 +5,7 @@ import { ConfigCatClient, IConfigCatClient, IConfigCatKernel } from "../src/Conf
 import { AutoPollOptions, ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
 import { SettingValue } from "../src/ProjectConfig";
+import { isAllowedValue } from "../src/RolloutEvaluator";
 import { FakeConfigCatKernel, FakeConfigFetcherBase, FakeConfigFetcherWithNullNewConfig } from "./helpers/fakes";
 
 describe("Local Overrides", () => {
@@ -58,7 +59,7 @@ describe("Local Overrides", () => {
 
   it("Values from map - RemoteOverLocal", async () => {
     const configCatKernel: FakeConfigCatKernel = {
-      configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+      configFetcher: new FakeConfigFetcherBase('{"f":{"fakeKey":{"t":0,"v":{"b":false}}}}'),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
@@ -107,7 +108,7 @@ describe("Local Overrides", () => {
     dataSource["double_setting"] = 3.14;
     dataSource["string-setting"] = "test";
     const configCatKernel: FakeConfigCatKernel = {
-      configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+      configFetcher: new FakeConfigFetcherBase('{"f":{"fakeKey":{"t":0,"v":{"b":false}}}}'),
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
@@ -200,9 +201,7 @@ describe("Local Overrides", () => {
 
       const expectedEvaluatedValues: SettingKeyValue[] = [{
         settingKey: key,
-        settingValue: typeof overrideValue === "boolean" || typeof overrideValue === "string" || typeof overrideValue === "number" || overrideValue === null || overrideValue === void 0
-          ? overrideValue
-          : null
+        settingValue: isAllowedValue(overrideValue) ? overrideValue : null
       }];
       assert.deepEqual(expectedEvaluatedValues, actualEvaluatedValues);
     });

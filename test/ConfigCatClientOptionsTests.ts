@@ -27,7 +27,7 @@ describe("Options", () => {
 
     assert.equal("APIKEY", options.apiKey);
     assert.equal(30000, options.requestTimeoutMs);
-    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
+    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/m-1.0.0", options.getUrl());
   });
 
   it("ManualPollOptions initialization With parameters works", () => {
@@ -46,7 +46,7 @@ describe("Options", () => {
     assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
     assert.equal(10, options.requestTimeoutMs);
-    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
+    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/m-1.0.0", options.getUrl());
     assert.equal("http://fake-proxy.com:8080", options.proxy);
   });
 
@@ -55,8 +55,8 @@ describe("Options", () => {
     const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
 
     assert.isDefined(options);
-    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
-    assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/m-1.0.0", options.getUrl());
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v6.json?sdk=common/m-1.0.0", options.getUrl());
+    assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/m-1.0.0", options.getUrl());
   });
 
   it("AutoPollOptions initialization With -1 requestTimeoutMs ShouldThrowError", () => {
@@ -71,7 +71,7 @@ describe("Options", () => {
     assert.isTrue(options.logger instanceof LoggerWrapper);
     assert.isTrue(options.logger["logger"] instanceof ConfigCatConsoleLogger);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
+    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(60, options.pollIntervalSeconds);
     assert.equal(30000, options.requestTimeoutMs);
     assert.isDefined(options.cache);
@@ -93,7 +93,7 @@ describe("Options", () => {
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
+    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(59, options.pollIntervalSeconds);
     assert.equal(20, options.requestTimeoutMs);
     assert.equal("http://fake-proxy.com:8080", options.proxy);
@@ -156,8 +156,8 @@ describe("Options", () => {
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
 
     assert.isDefined(options);
-    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
-    assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/a-1.0.0", options.getUrl());
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v6.json?sdk=common/a-1.0.0", options.getUrl());
+    assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/a-1.0.0", options.getUrl());
   });
 
   it("AutoPollOptions initialization With NaN 'maxInitWaitTimeSeconds' ShouldThrowError", () => {
@@ -212,7 +212,7 @@ describe("Options", () => {
     const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
+    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/l-1.0.0", options.getUrl());
     assert.equal(60, options.cacheTimeToLiveSeconds);
     assert.equal(30000, options.requestTimeoutMs);
   });
@@ -232,7 +232,7 @@ describe("Options", () => {
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger["logger"]);
     assert.equal("APIKEY", options.apiKey);
-    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
+    assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/l-1.0.0", options.getUrl());
     assert.equal(59, options.cacheTimeToLiveSeconds);
     assert.equal(20, options.requestTimeoutMs);
     assert.equal("http://fake-proxy.com:8080", options.proxy);
@@ -262,8 +262,8 @@ describe("Options", () => {
     const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", { baseUrl: "https://mycdn.example.org" }, null);
 
     assert.isDefined(options);
-    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
-    assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v5.json?sdk=common/l-1.0.0", options.getUrl());
+    assert.equal("https://mycdn.example.org/configuration-files/APIKEY/config_v6.json?sdk=common/l-1.0.0", options.getUrl());
+    assert.notEqual("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/l-1.0.0", options.getUrl());
   });
 
   it("Options initialization With 'defaultCache' Should set option cache to passed instance", () => {

@@ -12,8 +12,10 @@
     "../../src/ConfigFetcher": "../../src/ConfigFetcher.ts",
     "../../src/ConfigServiceBase": "../../src/ConfigServiceBase.ts",
     "../../src/DefaultEventEmitter": "../../src/DefaultEventEmitter.ts",
+    "../../src/EvaluateLogBuilder": "../../src/EvaluateLogBuilder.ts",
     "../../src/EventEmitter": "../../src/EventEmitter.ts",
     "../../src/FlagOverrides": "../../src/FlagOverrides.ts",
+    "../../src/Hash": "../../src/Hash.ts",
     "../../src/Hooks": "../../src/Hooks.ts",
     "../../src/LazyLoadConfigService": "../../src/LazyLoadConfigService.ts",
     "../../src/ManualPollConfigService": "../../src/ManualPollConfigService.ts",
@@ -21,7 +23,7 @@
     "../../src/ProjectConfig": "../../src/ProjectConfig.ts",
     "../../src/RolloutEvaluator": "../../src/RolloutEvaluator.ts",
     "../../src/Semver": "../../src/Semver.ts",
-    "../../src/Sha1": "../../src/Sha1.ts",
+    "../../src/User": "../../src/User.ts",
     "../../src/Utils": "../../src/Utils.ts"
   }
 }
