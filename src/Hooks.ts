@@ -1,20 +1,8 @@
-import { ClientCacheState } from "./ConfigServiceBase";
+import type { ClientCacheState } from "./ConfigServiceBase";
 import type { IEventEmitter, IEventProvider } from "./EventEmitter";
 import { NullEventEmitter } from "./EventEmitter";
 import type { IConfig } from "./ProjectConfig";
 import type { IEvaluationDetails } from "./RolloutEvaluator";
-
-/**
- * Contains the initialization state of `ConfigCatClient`.
- * @deprecated This type is obsolete and will be removed from the public API in a future major version. Please use `ClientCacheState` instead.
- */
-export type ClientReadyState = ClientCacheState;
-
-/**
- * @deprecated This type is obsolete and will be removed from the public API in a future major version. Please use `ClientCacheState` instead.
- */
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const ClientReadyState = ClientCacheState;
 
 /** Hooks (events) that can be emitted by `ConfigCatClient`. */
 export type HookEvents = {
