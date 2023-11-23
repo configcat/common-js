@@ -134,7 +134,7 @@ export abstract class OptionsBase {
 
   logger: LoggerWrapper;
 
-  apiKey: string;
+  sdkKey: string;
 
   clientVersion: string;
 
@@ -158,15 +158,15 @@ export abstract class OptionsBase {
 
   hooks: SafeHooksWrapper;
 
-  constructor(apiKey: string, clientVersion: string, options?: IOptions | null,
+  constructor(sdkKey: string, clientVersion: string, options?: IOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
     eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-    if (!apiKey) {
-      throw new Error("Invalid 'apiKey' value");
+    if (!sdkKey) {
+      throw new Error("Invalid 'sdkKey' value");
     }
 
-    this.apiKey = apiKey;
+    this.sdkKey = sdkKey;
     this.clientVersion = clientVersion;
     this.dataGovernance = options?.dataGovernance ?? DataGovernance.Global;
 
@@ -244,11 +244,11 @@ export abstract class OptionsBase {
   }
 
   getUrl(): string {
-    return this.baseUrl + "/configuration-files/" + this.apiKey + "/" + OptionsBase.configFileName + "?sdk=" + this.clientVersion;
+    return this.baseUrl + "/configuration-files/" + this.sdkKey + "/" + OptionsBase.configFileName + "?sdk=" + this.clientVersion;
   }
 
   getCacheKey(): string {
-    return sha1(`${this.apiKey}_${OptionsBase.configFileName}_${ProjectConfig.serializationFormatVersion}`);
+    return sha1(`${this.sdkKey}_${OptionsBase.configFileName}_${ProjectConfig.serializationFormatVersion}`);
   }
 }
 
@@ -258,11 +258,11 @@ export class AutoPollOptions extends OptionsBase {
 
   maxInitWaitTimeSeconds: number = 5;
 
-  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null,
+  constructor(sdkKey: string, sdkType: string, sdkVersion: string, options?: IAutoPollOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
     eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-    super(apiKey, sdkType + "/a-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
+    super(sdkKey, sdkType + "/a-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
 
     if (options) {
 
@@ -290,11 +290,11 @@ export class AutoPollOptions extends OptionsBase {
 }
 
 export class ManualPollOptions extends OptionsBase {
-  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null,
+  constructor(sdkKey: string, sdkType: string, sdkVersion: string, options?: IManualPollOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
     eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-    super(apiKey, sdkType + "/m-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
+    super(sdkKey, sdkType + "/m-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
   }
 }
 
@@ -302,11 +302,11 @@ export class LazyLoadOptions extends OptionsBase {
 
   cacheTimeToLiveSeconds: number = 60;
 
-  constructor(apiKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null,
+  constructor(sdkKey: string, sdkType: string, sdkVersion: string, options?: ILazyLoadingOptions | null,
     defaultCacheFactory?: ((options: OptionsBase) => IConfigCache) | null,
     eventEmitterFactory?: (() => IEventEmitter) | null) {
 
-    super(apiKey, sdkType + "/l-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
+    super(sdkKey, sdkType + "/l-" + sdkVersion, options, defaultCacheFactory, eventEmitterFactory);
 
     if (options) {
       if (options.cacheTimeToLiveSeconds != null) {

@@ -21,11 +21,11 @@ describe("Options", () => {
     assert.instanceOf(options.cache, InMemoryConfigCache);
   });
 
-  it("ManualPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
+  it("ManualPollOptions initialization With 'sdkKey' Should create an instance, defaults OK", () => {
     const options: ManualPollOptions = new ManualPollOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
 
-    assert.equal("APIKEY", options.apiKey);
+    assert.equal("APIKEY", options.sdkKey);
     assert.equal(30000, options.requestTimeoutMs);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/m-1.0.0", options.getUrl());
   });
@@ -44,7 +44,7 @@ describe("Options", () => {
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger["logger"]);
-    assert.equal("APIKEY", options.apiKey);
+    assert.equal("APIKEY", options.sdkKey);
     assert.equal(10, options.requestTimeoutMs);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/m-1.0.0", options.getUrl());
     assert.equal("http://fake-proxy.com:8080", options.proxy);
@@ -65,12 +65,12 @@ describe("Options", () => {
     }).to.throw("Invalid 'requestTimeoutMs' value");
   });
 
-  it("AutoPollOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
+  it("AutoPollOptions initialization With 'sdkKey' Should create an instance, defaults OK", () => {
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
     assert.isTrue(options.logger instanceof LoggerWrapper);
     assert.isTrue(options.logger["logger"] instanceof ConfigCatConsoleLogger);
-    assert.equal("APIKEY", options.apiKey);
+    assert.equal("APIKEY", options.sdkKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(60, options.pollIntervalSeconds);
     assert.equal(30000, options.requestTimeoutMs);
@@ -92,7 +92,7 @@ describe("Options", () => {
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger["logger"]);
-    assert.equal("APIKEY", options.apiKey);
+    assert.equal("APIKEY", options.sdkKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/a-1.0.0", options.getUrl());
     assert.equal(59, options.pollIntervalSeconds);
     assert.equal(20, options.requestTimeoutMs);
@@ -208,10 +208,10 @@ describe("Options", () => {
     assert.equal(options.maxInitWaitTimeSeconds, 5);
   });
 
-  it("LazyLoadOptions initialization With 'apiKey' Should create an instance, defaults OK", () => {
+  it("LazyLoadOptions initialization With 'sdkKey' Should create an instance, defaults OK", () => {
     const options: LazyLoadOptions = new LazyLoadOptions("APIKEY", "common", "1.0.0", null, null);
     assert.isDefined(options);
-    assert.equal("APIKEY", options.apiKey);
+    assert.equal("APIKEY", options.sdkKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/l-1.0.0", options.getUrl());
     assert.equal(60, options.cacheTimeToLiveSeconds);
     assert.equal(30000, options.requestTimeoutMs);
@@ -231,7 +231,7 @@ describe("Options", () => {
 
     assert.isDefined(options);
     assert.equal(fakeLogger, options.logger["logger"]);
-    assert.equal("APIKEY", options.apiKey);
+    assert.equal("APIKEY", options.sdkKey);
     assert.equal("https://cdn-global.configcat.com/configuration-files/APIKEY/config_v6.json?sdk=common/l-1.0.0", options.getUrl());
     assert.equal(59, options.cacheTimeToLiveSeconds);
     assert.equal(20, options.requestTimeoutMs);
