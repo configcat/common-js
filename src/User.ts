@@ -19,36 +19,32 @@ export class User {
     /**
      * Custom attributes of the user for advanced targeting rule definitions (e.g. user role, subscription type, etc.)
      * @remarks
-     * The set of allowed attribute values depends on the comparator of the condition which references the User Object attribute.
-     * `string` values are supported by all comparators (in some cases they need to be provided in a specific format though).
-     * Some of the comparators work with other types of values, as described below.
+     * All comparators support `string` values as User Object attribute (in some cases they need to be provided in a specific format though, see below),
+     * but some of them also support other types of values. It depends on the comparator how the values will be handled. The following rules apply:
      *
-     * Text-based comparators (EQUALS, IS ONE OF, etc.)<br/>
-     * * accept `string` values,<br/>
-     * * all other values are automatically converted to string (a warning will be logged but evaluation will continue as normal).
+     * **Text-based comparators** (EQUALS, IS ONE OF, etc.)
+     * * accept `string` values,
+     * * all other values are automatically converted to `string` (a warning will be logged but evaluation will continue as normal).
      *
-     * SemVer-based comparators (IS ONE OF, &lt;, &gt;=, etc.)<br/>
-     * * accept `string` values containing a properly formatted, valid semver value,<br/>
+     * **SemVer-based comparators** (IS ONE OF, &lt;, &gt;=, etc.)
+     * * accept `string` values containing a properly formatted, valid semver value,
      * * all other values are considered invalid (a warning will be logged and the currently evaluated targeting rule will be skipped).
      *
-     * Number-based comparators (=, &lt;, &gt;=, etc.)<br/>
-     * * accept `number` values,<br/>
-     * * accept `string` values containing a properly formatted, valid `number` value,<br/>
+     * **Number-based comparators** (=, &lt;, &gt;=, etc.)
+     * * accept `number` values,
+     * * accept `string` values containing a properly formatted, valid `number` value,
      * * all other values are considered invalid (a warning will be logged and the currently evaluated targeting rule will be skipped).
      *
-     * Date time-based comparators (BEFORE / AFTER)<br/>
-     * * accept `Date` values, which are automatically converted to a second-based Unix timestamp,<br/>
-     * * accept `number` values representing a second-based Unix timestamp,<br/>
-     * * accept `string` values containing a properly formatted, valid `number` value,<br/>
+     * **Date time-based comparators** (BEFORE / AFTER)
+     * * accept `Date` values, which are automatically converted to a second-based Unix timestamp,
+     * * accept `number` values representing a second-based Unix timestamp,
+     * * accept `string` values containing a properly formatted, valid `number` value,
      * * all other values are considered invalid (a warning will be logged and the currently evaluated targeting rule will be skipped).
      *
-     * String array-based comparators (ARRAY CONTAINS ANY OF / ARRAY NOT CONTAINS ANY OF)<br/>
-     * * accept arrays of `string`,<br/>
-     * * accept `string` values containing a valid JSON string which can be deserialized to an array of `string`,<br/>
+     * **String array-based comparators** (ARRAY CONTAINS ANY OF / ARRAY NOT CONTAINS ANY OF)
+     * * accept arrays of `string`,
+     * * accept `string` values containing a valid JSON string which can be deserialized to an array of `string`,
      * * all other values are considered invalid (a warning will be logged and the currently evaluated targeting rule will be skipped).
-     *
-     * In case a non-string attribute value needs to be converted to `string` during evaluation, it will always be done using the same format
-     * which is accepted by the comparators.
      **/
     public custom: { [key: string]: UserAttributeValue } = {}
   ) {
