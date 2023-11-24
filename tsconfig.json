@@ -14,5 +14,10 @@
       //"ES2021.WeakRef", // APIs used: WeakRef (only used if available)
       //"ES2021.Promise" // APIs used: AggregateError (only used if available)
     ]
-  }
+  },
+  "exclude": [
+    "**/node_modules/",
+    "lib/",
+    "samples/"
+  ],
 }

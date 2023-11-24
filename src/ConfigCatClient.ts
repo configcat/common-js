@@ -184,7 +184,7 @@ export class ConfigCatClientCache {
   getOrCreate(options: ConfigCatClientOptions, configCatKernel: IConfigCatKernel): [ConfigCatClient, boolean] {
     let instance: ConfigCatClient | undefined;
 
-    const cachedInstance = this.instances[options.apiKey];
+    const cachedInstance = this.instances[options.sdkKey];
     if (cachedInstance) {
       const [weakRef] = cachedInstance;
       instance = weakRef.deref();
@@ -196,7 +196,7 @@ export class ConfigCatClientCache {
     const token = {};
     instance = new ConfigCatClient(options, configCatKernel, token);
     const weakRefCtor = isWeakRefAvailable() ? WeakRef : getWeakRefStub();
-    this.instances[options.apiKey] = [new weakRefCtor(instance), token];
+    this.instances[options.sdkKey] = [new weakRefCtor(instance), token];
     return [instance, false];
   }
 
@@ -310,7 +310,7 @@ export class ConfigCatClient implements IConfigCatClient {
       this.hooks.emit("clientReady", ClientCacheState.HasLocalOverrideFlagDataOnly);
     }
 
-    this.suppressFinalize = registerForFinalization(this, { sdkKey: options.apiKey, cacheToken, configService: this.configService, logger: options.logger });
+    this.suppressFinalize = registerForFinalization(this, { sdkKey: options.sdkKey, cacheToken, configService: this.configService, logger: options.logger });
   }
 
   private static finalize(data: IFinalizationData) {
@@ -337,7 +337,7 @@ export class ConfigCatClient implements IConfigCatClient {
     options.logger.debug("dispose() called");
 
     if (this.cacheToken) {
-      clientInstanceCache.remove(options.apiKey, this.cacheToken);
+      clientInstanceCache.remove(options.sdkKey, this.cacheToken);
     }
 
     ConfigCatClient.close(this.configService, options.logger, this.hooks);

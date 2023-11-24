@@ -833,10 +833,10 @@ export interface IEvaluationDetails<TValue = SettingValue> {
   /** The exception object related to the error in case evaluation failed (if any). */
   errorException?: any;
 
-  /** The targeting rule which was used to select the evaluated value (if any). */
+  /** The targeting rule (if any) that matched during the evaluation and was used to return the evaluated value. */
   matchedTargetingRule?: ITargetingRule;
 
-  /** The percentage option which was used to select the evaluated value (if any). */
+  /** The percentage option (if any) that was used to select the evaluated value. */
   matchedPercentageOption?: IPercentageOption;
 }
 

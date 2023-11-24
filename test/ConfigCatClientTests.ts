@@ -8,7 +8,7 @@ import { LogLevel } from "../src/ConfigCatLogger";
 import { IFetchResponse } from "../src/ConfigFetcher";
 import { ClientCacheState, ConfigServiceBase, IConfigService, RefreshResult } from "../src/ConfigServiceBase";
 import { MapOverrideDataSource, OverrideBehaviour } from "../src/FlagOverrides";
-import { ClientReadyState, IProvidesHooks } from "../src/Hooks";
+import { IProvidesHooks } from "../src/Hooks";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { isWeakRefAvailable, setupPolyfills } from "../src/Polyfills";
 import { SettingValueContainer } from "../src/ProjectConfig";
@@ -626,7 +626,7 @@ describe("ConfigCatClient", () => {
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
 
-      assert.equal(state, ClientReadyState.HasUpToDateFlagData);
+      assert.equal(state, ClientCacheState.HasUpToDateFlagData);
       assert.equal(client.snapshot().getValue("debug", false), true);
     });
 
@@ -644,7 +644,7 @@ describe("ConfigCatClient", () => {
       assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
       assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
-      assert.equal(state, ClientReadyState.NoFlagData);
+      assert.equal(state, ClientCacheState.NoFlagData);
 
       const snapshot = client.snapshot();
       assert.equal(snapshot.getValue("debug", false), false);
@@ -675,7 +675,7 @@ describe("ConfigCatClient", () => {
       assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
       assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
 
-      assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
+      assert.equal(state, ClientCacheState.HasCachedFlagDataOnly);
 
       const snapshot = client.snapshot();
       assert.equal(snapshot.getValue("debug", false), true);
@@ -694,7 +694,7 @@ describe("ConfigCatClient", () => {
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
 
-      assert.equal(state, ClientReadyState.HasUpToDateFlagData);
+      assert.equal(state, ClientCacheState.HasUpToDateFlagData);
       assert.equal(client.snapshot().getValue("debug", false), true);
     });
 
@@ -708,7 +708,7 @@ describe("ConfigCatClient", () => {
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
 
-      assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
+      assert.equal(state, ClientCacheState.HasCachedFlagDataOnly);
       assert.equal(client.snapshot().getValue("debug", false), true);
     });
 
@@ -722,7 +722,7 @@ describe("ConfigCatClient", () => {
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
 
-      assert.equal(state, ClientReadyState.HasCachedFlagDataOnly);
+      assert.equal(state, ClientCacheState.HasCachedFlagDataOnly);
       const snapshot = client.snapshot();
       assert.equal(snapshot.getValue("debug", false), true);
       assert.deepEqual(snapshot.getAllKeys(), ["debug"]);
@@ -747,7 +747,7 @@ describe("ConfigCatClient", () => {
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
 
-      assert.equal(state, ClientReadyState.HasLocalOverrideFlagDataOnly);
+      assert.equal(state, ClientCacheState.HasLocalOverrideFlagDataOnly);
       const snapshot = client.snapshot();
       assert.equal(snapshot.getValue("fakeKey", false), true);
       assert.deepEqual(snapshot.getAllKeys(), ["fakeKey"]);
@@ -1330,7 +1330,7 @@ describe("ConfigCatClient", () => {
 
       const state = await client.waitForReady();
 
-      assert.equal(state, ClientReadyState.NoFlagData);
+      assert.equal(state, ClientCacheState.NoFlagData);
       assert.equal(clientReadyEventCount, 1);
       assert.equal(configChangedEvents.length, 0);
       assert.equal(flagEvaluatedEvents.length, 0);
@@ -1345,7 +1345,7 @@ describe("ConfigCatClient", () => {
         get isOffline(): boolean { return false; }
         setOnline(): void { }
         setOffline(): void { }
-        getCacheState(): ClientReadyState { return ClientReadyState.NoFlagData; }
+        getCacheState(): ClientCacheState { return ClientCacheState.NoFlagData; }
         dispose(): void { }
       };
 
@@ -1422,7 +1422,7 @@ describe("ConfigCatClient", () => {
       get isOffline(): boolean { return false; }
       setOnline(): void { }
       setOffline(): void { }
-      getCacheState(): ClientReadyState { return ClientReadyState.NoFlagData; }
+      getCacheState(): ClientCacheState { return ClientCacheState.NoFlagData; }
       dispose(): void { }
     };
 

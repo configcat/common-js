@@ -1,12 +1,7 @@
 import { assert } from "chai";
 import "mocha";
-import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
 import { User } from "../src/index";
-import { Config } from "../src/ProjectConfig";
-import { RolloutEvaluator, evaluate } from "../src/RolloutEvaluator";
 import { WellKnownUserObjectAttribute, getUserAttributes } from "../src/User";
-import { parseFloatStrict } from "../src/Utils";
-import { FakeLogger } from "./helpers/fakes";
 
 const identifierAttribute: WellKnownUserObjectAttribute = "Identifier";
 const emailAttribute: WellKnownUserObjectAttribute = "Email";
