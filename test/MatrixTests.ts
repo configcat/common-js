@@ -128,6 +128,8 @@ function createUser(columns: ReadonlyArray<string>, headers: string[]): User | u
     result.country = country;
   }
 
+  result.custom = {};
+
   if (custom && custom !== USERNULL) {
     result.custom[headers[3]] = custom;
   }

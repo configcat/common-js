@@ -89,6 +89,10 @@ function createUser(userRaw?: Readonly<{ [key: string]: string }>): User | undef
     user.country = country;
   }
 
+  if (!user.custom) {
+    user.custom = {};
+  }
+
   const wellKnownAttributes: string[] = [identifierAttribute, emailAttribute, countryAttribute];
   for (const attributeName of Object.keys(userRaw)) {
     if (wellKnownAttributes.indexOf(attributeName) < 0) {

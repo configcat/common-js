@@ -46,7 +46,7 @@ export class User {
      * * accept `string` values containing a valid JSON string which can be deserialized to an array of `string`,
      * * all other values are considered invalid (a warning will be logged and the currently evaluated targeting rule will be skipped).
      **/
-    public custom: { [key: string]: UserAttributeValue } = {}
+    public custom?: { [key: string]: UserAttributeValue },
   ) {
   }
 }

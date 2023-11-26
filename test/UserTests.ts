@@ -9,6 +9,8 @@ const countryAttribute: WellKnownUserObjectAttribute = "Country";
 
 function createUser(attributeName: string, attributeValue: string) {
   const user = new User("");
+  user.custom = {};
+
   switch (attributeName) {
     case identifierAttribute:
       user.identifier = attributeValue;
