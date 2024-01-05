@@ -939,7 +939,7 @@ function isCompatibleValue(value: SettingValue, settingType: SettingType): boole
   }
 }
 
-function handleInvalidReturnValue(value: unknown): never {
+export function handleInvalidReturnValue(value: unknown): never {
   throw new TypeError(
     value === null ? "Setting value is null." :
     value === void 0 ? "Setting value is undefined." :
