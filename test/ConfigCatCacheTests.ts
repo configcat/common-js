@@ -39,7 +39,7 @@ describe("ConfigCatCache", () => {
 
       // 3. When cache is empty, setting a non-empty config with any (even older) timestamp should overwrite the cache.
       const configJson = "{\"p\": {\"u\": \"http://example.com\", \"r\": 0}}";
-      const config3 = new ProjectConfig(configJson, new Config(configJson), config2.timestamp - 1000, "\"ETAG\"");
+      const config3 = new ProjectConfig(configJson, Config.deserialize(configJson), config2.timestamp - 1000, "\"ETAG\"");
       await configCache.set(cacheKey, config3);
       cachedConfig = await configCache.get(cacheKey);
 
@@ -72,7 +72,7 @@ describe("ConfigCatCache", () => {
     logger.events.length = 0;
 
     const configJson = "{\"p\": {\"u\": \"http://example.com\", \"r\": 0}}";
-    const config = new ProjectConfig(configJson, new Config(configJson), ProjectConfig.generateTimestamp(), "\"ETAG\"");
+    const config = new ProjectConfig(configJson, Config.deserialize(configJson), ProjectConfig.generateTimestamp(), "\"ETAG\"");
 
     await configCache.set(cacheKey, config);
 

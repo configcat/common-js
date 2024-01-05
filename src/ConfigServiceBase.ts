@@ -1,7 +1,8 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
-import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
+import { RedirectMode } from "./ConfigJson";
+import { Config, ProjectConfig } from "./ProjectConfig";
 
 /** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
 export class RefreshResult {

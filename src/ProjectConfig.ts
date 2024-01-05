@@ -1,3 +1,5 @@
+import type * as ConfigJson from "./ConfigJson";
+import type { PrerequisiteFlagComparator, RedirectMode, SegmentComparator, SettingType, UserComparator } from "./ConfigJson";
 import type { WellKnownUserObjectAttribute } from "./User";
 
 export class ProjectConfig {
@@ -100,9 +102,9 @@ export class Config implements IConfig {
   readonly segments: ReadonlyArray<Segment>;
   readonly settings: Readonly<{ [key: string]: SettingUnion }>;
 
-  constructor(json: any) {
+  constructor(json: Partial<ConfigJson.Config>) {
     this.preferences = json.p != null ? new Preferences(json.p) : void 0;
-    this.segments = json.s?.map((item: any) => new Segment(item)) ?? [];
+    this.segments = json.s?.map(item => new Segment(item)) ?? [];
     this.settings = json.f != null
       ? Object.fromEntries(Object.entries(json.f).map(([key, value]) => [key, new Setting(value, this) as SettingUnion]))
       : {};
@@ -111,18 +113,12 @@ export class Config implements IConfig {
   get salt(): string | undefined { return this.preferences?.salt; }
 }
 
-export enum RedirectMode {
-  No = 0,
-  Should = 1,
-  Force = 2,
-}
-
 export class Preferences {
   readonly baseUrl: string | undefined;
   readonly redirectMode: RedirectMode | undefined;
   readonly salt: string | undefined;
 
-  constructor(json: any) {
+  constructor(json: ConfigJson.Preferences) {
     this.baseUrl = json.u;
     this.redirectMode = json.r;
     this.salt = json.s;
@@ -141,22 +137,10 @@ export class Segment implements ISegment {
   readonly name: string;
   readonly conditions: ReadonlyArray<UserConditionUnion>;
 
-  constructor(json: any) {
+  constructor(json: ConfigJson.Segment) {
     this.name = json.n;
-    this.conditions = json.r?.map((item: any) => new UserCondition(item)) ?? [];
+    this.conditions = json.r?.map(item => new UserCondition(item) as UserConditionUnion) ?? [];
   }
-}
-
-/** Setting type. */
-export enum SettingType {
-  /** On/off type (feature flag). */
-  Boolean = 0,
-  /** Text type. */
-  String = 1,
-  /** Whole number type. */
-  Int = 2,
-  /** Decimal number type. */
-  Double = 3,
 }
 
 export type SettingTypeMap = {
@@ -171,19 +155,19 @@ export type SettingValue = SettingTypeMap[SettingType] | null | undefined;
 export type VariationIdValue = string | null | undefined;
 
 /** A model object which contains a setting value along with related data. */
-export interface ISettingValueContainer<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> {
+export interface ISettingValueContainer<TSetting extends SettingType = SettingType> {
   /** Setting value. */
-  readonly value: TValue;
+  readonly value: SettingTypeMap[TSetting];
   /** Variation ID. */
   readonly variationId?: NonNullable<VariationIdValue>;
 }
 
-export class SettingValueContainer<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> implements ISettingValueContainer<TValue> {
-  readonly value: TValue;
+export class SettingValueContainer<TSetting extends SettingType = SettingType> implements ISettingValueContainer<TSetting> {
+  readonly value: SettingTypeMap[TSetting]; // can also store an unsupported value of any type for internal use, however such values should never be exposed to the user!
   readonly variationId?: NonNullable<VariationIdValue>;
 
-  constructor(json: any, hasUnwrappedValue = false) {
-    this.value = !hasUnwrappedValue ? unwrapSettingValue(json.v) : json.v;
+  constructor(json: ConfigJson.ServedValue, hasUnwrappedValue = false) {
+    this.value = (!hasUnwrappedValue ? unwrapSettingValue(json.v) : json.v) as SettingTypeMap[TSetting];
     this.variationId = json.i;
   }
 }
@@ -194,33 +178,33 @@ export class SettingValueContainer<TValue extends NonNullable<SettingValue> = No
 export type ISettingUnion = { [K in SettingType]: ISetting<K> }[SettingType];
 
 /** Feature flag or setting. */
-export interface ISetting<T extends SettingType = SettingType> extends ISettingValueContainer<SettingTypeMap[T]> {
+export interface ISetting<TSetting extends SettingType = SettingType> extends ISettingValueContainer<TSetting> {
   /** Setting type. */
-  readonly type: T;
+  readonly type: TSetting;
   /** The User Object attribute which serves as the basis of percentage options evaluation. */
   readonly percentageOptionsAttribute: string;
   /** The array of targeting rules (where there is a logical OR relation between the items). */
-  readonly targetingRules: ReadonlyArray<ITargetingRule>;
+  readonly targetingRules: ReadonlyArray<ITargetingRule<TSetting>>;
   /** The array of percentage options. */
-  readonly percentageOptions: ReadonlyArray<IPercentageOption>;
+  readonly percentageOptions: ReadonlyArray<IPercentageOption<TSetting>>;
 }
 
 export type SettingUnion = { [K in SettingType]: Setting<K> }[SettingType];
 
-export class Setting<T extends SettingType = SettingType> extends SettingValueContainer<SettingTypeMap[T]> implements ISetting {
-  readonly type: T;
+export class Setting<TSetting extends SettingType = SettingType> extends SettingValueContainer<TSetting> implements ISetting<TSetting> {
+  readonly type: TSetting;
   readonly percentageOptionsAttribute: string;
-  readonly targetingRules: ReadonlyArray<TargetingRule<SettingTypeMap[T]>>;
-  readonly percentageOptions: ReadonlyArray<PercentageOption<SettingTypeMap[T]>>;
+  readonly targetingRules: ReadonlyArray<TargetingRule<TSetting>>;
+  readonly percentageOptions: ReadonlyArray<PercentageOption<TSetting>>;
   readonly configJsonSalt: string;
 
-  constructor(json: any, config?: Config) {
+  constructor(json: ConfigJson.Setting<TSetting>, config?: Config) {
     super(json, json.t < 0);
     this.type = json.t;
     const identifierAttribute: WellKnownUserObjectAttribute = "Identifier";
     this.percentageOptionsAttribute = json.a ?? identifierAttribute;
-    this.targetingRules = json.r?.map((item: any) => new TargetingRule(item, config!)) ?? [];
-    this.percentageOptions = json.p?.map((item: any) => new PercentageOption(item)) ?? [];
+    this.targetingRules = json.r?.map(item => new TargetingRule<TSetting>(item, config!)) ?? [];
+    this.percentageOptions = json.p?.map(item => new PercentageOption<TSetting>(item)) ?? [];
     this.configJsonSalt = config?.salt ?? "";
   }
 
@@ -228,44 +212,44 @@ export class Setting<T extends SettingType = SettingType> extends SettingValueCo
     return new Setting({
       t: -1, // this is not a defined SettingType value, we only use it internally (will never expose it to the consumer)
       v: value,
-    });
+    } as unknown as ConfigJson.Setting);
   }
 }
 
 /** Describes a targeting rule. */
-export interface ITargetingRule<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> {
+export interface ITargetingRule<TSetting extends SettingType = SettingType> {
   /** The array of conditions that are combined with the AND logical operator. (The IF part of the targeting rule.) */
   readonly conditions: ReadonlyArray<IConditionUnion>;
   /** The simple value or the array of percentage options associated with the targeting rule. (The THEN part of the targeting rule.) */
-  readonly then: ISettingValueContainer<TValue> | ReadonlyArray<IPercentageOption<TValue>>;
+  readonly then: ISettingValueContainer<TSetting> | ReadonlyArray<IPercentageOption<TSetting>>;
 }
 
-export class TargetingRule<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> implements ITargetingRule {
+export class TargetingRule<TSetting extends SettingType = SettingType> implements ITargetingRule<TSetting> {
   readonly conditions: ReadonlyArray<ConditionUnion>;
-  readonly then: SettingValueContainer<TValue> | ReadonlyArray<PercentageOption<TValue>>;
+  readonly then: SettingValueContainer<TSetting> | ReadonlyArray<PercentageOption<TSetting>>;
 
-  constructor(json: any, config: Config) {
-    this.conditions = json.c?.map((item: any) =>
-      item.u != null ? new UserCondition(item.u) :
+  constructor(json: ConfigJson.TargetingRule<TSetting>, config: Config) {
+    this.conditions = json.c?.map(item =>
+      item.u != null ? new UserCondition(item.u) as UserConditionUnion :
       item.p != null ? new PrerequisiteFlagCondition(item.p) :
       item.s != null ? new SegmentCondition(item.s, config) :
-      void 0) ?? [];
+      void 0 as unknown as ConditionUnion) ?? [];
     this.then = json.p != null
-      ? json.p.map((item: any) => new PercentageOption(item))
-      : new SettingValueContainer(json.s);
+      ? json.p.map(item => new PercentageOption<TSetting>(item))
+      : new SettingValueContainer<TSetting>(json.s);
   }
 }
 
 /** Represents a percentage option. */
-export interface IPercentageOption<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> extends ISettingValueContainer<TValue> {
+export interface IPercentageOption<TSetting extends SettingType = SettingType> extends ISettingValueContainer<TSetting> {
   /** A number between 0 and 100 that represents a randomly allocated fraction of the users. */
   readonly percentage: number;
 }
 
-export class PercentageOption<TValue extends NonNullable<SettingValue> = NonNullable<SettingValue>> extends SettingValueContainer<TValue> implements IPercentageOption {
+export class PercentageOption<TSetting extends SettingType = SettingType> extends SettingValueContainer<TSetting> implements IPercentageOption<TSetting> {
   readonly percentage: number;
 
-  constructor(json: any) {
+  constructor(json: ConfigJson.PercentageOption<TSetting>) {
     super(json);
     this.percentage = json.p;
   }
@@ -280,88 +264,12 @@ export type ConditionTypeMap = {
 export type IConditionUnion = ConditionTypeMap[keyof ConditionTypeMap];
 
 /** Represents a condition. */
-export interface ICondition<T extends keyof ConditionTypeMap = keyof ConditionTypeMap> {
+export interface ICondition<TCondition extends keyof ConditionTypeMap = keyof ConditionTypeMap> {
   /** The type of the condition. */
-  readonly type: T;
+  readonly type: TCondition;
 }
 
 export type ConditionUnion = UserConditionUnion | PrerequisiteFlagCondition | SegmentCondition;
-
-/** User Object attribute comparison operator used during the evaluation process. */
-export enum UserComparator {
-  /** IS ONE OF (cleartext) - It matches when the comparison attribute is equal to any of the comparison values. */
-  IsOneOf = 0,
-  /** IS NOT ONE OF (cleartext) - It matches when the comparison attribute is not equal to any of the comparison values. */
-  IsNotOneOf = 1,
-  /** CONTAINS ANY OF (cleartext) - It matches when the comparison attribute contains any comparison values as a substring. */
-  ContainsAnyOf = 2,
-  /** NOT CONTAINS ANY OF (cleartext) - It matches when the comparison attribute does not contain any comparison values as a substring. */
-  NotContainsAnyOf = 3,
-  /** IS ONE OF (semver) - It matches when the comparison attribute interpreted as a semantic version is equal to any of the comparison values. */
-  SemVerIsOneOf = 4,
-  /** IS NOT ONE OF (semver) - It matches when the comparison attribute interpreted as a semantic version is not equal to any of the comparison values. */
-  SemVerIsNotOneOf = 5,
-  /** &lt; (semver) - It matches when the comparison attribute interpreted as a semantic version is less than the comparison value. */
-  SemVerLess = 6,
-  /** &lt;= (semver) - It matches when the comparison attribute interpreted as a semantic version is less than or equal to the comparison value. */
-  SemVerLessOrEquals = 7,
-  /** &gt; (semver) - It matches when the comparison attribute interpreted as a semantic version is greater than the comparison value. */
-  SemVerGreater = 8,
-  /** &gt;= (semver) - It matches when the comparison attribute interpreted as a semantic version is greater than or equal to the comparison value. */
-  SemVerGreaterOrEquals = 9,
-  /** = (number) - It matches when the comparison attribute interpreted as a decimal number is equal to the comparison value. */
-  NumberEquals = 10,
-  /** != (number) - It matches when the comparison attribute interpreted as a decimal number is not equal to the comparison value. */
-  NumberNotEquals = 11,
-  /** &lt; (number) - It matches when the comparison attribute interpreted as a decimal number is less than the comparison value. */
-  NumberLess = 12,
-  /** &lt;= (number) - It matches when the comparison attribute interpreted as a decimal number is less than or equal to the comparison value. */
-  NumberLessOrEquals = 13,
-  /** &gt; (number) - It matches when the comparison attribute interpreted as a decimal number is greater than the comparison value. */
-  NumberGreater = 14,
-  /** &gt;= (number) - It matches when the comparison attribute interpreted as a decimal number is greater than or equal to the comparison value. */
-  NumberGreaterOrEquals = 15,
-  /** IS ONE OF (hashed) - It matches when the comparison attribute is equal to any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveIsOneOf = 16,
-  /** IS NOT ONE OF (hashed) - It matches when the comparison attribute is not equal to any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveIsNotOneOf = 17,
-  /** BEFORE (UTC datetime) - It matches when the comparison attribute interpreted as the seconds elapsed since <see href="https://en.wikipedia.org/wiki/Unix_time">Unix Epoch</see> is less than the comparison value. */
-  DateTimeBefore = 18,
-  /** AFTER (UTC datetime) - It matches when the comparison attribute interpreted as the seconds elapsed since <see href="https://en.wikipedia.org/wiki/Unix_time">Unix Epoch</see> is greater than the comparison value. */
-  DateTimeAfter = 19,
-  /** EQUALS (hashed) - It matches when the comparison attribute is equal to the comparison value (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveTextEquals = 20,
-  /** NOT EQUALS (hashed) - It matches when the comparison attribute is not equal to the comparison value (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveTextNotEquals = 21,
-  /** STARTS WITH ANY OF (hashed) - It matches when the comparison attribute starts with any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveTextStartsWithAnyOf = 22,
-  /** NOT STARTS WITH ANY OF (hashed) - It matches when the comparison attribute does not start with any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveTextNotStartsWithAnyOf = 23,
-  /** ENDS WITH ANY OF (hashed) - It matches when the comparison attribute ends with any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveTextEndsWithAnyOf = 24,
-  /** NOT ENDS WITH ANY OF (hashed) - It matches when the comparison attribute does not end with any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveTextNotEndsWithAnyOf = 25,
-  /** ARRAY CONTAINS ANY OF (hashed) - It matches when the comparison attribute interpreted as a comma-separated list contains any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveArrayContainsAnyOf = 26,
-  /** ARRAY NOT CONTAINS ANY OF (hashed) - It matches when the comparison attribute interpreted as a comma-separated list does not contain any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveArrayNotContainsAnyOf = 27,
-  /** EQUALS (cleartext) - It matches when the comparison attribute is equal to the comparison value. */
-  TextEquals = 28,
-  /** NOT EQUALS (cleartext) - It matches when the comparison attribute is not equal to the comparison value. */
-  TextNotEquals = 29,
-  /** STARTS WITH ANY OF (cleartext) - It matches when the comparison attribute starts with any of the comparison values. */
-  TextStartsWithAnyOf = 30,
-  /** NOT STARTS WITH ANY OF (cleartext) - It matches when the comparison attribute does not start with any of the comparison values. */
-  TextNotStartsWithAnyOf = 31,
-  /** ENDS WITH ANY OF (cleartext) - It matches when the comparison attribute ends with any of the comparison values. */
-  TextEndsWithAnyOf = 32,
-  /** NOT ENDS WITH ANY OF (cleartext) - It matches when the comparison attribute does not end with any of the comparison values. */
-  TextNotEndsWithAnyOf = 33,
-  /** ARRAY CONTAINS ANY OF (cleartext) - It matches when the comparison attribute interpreted as a comma-separated list contains any of the comparison values. */
-  ArrayContainsAnyOf = 34,
-  /** ARRAY NOT CONTAINS ANY OF (cleartext) - It matches when the comparison attribute interpreted as a comma-separated list does not contain any of the comparison values. */
-  ArrayNotContainsAnyOf = 35,
-}
 
 export type UserConditionComparisonValueTypeMap = {
   [UserComparator.IsOneOf]: Readonly<string[]>;
@@ -422,19 +330,11 @@ export class UserCondition<TComparator extends UserComparator = UserComparator> 
   readonly comparator: TComparator;
   readonly comparisonValue: UserConditionComparisonValueTypeMap[TComparator];
 
-  constructor(json: any) {
+  constructor(json: ConfigJson.UserCondition<TComparator>) {
     this.comparisonAttribute = json.a;
     this.comparator = json.c;
-    this.comparisonValue = json.s ?? json.d ?? json.l;
+    this.comparisonValue = (json.s ?? json.d ?? json.l) as UserConditionComparisonValueTypeMap[TComparator];
   }
-}
-
-/** Prerequisite flag comparison operator used during the evaluation process. */
-export enum PrerequisiteFlagComparator {
-  /** EQUALS - It matches when the evaluated value of the specified prerequisite flag is equal to the comparison value. */
-  Equals = 0,
-  /** NOT EQUALS - It matches when the evaluated value of the specified prerequisite flag is not equal to the comparison value. */
-  NotEquals = 1
 }
 
 /** Describes a condition that is based on a prerequisite flag. */
@@ -453,19 +353,11 @@ export class PrerequisiteFlagCondition implements IPrerequisiteFlagCondition {
   readonly comparator: PrerequisiteFlagComparator;
   readonly comparisonValue: NonNullable<SettingValue>;
 
-  constructor(json: any) {
+  constructor(json: ConfigJson.PrerequisiteFlagCondition) {
     this.prerequisiteFlagKey = json.f;
     this.comparator = json.c;
     this.comparisonValue = unwrapSettingValue(json.v);
   }
-}
-
-/** Segment comparison operator used during the evaluation process. */
-export enum SegmentComparator {
-  /** IS IN SEGMENT - It matches when the conditions of the specified segment are evaluated to true. */
-  IsIn,
-  /** IS NOT IN SEGMENT - It matches when the conditions of the specified segment are evaluated to false. */
-  IsNotIn,
 }
 
 /** Describes a condition that is based on a segment. */
@@ -481,12 +373,12 @@ export class SegmentCondition implements ISegmentCondition {
   readonly segment: Segment;
   readonly comparator: SegmentComparator;
 
-  constructor(json: any, config: Config) {
+  constructor(json: ConfigJson.SegmentCondition, config: Config) {
     this.segment = config.segments[json.s];
     this.comparator = json.c;
   }
 }
 
-function unwrapSettingValue(json: any): NonNullable<SettingValue> {
-  return json.b ?? json.s ?? json.i ?? json.d;
+function unwrapSettingValue(json: ConfigJson.SettingValue): NonNullable<SettingValue> {
+  return (json.b ?? json.s ?? json.i ?? json.d)!;
 }

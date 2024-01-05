@@ -1,5 +1,5 @@
+import { PrerequisiteFlagComparator, SegmentComparator, UserComparator } from "./ConfigJson";
 import type { PrerequisiteFlagCondition, SegmentCondition, SettingValue, TargetingRule, UserCondition, UserConditionUnion } from "./ProjectConfig";
-import { PrerequisiteFlagComparator, SegmentComparator, UserComparator } from "./ProjectConfig";
 import { isAllowedValue } from "./RolloutEvaluator";
 import { formatStringList, isArray } from "./Utils";
 

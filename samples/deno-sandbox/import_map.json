@@ -10,6 +10,7 @@
     "../../src/ConfigCatClientOptions": "../../src/ConfigCatClientOptions.ts",
     "../../src/ConfigCatLogger": "../../src/ConfigCatLogger.ts",
     "../../src/ConfigFetcher": "../../src/ConfigFetcher.ts",
+    "../../src/ConfigJson": "../../src/ConfigJson.ts",
     "../../src/ConfigServiceBase": "../../src/ConfigServiceBase.ts",
     "../../src/DefaultEventEmitter": "../../src/DefaultEventEmitter.ts",
     "../../src/EvaluateLogBuilder": "../../src/EvaluateLogBuilder.ts",

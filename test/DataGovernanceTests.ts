@@ -2,6 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import { DataGovernance, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
+import type * as ConfigJson from "../src/ConfigJson";
 import { ClientCacheState, ConfigServiceBase } from "../src/ConfigServiceBase";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
 
@@ -279,10 +280,11 @@ export class FakeConfigServiceBase extends ConfigServiceBase<FakeOptions> {
   prepareResponse(baseUrl: string, jsonBaseUrl: string, jsonRedirect: number, jsonFeatureFlags: any): void {
     const configFetcher = this.configFetcher as FakeConfigFetcher;
 
-    const configJson = {
+    const configJson: ConfigJson.Config = {
       p: {
         u: jsonBaseUrl,
-        r: jsonRedirect
+        r: jsonRedirect,
+        s: ""
       },
       f: jsonFeatureFlags
     };
