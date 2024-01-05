@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: [ 14, 16, 18 ]
+        node: [ 14, 16, 18, 20 ]
         os: [ macos-latest, ubuntu-latest, windows-latest ]
       fail-fast: false
     name: Test [${{ matrix.os }}, Node ${{ matrix.node }}]
