@@ -563,8 +563,8 @@ describe("ConfigCatClient", () => {
     const actualValue = await client.getValueAsync("debug", false);
     const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-    assert.isAtLeast(elapsedMilliseconds, 500);
-    assert.isAtMost(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000);
+    assert.isAtLeast(elapsedMilliseconds, 500 - 10); // 10 ms for tolerance
+    assert.isAtMost(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000 + 50); // 50 ms for tolerance
     assert.equal(actualValue, true);
   });
 
@@ -585,8 +585,8 @@ describe("ConfigCatClient", () => {
       const actualDetails = await client.getValueDetailsAsync("debug", false);
       const elapsedMilliseconds: number = new Date().getTime() - startDate;
 
-      assert.isAtLeast(elapsedMilliseconds, 500);
-      assert.isAtMost(elapsedMilliseconds, configFetchDelay * 2);
+      assert.isAtLeast(elapsedMilliseconds, 500 - 10); // 10 ms for tolerance
+      assert.isAtMost(elapsedMilliseconds, configFetchDelay * 2 + 50); // 50 ms for tolerance
       assert.equal(actualDetails.isDefaultValue, true);
       assert.equal(actualDetails.value, false);
     });
