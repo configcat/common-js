@@ -207,10 +207,11 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  fetchReceived200WithInvalidBody(): LogMessage {
+  fetchReceived200WithInvalidBody(ex: any): LogMessage {
     return this.log(
       LogLevel.Error, 1105,
-      "Fetching config JSON was successful but the HTTP response content was invalid."
+      "Fetching config JSON was successful but the HTTP response content was invalid.",
+      ex
     );
   }
 

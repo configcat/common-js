@@ -69,12 +69,7 @@ export class ProjectConfig {
     let config: Config | undefined;
     let configJson: string | undefined;
     if (slice.length > 0) {
-      try {
-        config = new Config(JSON.parse(slice));
-      }
-      catch {
-        throw new Error("Invalid config JSON content: " + slice);
-      }
+      config = Config.deserialize(slice);
       configJson = slice;
     }
 
@@ -93,6 +88,14 @@ export interface IConfig {
 }
 
 export class Config implements IConfig {
+  static deserialize(configJson: string): Config {
+    const configJsonParsed = JSON.parse(configJson);
+    if (typeof configJsonParsed !== "object" || !configJsonParsed) {
+      throw new Error("Invalid config JSON content:" + configJson);
+    }
+    return new Config(configJsonParsed);
+  }
+
   readonly preferences: Preferences | undefined;
   readonly segments: ReadonlyArray<Segment>;
   readonly settings: Readonly<{ [key: string]: SettingUnion }>;
