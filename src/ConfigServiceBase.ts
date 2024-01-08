@@ -1,7 +1,8 @@
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
-import { Config, ProjectConfig, RedirectMode } from "./ProjectConfig";
+import { RedirectMode } from "./ConfigJson";
+import { Config, ProjectConfig } from "./ProjectConfig";
 
 /** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
 export class RefreshResult {
@@ -153,18 +154,18 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
     let errorMessage: string;
     try {
-      const [response, config] = await this.fetchRequestAsync(lastConfig.httpETag ?? null);
+      const [response, configOrError] = await this.fetchRequestAsync(lastConfig.httpETag ?? null);
 
       switch (response.statusCode) {
         case 200: // OK
-          if (!config) {
-            errorMessage = options.logger.fetchReceived200WithInvalidBody().toString();
+          if (!(configOrError instanceof Config)) {
+            errorMessage = options.logger.fetchReceived200WithInvalidBody(configOrError).toString();
             options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
-            return FetchResult.error(lastConfig, errorMessage);
+            return FetchResult.error(lastConfig, errorMessage, configOrError);
           }
 
           options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was successful. Returning new config.");
-          return FetchResult.success(new ProjectConfig(response.body, config, ProjectConfig.generateTimestamp(), response.eTag));
+          return FetchResult.success(new ProjectConfig(response.body, configOrError, ProjectConfig.generateTimestamp(), response.eTag));
 
         case 304: // Not Modified
           if (!lastConfig) {
@@ -198,7 +199,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  private async fetchRequestAsync(lastETag: string | null, maxRetryCount = 2): Promise<[IFetchResponse, Config?]> {
+  private async fetchRequestAsync(lastETag: string | null, maxRetryCount = 2): Promise<[IFetchResponse, (Config | any)?]> {
     const options = this.options;
     options.logger.debug("ConfigServiceBase.fetchRequestAsync() - called.");
 
@@ -212,16 +213,16 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
       if (!response.body) {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): no response body.");
-        return [response];
+        return [response, new Error("No response body.")];
       }
 
       let config: Config;
       try {
-        config = new Config(JSON.parse(response.body));
+        config = Config.deserialize(response.body);
       }
-      catch {
+      catch (err) {
         options.logger.debug("ConfigServiceBase.fetchRequestAsync(): invalid response body.");
-        return [response];
+        return [response, err];
       }
 
       const preferences = config.preferences;

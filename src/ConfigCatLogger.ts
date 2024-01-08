@@ -195,7 +195,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   fetchFailedDueToUnexpectedError(ex: any): LogMessage {
     return this.log(
       LogLevel.Error, 1103,
-      "Unexpected error occurred while trying to fetch config JSON.",
+      "Unexpected error occurred while trying to fetch config JSON. It is most likely due to a local network issue. Please make sure your application can reach the ConfigCat CDN servers (or your proxy server) over HTTP.",
       ex
     );
   }
@@ -207,10 +207,11 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  fetchReceived200WithInvalidBody(): LogMessage {
+  fetchReceived200WithInvalidBody(ex: any): LogMessage {
     return this.log(
       LogLevel.Error, 1105,
-      "Fetching config JSON was successful but the HTTP response content was invalid."
+      "Fetching config JSON was successful but the HTTP response content was invalid.",
+      ex
     );
   }
 

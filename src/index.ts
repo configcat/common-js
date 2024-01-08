@@ -87,7 +87,7 @@ export type {
   ConditionTypeMap, IConditionUnion, ICondition, UserConditionComparisonValueTypeMap, IUserConditionUnion, IUserCondition, IPrerequisiteFlagCondition, ISegmentCondition
 } from "./ProjectConfig";
 
-export { SettingType, UserComparator, PrerequisiteFlagComparator, SegmentComparator } from "./ProjectConfig";
+export { SettingType, UserComparator, PrerequisiteFlagComparator, SegmentComparator } from "./ConfigJson";
 
 export type { IConfigCatClient };
 

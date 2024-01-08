@@ -1,9 +1,9 @@
 import type { LoggerWrapper } from "./ConfigCatLogger";
 import { LogLevel } from "./ConfigCatLogger";
+import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ConfigJson";
 import { EvaluateLogBuilder, formatSegmentComparator, formatUserCondition, valueToString } from "./EvaluateLogBuilder";
 import { sha1, sha256 } from "./Hash";
 import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, PrerequisiteFlagCondition, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserConditionUnion, VariationIdValue } from "./ProjectConfig";
-import { PrerequisiteFlagComparator, SegmentComparator, SettingType, UserComparator } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
 import type { User, UserAttributeValue } from "./User";
@@ -805,7 +805,7 @@ export type SettingTypeOf<T> =
   any;
 
 /** The evaluated value and additional information about the evaluation of a feature flag or setting. */
-export interface IEvaluationDetails<TValue = SettingValue> {
+export interface IEvaluationDetails<TValue extends SettingValue = SettingValue> {
   /** Key of the feature flag or setting. */
   key: string;
 
@@ -939,7 +939,7 @@ function isCompatibleValue(value: SettingValue, settingType: SettingType): boole
   }
 }
 
-function handleInvalidReturnValue(value: unknown): never {
+export function handleInvalidReturnValue(value: unknown): never {
   throw new TypeError(
     value === null ? "Setting value is null." :
     value === void 0 ? "Setting value is undefined." :

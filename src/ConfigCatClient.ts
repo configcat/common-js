@@ -14,7 +14,7 @@ import { ManualPollConfigService } from "./ManualPollConfigService";
 import { getWeakRefStub, isWeakRefAvailable } from "./Polyfills";
 import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue } from "./ProjectConfig";
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf } from "./RolloutEvaluator";
-import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, isAllowedValue } from "./RolloutEvaluator";
+import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, handleInvalidReturnValue, isAllowedValue } from "./RolloutEvaluator";
 import type { User } from "./User";
 import { errorToString, isArray, throwError } from "./Utils";
 
@@ -496,7 +496,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
       for (const [settingKey, setting] of Object.entries(settings)) {
         if (variationId === setting.variationId) {
-          return new SettingKeyValue(settingKey, setting.value);
+          return new SettingKeyValue(settingKey, ensureAllowedValue(setting.value));
         }
 
         const targetingRules = settings[settingKey].targetingRules;
@@ -507,12 +507,12 @@ export class ConfigCatClient implements IConfigCatClient {
               for (let j = 0; j < then.length; j++) {
                 const percentageOption: PercentageOption = then[j];
                 if (variationId === percentageOption.variationId) {
-                  return new SettingKeyValue(settingKey, percentageOption.value);
+                  return new SettingKeyValue(settingKey, ensureAllowedValue(percentageOption.value));
                 }
               }
             }
             else if (variationId === then.variationId) {
-              return new SettingKeyValue(settingKey, then.value);
+              return new SettingKeyValue(settingKey, ensureAllowedValue(then.value));
             }
           }
         }
@@ -522,7 +522,7 @@ export class ConfigCatClient implements IConfigCatClient {
           for (let i = 0; i < percentageOptions.length; i++) {
             const percentageOption: PercentageOption = percentageOptions[i];
             if (variationId === percentageOption.variationId) {
-              return new SettingKeyValue(settingKey, percentageOption.value);
+              return new SettingKeyValue(settingKey, ensureAllowedValue(percentageOption.value));
             }
           }
         }
@@ -759,7 +759,7 @@ class Snapshot implements IConfigCatClientSnapshot {
 }
 
 /** Setting key-value pair. */
-export class SettingKeyValue<TValue = SettingValue> {
+export class SettingKeyValue<TValue extends SettingValue = SettingValue> {
   constructor(
     public settingKey: string,
     public settingValue: TValue) { }
@@ -792,6 +792,10 @@ function ensureAllowedDefaultValue(value: SettingValue): void {
   if (value != null && !isAllowedValue(value)) {
     throw new TypeError("The default value must be boolean, number, string, null or undefined.");
   }
+}
+
+function ensureAllowedValue(value: NonNullable<SettingValue>): NonNullable<SettingValue> {
+  return isAllowedValue(value) ? value : handleInvalidReturnValue(value);
 }
 
 /* GC finalization support */

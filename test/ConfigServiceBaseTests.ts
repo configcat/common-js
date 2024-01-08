@@ -214,7 +214,7 @@ describe("ConfigServiceBaseTests", () => {
     const pollInterval = 10;
 
     const time: number = new Date().getTime();
-    const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 999));
+    const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 1000) + 50); // 50ms for tolerance
 
     const cache = new InMemoryConfigCache();
 
@@ -743,7 +743,7 @@ function createProjectConfig(eTag = "etag"): ProjectConfig {
   const configJson = "{\"f\": { \"debug\": { \"v\": { \"b\": true }, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
   return new ProjectConfig(
     configJson,
-    new Config(JSON.parse(configJson)),
+    Config.deserialize(configJson),
     1,
     eTag);
 }
