@@ -759,10 +759,10 @@ class Snapshot implements IConfigCatClientSnapshot {
 }
 
 /** Setting key-value pair. */
-export class SettingKeyValue {
+export class SettingKeyValue<TValue extends SettingValue = SettingValue> {
   constructor(
     public settingKey: string,
-    public settingValue: SettingValue) { }
+    public settingValue: TValue) { }
 }
 
 function isValidSdkKey(sdkKey: string, customBaseUrl: boolean) {

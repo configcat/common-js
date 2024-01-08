@@ -805,7 +805,7 @@ export type SettingTypeOf<T> =
   any;
 
 /** The evaluated value and additional information about the evaluation of a feature flag or setting. */
-export interface IEvaluationDetails<TValue = SettingValue> {
+export interface IEvaluationDetails<TValue extends SettingValue = SettingValue> {
   /** Key of the feature flag or setting. */
   key: string;
 
