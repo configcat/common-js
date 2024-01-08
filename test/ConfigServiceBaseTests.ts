@@ -214,7 +214,7 @@ describe("ConfigServiceBaseTests", () => {
     const pollInterval = 10;
 
     const time: number = new Date().getTime();
-    const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 999));
+    const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 1000) + 50); // 50ms for tolerance
 
     const cache = new InMemoryConfigCache();
 
