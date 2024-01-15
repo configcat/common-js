@@ -15,25 +15,117 @@ describe("Local Overrides", () => {
       sdkType: "common",
       sdkVersion: "1.0.0"
     };
+
+    const overrideMap = {
+      enabledFeature: true,
+      disabledFeature: false,
+      intSetting: 5,
+      doubleSetting: 3.14,
+      stringSetting: "test"
+    };
+
     const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
       flagOverrides: {
-        dataSource: new MapOverrideDataSource({
-          enabledFeature: true,
-          disabledFeature: false,
-          intSetting: 5,
-          doubleSetting: 3.14,
-          stringSetting: "test"
-        }),
+        dataSource: new MapOverrideDataSource(overrideMap),
         behaviour: OverrideBehaviour.LocalOnly
       }
     }, null);
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
 
-    assert.equal(await client.getValueAsync("enabledFeature", false), true);
-    assert.equal(await client.getValueAsync("disabledFeature", true), false);
-    assert.equal(await client.getValueAsync("intSetting", 0), 5);
-    assert.equal(await client.getValueAsync("doubleSetting", 0), 3.14);
-    assert.equal(await client.getValueAsync("stringSetting", ""), "test");
+    assert.equal(await client.getValueAsync("enabledFeature", null), true);
+    assert.equal(await client.getValueAsync("disabledFeature", null), false);
+    assert.equal(await client.getValueAsync("intSetting", null), 5);
+    assert.equal(await client.getValueAsync("doubleSetting", null), 3.14);
+    assert.equal(await client.getValueAsync("stringSetting", null), "test");
+
+    overrideMap.disabledFeature = true;
+    overrideMap.intSetting = -5;
+
+    assert.equal(await client.getValueAsync("enabledFeature", null), true);
+    assert.equal(await client.getValueAsync("disabledFeature", null), false);
+    assert.equal(await client.getValueAsync("intSetting", null), 5);
+    assert.equal(await client.getValueAsync("doubleSetting", null), 3.14);
+    assert.equal(await client.getValueAsync("stringSetting", null), "test");
+  });
+
+  it("Values from map - LocalOnly - watch changes - async", async () => {
+    const configCatKernel: FakeConfigCatKernel = {
+      configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+      sdkType: "common",
+      sdkVersion: "1.0.0"
+    };
+
+    const overrideMap = {
+      enabledFeature: true,
+      disabledFeature: false,
+      intSetting: 5,
+      doubleSetting: 3.14,
+      stringSetting: "test"
+    };
+
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+      flagOverrides: {
+        dataSource: new MapOverrideDataSource(overrideMap, true),
+        behaviour: OverrideBehaviour.LocalOnly
+      }
+    }, null);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    assert.equal(await client.getValueAsync("enabledFeature", null), true);
+    assert.equal(await client.getValueAsync("disabledFeature", null), false);
+    assert.equal(await client.getValueAsync("intSetting", null), 5);
+    assert.equal(await client.getValueAsync("doubleSetting", null), 3.14);
+    assert.equal(await client.getValueAsync("stringSetting", null), "test");
+
+    overrideMap.disabledFeature = true;
+    overrideMap.intSetting = -5;
+
+    assert.equal(await client.getValueAsync("enabledFeature", null), true);
+    assert.equal(await client.getValueAsync("disabledFeature", null), true);
+    assert.equal(await client.getValueAsync("intSetting", null), -5);
+    assert.equal(await client.getValueAsync("doubleSetting", null), 3.14);
+    assert.equal(await client.getValueAsync("stringSetting", null), "test");
+  });
+
+  it("Values from map - LocalOnly - watch changes - sync", async () => {
+    const configCatKernel: FakeConfigCatKernel = {
+      configFetcher: new FakeConfigFetcherBase("{\"f\": { \"fakeKey\": { \"v\": false, \"p\": [], \"r\": [] } } }"),
+      sdkType: "common",
+      sdkVersion: "1.0.0"
+    };
+
+    const overrideMap = {
+      enabledFeature: true,
+      disabledFeature: false,
+      intSetting: 5,
+      doubleSetting: 3.14,
+      stringSetting: "test"
+    };
+
+    const options: AutoPollOptions = new AutoPollOptions("localhost", "common", "1.0.0", {
+      flagOverrides: {
+        dataSource: new MapOverrideDataSource(overrideMap, true),
+        behaviour: OverrideBehaviour.LocalOnly
+      }
+    }, null);
+    const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
+
+    let snapshot = client.snapshot();
+    assert.equal(await snapshot.getValue("enabledFeature", null), true);
+    assert.equal(await snapshot.getValue("disabledFeature", null), false);
+    assert.equal(await snapshot.getValue("intSetting", null), 5);
+    assert.equal(await snapshot.getValue("doubleSetting", null), 3.14);
+    assert.equal(await snapshot.getValue("stringSetting", null), "test");
+
+    overrideMap.disabledFeature = true;
+    overrideMap.intSetting = -5;
+
+    snapshot = client.snapshot();
+    assert.equal(await snapshot.getValue("enabledFeature", null), true);
+    assert.equal(await snapshot.getValue("disabledFeature", null), true);
+    assert.equal(await snapshot.getValue("intSetting", null), -5);
+    assert.equal(await snapshot.getValue("doubleSetting", null), 3.14);
+    assert.equal(await snapshot.getValue("stringSetting", null), "test");
   });
 
   it("Values from map - LocalOverRemote", async () => {
