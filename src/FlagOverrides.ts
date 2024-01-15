@@ -31,20 +31,31 @@ export interface IOverrideDataSource {
 }
 
 export class MapOverrideDataSource implements IOverrideDataSource {
-  private readonly map: { [name: string]: Setting } = {};
+  private static getCurrentSettings(map: { [name: string]: NonNullable<SettingValue> }) {
+    return Object.fromEntries(Object.entries(map)
+      .map(([key, value]) => [key, Setting.fromValue(value)]));
+  }
 
-  constructor(map: { [name: string]: NonNullable<SettingValue> }) {
-    this.map = Object.fromEntries(Object.entries(map).map(([key, value]) => {
-      return [key, Setting.fromValue(value)];
-    }));
+  private readonly initialSettings: { [name: string]: Setting };
+  private readonly map?: { [name: string]: NonNullable<SettingValue> };
+
+  private readonly ["constructor"]!: typeof MapOverrideDataSource;
+
+  constructor(map: { [name: string]: NonNullable<SettingValue> }, watchChanges?: boolean) {
+    this.initialSettings = this.constructor.getCurrentSettings(map);
+    if (watchChanges) {
+      this.map = map;
+    }
   }
 
   getOverrides(): Promise<{ [name: string]: Setting }> {
-    return Promise.resolve(this.map);
+    return Promise.resolve(this.getOverridesSync());
   }
 
   getOverridesSync(): { [name: string]: Setting } {
-    return this.map;
+    return this.map
+      ? this.constructor.getCurrentSettings(this.map)
+      : this.initialSettings;
   }
 }
 

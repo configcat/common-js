@@ -1,7 +1,8 @@
 import { assert } from "chai";
 import "mocha";
-import { FlagOverrides, IManualPollOptions, MapOverrideDataSource, OverrideBehaviour, SettingValue, User, UserAttributeValue } from "../src";
+import { IManualPollOptions, OverrideBehaviour, SettingValue, User, UserAttributeValue } from "../src";
 import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
+import { FlagOverrides, MapOverrideDataSource } from "../src/FlagOverrides";
 import { RolloutEvaluator, evaluate, isAllowedValue } from "../src/RolloutEvaluator";
 import { errorToString } from "../src/Utils";
 import { CdnConfigLocation, LocalFileConfigLocation } from "./helpers/ConfigLocation";

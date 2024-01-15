@@ -4,7 +4,9 @@ import type { IAutoPollOptions, ILazyLoadingOptions, IManualPollOptions, Options
 import { PollingMode } from "./ConfigCatClientOptions";
 import type { IConfigCatLogger } from "./ConfigCatLogger";
 import { ConfigCatConsoleLogger, LogLevel } from "./ConfigCatLogger";
+import { FlagOverrides, MapOverrideDataSource, OverrideBehaviour } from "./FlagOverrides";
 import { setupPolyfills } from "./Polyfills";
+import type { SettingValue } from "./ProjectConfig";
 
 setupPolyfills();
 
@@ -37,6 +39,19 @@ export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
   return new ConfigCatConsoleLogger(logLevel);
 }
 
+/**
+ * Creates an instance of `FlagOverrides` that uses a map data source.
+ * @param map The map that contains the overrides.
+ * @param behaviour The override behaviour.
+ * Specifies whether the local values should override the remote values
+ * or local values should only be used when a remote value doesn't exist
+ * or the local values should be used only.
+ * @param watchChanges If set to `true`, the input map will be tracked for changes.
+ */
+export function createFlagOverridesFromMap(map: { [name: string]: NonNullable<SettingValue> }, behaviour: OverrideBehaviour, watchChanges?: boolean): FlagOverrides {
+  return new FlagOverrides(new MapOverrideDataSource(map, watchChanges), behaviour);
+}
+
 /* Public types for platform-specific SDKs */
 
 // List types here which are required to implement the platform-specific SDKs but shouldn't be exposed to end users.
@@ -51,13 +66,9 @@ export type { OptionsBase } from "./ConfigCatClientOptions";
 
 export type { IConfigCache } from "./ConfigCatCache";
 
-export { ExternalConfigCache } from "./ConfigCatCache";
+export { InMemoryConfigCache, ExternalConfigCache } from "./ConfigCatCache";
 
 export type { IEventProvider, IEventEmitter } from "./EventEmitter";
-
-export type { IOverrideDataSource } from "./FlagOverrides";
-
-export { FlagOverrides, MapOverrideDataSource } from "./FlagOverrides";
 
 /* Public types for end users */
 
@@ -101,7 +112,9 @@ export type { UserAttributeValue } from "./User";
 
 export { User } from "./User";
 
-export { OverrideBehaviour } from "./FlagOverrides";
+export type { FlagOverrides };
+
+export { OverrideBehaviour };
 
 export { ClientCacheState, RefreshResult } from "./ConfigServiceBase";
 
