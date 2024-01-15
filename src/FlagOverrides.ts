@@ -39,8 +39,10 @@ export class MapOverrideDataSource implements IOverrideDataSource {
   private readonly initialSettings: { [name: string]: Setting };
   private readonly map?: { [name: string]: NonNullable<SettingValue> };
 
+  private readonly ["constructor"]!: typeof MapOverrideDataSource;
+
   constructor(map: { [name: string]: NonNullable<SettingValue> }, watchChanges?: boolean) {
-    this.initialSettings = (this.constructor as typeof MapOverrideDataSource).getCurrentSettings(map);
+    this.initialSettings = this.constructor.getCurrentSettings(map);
     if (watchChanges) {
       this.map = map;
     }
@@ -52,7 +54,7 @@ export class MapOverrideDataSource implements IOverrideDataSource {
 
   getOverridesSync(): { [name: string]: Setting } {
     return this.map
-      ? (this.constructor as typeof MapOverrideDataSource).getCurrentSettings(this.map)
+      ? this.constructor.getCurrentSettings(this.map)
       : this.initialSettings;
   }
 }
