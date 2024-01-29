@@ -293,4 +293,119 @@ describe("Setting evaluation (config v2)", () => {
       assert.strictEqual(evaluationDetails.value, expectedReturnValue);
     });
   }
+
+  for (const [key, expectedReturnValue] of
+    <[string, string][]>[
+      ["isoneof", "no trim"],
+      ["isnotoneof", "no trim"],
+      ["isoneofhashed", "no trim"],
+      ["isnotoneofhashed", "no trim"],
+      ["equalshashed", "no trim"],
+      ["notequalshashed", "no trim"],
+      ["arraycontainsanyofhashed", "no trim"],
+      ["arraynotcontainsanyofhashed", "no trim"],
+      ["equals", "no trim"],
+      ["notequals", "no trim"],
+      ["startwithanyof", "no trim"],
+      ["notstartwithanyof", "no trim"],
+      ["endswithanyof", "no trim"],
+      ["notendswithanyof", "no trim"],
+      ["arraycontainsanyof", "no trim"],
+      ["arraynotcontainsanyof", "no trim"],
+      ["startwithanyofhashed", "no trim"],
+      ["notstartwithanyofhashed", "no trim"],
+      ["endswithanyofhashed", "no trim"],
+      ["notendswithanyofhashed", "no trim"],
+      //semver comparators user values trimmed because of backward compatibility
+      ["semverisoneof", "4 trim"],
+      ["semverisnotoneof", "5 trim"],
+      ["semverless", "6 trim"],
+      ["semverlessequals", "7 trim"],
+      ["semvergreater", "8 trim"],
+      ["semvergreaterequals", "9 trim"],
+      //number and date comparators user values trimmed because of backward compatibility
+      ["numberequals", "10 trim"],
+      ["numbernotequals", "11 trim"],
+      ["numberless", "12 trim"],
+      ["numberlessequals", "13 trim"],
+      ["numbergreater", "14 trim"],
+      ["numbergreaterequals", "15 trim"],
+      ["datebefore", "18 trim"],
+      ["dateafter", "19 trim"],
+      //"contains any of" and "not contains any of" is a special case, the not trimmed user attribute checked against not trimmed comparator values.
+      ["containsanyof", "no trim"],
+      ["notcontainsanyof", "no trim"],
+    ]) {
+    it(`Comparison attribute trimming - key: ${key}`, async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "comparison_attribute_trimming.json");
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = new User(" 12345 ", void 0, "[\" USA \"]", {
+        ["Version"]: " 1.0.0 ",
+        ["Number"]: " 3 ",
+        ["Date"]: " 1705253400 "
+      });
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, "default", user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+    });
+  }
+
+  for (const [key, expectedReturnValue] of
+    <[string, string][]>[
+      ["isoneof", "no trim"],
+      ["isnotoneof", "no trim"],
+      ["containsanyof", "no trim"],
+      ["notcontainsanyof", "no trim"],
+      ["isoneofhashed", "no trim"],
+      ["isnotoneofhashed", "no trim"],
+      ["equalshashed", "no trim"],
+      ["notequalshashed", "no trim"],
+      ["arraycontainsanyofhashed", "no trim"],
+      ["arraynotcontainsanyofhashed", "no trim"],
+      ["equals", "no trim"],
+      ["notequals", "no trim"],
+      ["startwithanyof", "no trim"],
+      ["notstartwithanyof", "no trim"],
+      ["endswithanyof", "no trim"],
+      ["notendswithanyof", "no trim"],
+      ["arraycontainsanyof", "no trim"],
+      ["arraynotcontainsanyof", "no trim"],
+      ["startwithanyofhashed", "no trim"],
+      ["notstartwithanyofhashed", "no trim"],
+      ["endswithanyofhashed", "no trim"],
+      ["notendswithanyofhashed", "no trim"],
+      //semver comparator values trimmed because of backward compatibility
+      ["semverisoneof", "4 trim"],
+      ["semverisnotoneof", "5 trim"],
+      ["semverless", "6 trim"],
+      ["semverlessequals", "7 trim"],
+      ["semvergreater", "8 trim"],
+      ["semvergreaterequals", "9 trim"],
+    ]) {
+    it(`Comparison value trimming - key: ${key}`, async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "comparison_value_trimming.json");
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = new User("12345", void 0, "[\"USA\"]", {
+        ["Version"]: "1.0.0",
+        ["Number"]: "3",
+        ["Date"]: "1705253400"
+      });
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, "default", user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+    });
+  }
+
 });
