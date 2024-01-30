@@ -294,6 +294,43 @@ describe("Setting evaluation (config v2)", () => {
     });
   }
 
+  for (const [key, customAttributeValue, expectedReturnValue] of
+    <[string, number | Date | ReadonlyArray<string>, string][]>[
+      ["numberToStringConversion", .12345, "1"],
+      ["numberToStringConversionInt", 125.0, "4"],
+      ["numberToStringConversionPositiveExp", -1.23456789e96, "2"],
+      ["numberToStringConversionNegativeExp", -12345.6789E-100, "4"],
+      ["numberToStringConversionNaN", NaN, "3"],
+      ["numberToStringConversionPositiveInf", Infinity, "4"],
+      ["numberToStringConversionNegativeInf", -Infinity, "3"],
+      ["dateToStringConversion", new Date("2023-03-31T23:59:59.9990000Z"), "3"],
+      ["dateToStringConversion", 1680307199.999, "3"],
+      ["dateToStringConversionNaN", NaN, "3"],
+      ["dateToStringConversionPositiveInf", Infinity, "1"],
+      ["dateToStringConversionNegativeInf", -Infinity, "5"],
+      ["stringArrayToStringConversion", ["read", "Write", " eXecute "], "4"],
+      ["stringArrayToStringConversionEmpty", [], "5"],
+      ["stringArrayToStringConversionSpecialChars", ["+<>%\"'\\/\t\r\n"], "3"],
+      ["stringArrayToStringConversionUnicode", ["äöüÄÖÜçéèñışğâ¢™✓😀"], "2"],
+    ]) {
+    it(`Comparison attribute conversion to canonical string representation - key: ${key} | customAttributeValue: ${customAttributeValue}`, async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "comparison_attribute_conversion.json");
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = new User("12345", void 0, void 0, {
+        ["Custom1"]: customAttributeValue,
+      });
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, "default", user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+    });
+  }
+
   for (const [key, expectedReturnValue] of
     <[string, string][]>[
       ["isoneof", "no trim"],
