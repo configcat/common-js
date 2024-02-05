@@ -6,17 +6,11 @@ import { sha1, sha256 } from "./Hash";
 import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, PrerequisiteFlagCondition, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserConditionUnion, VariationIdValue } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
-import type { User, UserAttributeValue } from "./User";
-import { getUserAttributes } from "./User";
+import type { User, UserAttributeValue, WellKnownUserObjectAttribute } from "./User";
+import { getUserAttribute, getUserAttributes } from "./User";
 import { errorToString, formatStringList, isArray, parseFloatStrict, utf8Encode } from "./Utils";
 
 export class EvaluateContext {
-  private $userAttributes?: { [key: string]: UserAttributeValue } | null;
-  get userAttributes(): { [key: string]: UserAttributeValue } | null {
-    const attributes = this.$userAttributes;
-    return attributes !== void 0 ? attributes : (this.$userAttributes = this.user ? getUserAttributes(this.user) : null);
-  }
-
   private $visitedFlags?: string[];
   get visitedFlags(): string[] { return this.$visitedFlags ??= []; }
 
@@ -35,7 +29,6 @@ export class EvaluateContext {
 
   static forPrerequisiteFlag(key: string, setting: Setting, dependentFlagContext: EvaluateContext): EvaluateContext {
     const context = new EvaluateContext(key, setting, dependentFlagContext.user, dependentFlagContext.settings);
-    context.$userAttributes = dependentFlagContext.userAttributes;
     context.$visitedFlags = dependentFlagContext.visitedFlags; // crucial to use the computed property here to make sure the list is created!
     context.logBuilder = dependentFlagContext.logBuilder;
     return context;
@@ -73,8 +66,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       logBuilder.append(`Evaluating '${context.key}'`);
 
-      if (context.userAttributes) {
-        logBuilder.append(` for User '${JSON.stringify(context.userAttributes)}'`);
+      if (context.user) {
+        logBuilder.append(` for User '${JSON.stringify(getUserAttributes(context.user))}'`);
       }
 
       logBuilder.increaseIndent();
@@ -191,7 +184,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, targetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
     const logBuilder = context.logBuilder;
 
-    if (!context.userAttributes) {
+    if (!context.user) {
       logBuilder?.newLine("Skipping % options because the User Object is missing.");
 
       if (!context.isMissingUserObjectLogged) {
@@ -202,8 +195,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       return;
     }
 
-    const percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
-    const percentageOptionsAttributeValue = context.userAttributes[percentageOptionsAttributeName];
+    let percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
+    let percentageOptionsAttributeValue: UserAttributeValue | null | undefined;
+
+    if (percentageOptionsAttributeName == null) {
+      percentageOptionsAttributeName = <WellKnownUserObjectAttribute>"Identifier";
+      percentageOptionsAttributeValue = context.user.identifier;
+    }
+    else {
+      percentageOptionsAttributeValue = getUserAttribute(context.user, percentageOptionsAttributeName);
+    }
+
     if (percentageOptionsAttributeValue == null) {
       logBuilder?.newLine(`Skipping % options because the User.${percentageOptionsAttributeName} attribute is missing.`);
 
@@ -309,7 +311,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     const logBuilder = context.logBuilder;
     logBuilder?.appendUserCondition(condition);
 
-    if (!context.userAttributes) {
+    if (!context.user) {
       if (!context.isMissingUserObjectLogged) {
         this.logger.userObjectIsMissing(context.key);
         context.isMissingUserObjectLogged = true;
@@ -319,7 +321,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     const userAttributeName = condition.comparisonAttribute;
-    const userAttributeValue = context.userAttributes[userAttributeName];
+    const userAttributeValue = getUserAttribute(context.user, userAttributeName);
     if (userAttributeValue == null || userAttributeValue === "") { // besides null and undefined, empty string is considered missing value as well
       this.logger.userObjectAttributeIsMissingCondition(formatUserCondition(condition), context.key, userAttributeName);
       return missingUserAttributeError(userAttributeName);
@@ -657,7 +659,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     const logBuilder = context.logBuilder;
     logBuilder?.appendSegmentCondition(condition);
 
-    if (!context.userAttributes) {
+    if (!context.user) {
       if (!context.isMissingUserObjectLogged) {
         this.logger.userObjectIsMissing(context.key);
         context.isMissingUserObjectLogged = true;
