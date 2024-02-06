@@ -8,7 +8,7 @@ import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
 import type { User, UserAttributeValue, WellKnownUserObjectAttribute } from "./User";
 import { getUserAttribute, getUserAttributes } from "./User";
-import { errorToString, formatStringList, isArray, parseFloatStrict, utf8Encode } from "./Utils";
+import { errorToString, formatStringList, isArray, isStringArray, parseFloatStrict, utf8Encode } from "./Utils";
 
 export class EvaluateContext {
   private $visitedFlags?: string[];
@@ -713,10 +713,6 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
 function isEvaluationError(isMatchOrError: boolean | string): isMatchOrError is string {
   return typeof isMatchOrError === "string";
-}
-
-export function isStringArray(value: unknown): value is string[] {
-  return isArray(value) && !value.some(item => typeof item !== "string");
 }
 
 function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {

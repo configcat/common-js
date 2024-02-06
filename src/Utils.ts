@@ -22,9 +22,8 @@ export function isArray(value: unknown): value is readonly unknown[] {
   return Array.isArray(value);
 }
 
-export function isPromiseLike<T>(obj: unknown): obj is PromiseLike<T> {
-  // See also: https://stackoverflow.com/a/27746324/8656352
-  return typeof (obj as PromiseLike<T>)?.then === "function";
+export function isStringArray(value: unknown): value is string[] {
+  return isArray(value) && !value.some(item => typeof item !== "string");
 }
 
 export function formatStringList(items: ReadonlyArray<string>, maxLength = 0, getOmittedItemsText?: (count: number) => string, separator = ", "): string {
@@ -43,6 +42,11 @@ export function formatStringList(items: ReadonlyArray<string>, maxLength = 0, ge
   }
 
   return "'" + items.join("'" + separator + "'") + "'" + appendix;
+}
+
+export function isPromiseLike<T>(obj: unknown): obj is PromiseLike<T> {
+  // See also: https://stackoverflow.com/a/27746324/8656352
+  return typeof (obj as PromiseLike<T>)?.then === "function";
 }
 
 export function utf8Encode(text: string): string {
