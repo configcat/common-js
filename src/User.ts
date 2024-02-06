@@ -56,7 +56,7 @@ export class User {
 
 export function getUserAttribute(user: User, name: string): UserAttributeValue | null | undefined {
   switch (name) {
-    case <WellKnownUserObjectAttribute>"Identifier": return user.identifier;
+    case <WellKnownUserObjectAttribute>"Identifier": return user.identifier ?? "";
     case <WellKnownUserObjectAttribute>"Email": return user.email;
     case <WellKnownUserObjectAttribute>"Country": return user.country;
     default: return user.custom?.[name];

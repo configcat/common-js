@@ -181,7 +181,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
   }
 
-  private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, targetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
+  private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, matchedTargetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
     const logBuilder = context.logBuilder;
 
     if (!context.user) {
@@ -200,7 +200,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     if (percentageOptionsAttributeName == null) {
       percentageOptionsAttributeName = <WellKnownUserObjectAttribute>"Identifier";
-      percentageOptionsAttributeValue = context.user.identifier;
+      percentageOptionsAttributeValue = context.user.identifier ?? "";
     }
     else {
       percentageOptionsAttributeValue = getUserAttribute(context.user, percentageOptionsAttributeName);
@@ -236,7 +236,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       logBuilder?.newLine(`- Hash value ${hashValue} selects % option ${i + 1} (${percentageOption.percentage}%), '${valueToString(percentageOption.value)}'.`);
 
-      return { selectedValue: percentageOption, matchedTargetingRule: targetingRule, matchedPercentageOption: percentageOption };
+      return { selectedValue: percentageOption, matchedTargetingRule, matchedPercentageOption: percentageOption };
     }
 
     throw new Error("Sum of percentage option percentages are less than 100.");
