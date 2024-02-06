@@ -43,8 +43,8 @@ export class EvaluateLogBuilder {
     return this.log;
   }
 
-  appendEvaluationResult(isMatch: boolean): this {
-    return this.append(`${isMatch}`);
+  appendEvaluationResult(result: boolean): this {
+    return this.append(`${result}`);
   }
 
   private appendUserConditionCore(comparisonAttribute: string, comparator: UserComparator, comparisonValue?: unknown) {
@@ -159,9 +159,9 @@ export class EvaluateLogBuilder {
     return this.append(`User ${formatSegmentComparator(comparator)} '${segmentName}'`);
   }
 
-  appendConditionConsequence(isMatch: boolean): this {
-    this.append(" => ").appendEvaluationResult(isMatch);
-    return isMatch ? this : this.append(", skipping the remaining AND conditions");
+  appendConditionConsequence(result: boolean): this {
+    this.append(" => ").appendEvaluationResult(result);
+    return result ? this : this.append(", skipping the remaining AND conditions");
   }
 
   appendTargetingRuleThenPart(targetingRule: TargetingRule, newLine: boolean): this {

@@ -285,17 +285,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           throw new Error(); // execution should never get here
       }
 
-      const isMatch = result === true;
+      const success = result === true;
 
       if (logBuilder) {
         if (!targetingRule || conditions.length > 1) {
-          logBuilder.appendConditionConsequence(isMatch);
+          logBuilder.appendConditionConsequence(success);
         }
 
         logBuilder.decreaseIndent();
       }
 
-      if (!isMatch) {
+      if (!success) {
         break;
       }
     }
@@ -443,15 +443,15 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
   private evaluateIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     // NOTE: Array.prototype.indexOf uses strict equality.
-    const isMatch = comparisonValues.indexOf(text) >= 0;
-    return isMatch !== negate;
+    const result = comparisonValues.indexOf(text) >= 0;
+    return result !== negate;
   }
 
   private evaluateSensitiveIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
     const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
     // NOTE: Array.prototype.indexOf uses strict equality.
-    const isMatch = comparisonValues.indexOf(hash) >= 0;
-    return isMatch !== negate;
+    const result = comparisonValues.indexOf(hash) >= 0;
+    return result !== negate;
   }
 
   private evaluateTextSliceEqualsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, startsWith: boolean, negate: boolean): boolean {
@@ -463,8 +463,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       }
 
       // NOTE: String.prototype.startsWith/endsWith were introduced after ES5. We'd rather work around them instead of polyfilling them.
-      const isMatch = (startsWith ? text.lastIndexOf(item, 0) : text.indexOf(item, text.length - item.length)) >= 0;
-      if (isMatch) {
+      const result = (startsWith ? text.lastIndexOf(item, 0) : text.indexOf(item, text.length - item.length)) >= 0;
+      if (result) {
         return !negate;
       }
     }
@@ -488,8 +488,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       const sliceUtf8 = startsWith ? textUtf8.slice(0, sliceLength) : textUtf8.slice(textUtf8.length - sliceLength);
       const hash = hashComparisonValueSlice(sliceUtf8, configJsonSalt, contextSalt);
 
-      const isMatch = hash === item.slice(index + 1);
-      if (isMatch) {
+      const result = hash === item.slice(index + 1);
+      if (result) {
         return !negate;
       }
     }
@@ -575,8 +575,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   private evaluateArrayContainsAnyOf(array: ReadonlyArray<string>, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     for (let i = 0; i < array.length; i++) {
       // NOTE: Array.prototype.indexOf uses strict equality.
-      const isMatch = comparisonValues.indexOf(array[i]) >= 0;
-      if (isMatch) {
+      const result = comparisonValues.indexOf(array[i]) >= 0;
+      if (result) {
         return !negate;
       }
     }
@@ -588,8 +588,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     for (let i = 0; i < array.length; i++) {
       const hash = hashComparisonValue(array[i], configJsonSalt, contextSalt);
       // NOTE: Array.prototype.indexOf uses strict equality.
-      const isMatch = comparisonValues.indexOf(hash) >= 0;
-      if (isMatch) {
+      const result = comparisonValues.indexOf(hash) >= 0;
+      if (result) {
         return !negate;
       }
     }
