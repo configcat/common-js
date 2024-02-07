@@ -37,7 +37,7 @@ export function formatStringList(items: ReadonlyArray<string>, maxLength = 0, ge
   if (maxLength > 0 && length > maxLength) {
     items = items.slice(0, maxLength);
     if (getOmittedItemsText) {
-      appendix = getOmittedItemsText?.(length - maxLength);
+      appendix = getOmittedItemsText(length - maxLength);
     }
   }
 
