@@ -64,6 +64,9 @@ export interface IConfigCatLogger {
   /** Gets the log level (the minimum level to use for filtering log events). */
   readonly level?: LogLevel;
 
+  /** Gets the character sequence to use for line breaks in log messages. Defaults to "\n". */
+  readonly eol?: string;
+
   /**
    * Writes an event into the log.
    * @param level Event severity level.
@@ -77,6 +80,10 @@ export interface IConfigCatLogger {
 export class LoggerWrapper implements IConfigCatLogger {
   get level(): LogLevel {
     return this.logger.level ?? LogLevel.Warn;
+  }
+
+  get eol(): string {
+    return this.logger.eol ?? "\n";
   }
 
   constructor(
@@ -369,7 +376,7 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
   /**
    * Create an instance of ConfigCatConsoleLogger
    */
-  constructor(public level = LogLevel.Warn) {
+  constructor(public level = LogLevel.Warn, readonly eol = "\n") {
   }
 
   /** @inheritdoc */
@@ -381,7 +388,7 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
       level === LogLevel.Error ? [console.error, "ERROR"] :
       [console.log, LogLevel[level].toUpperCase()];
 
-    const exceptionString = exception !== void 0 ? "\n" + errorToString(exception, true) : "";
+    const exceptionString = exception !== void 0 ? this.eol + errorToString(exception, true) : "";
 
     logMethod(`${this.SOURCE} - ${levelString} - [${eventId}] ${message}${exceptionString}`);
   }

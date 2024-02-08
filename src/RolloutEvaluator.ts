@@ -62,7 +62,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     // Building the evaluation log is expensive, so let's not do it if it wouldn't be logged anyway.
     if (this.logger.isEnabled(LogLevel.Info)) {
-      context.logBuilder = logBuilder = new EvaluateLogBuilder();
+      context.logBuilder = logBuilder = new EvaluateLogBuilder(this.logger.eol);
 
       logBuilder.append(`Evaluating '${context.key}'`);
 

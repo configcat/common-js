@@ -34,9 +34,10 @@ export function disposeAllClients(): void {
 /**
  * Creates an instance of `ConfigCatConsoleLogger`.
  * @param logLevel Log level (the minimum level to use for filtering log events).
+ * @param eol The character sequence to use for line breaks in log messages. Defaults to "\n".
  */
-export function createConsoleLogger(logLevel: LogLevel): IConfigCatLogger {
-  return new ConfigCatConsoleLogger(logLevel);
+export function createConsoleLogger(logLevel: LogLevel, eol?: string): IConfigCatLogger {
+  return new ConfigCatConsoleLogger(logLevel, eol);
 }
 
 /**

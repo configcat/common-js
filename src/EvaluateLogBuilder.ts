@@ -14,6 +14,9 @@ export class EvaluateLogBuilder {
   private log = "";
   private indent = "";
 
+  constructor(private readonly eol: string) {
+  }
+
   resetIndent(): this {
     this.indent = "";
     return this;
@@ -30,7 +33,7 @@ export class EvaluateLogBuilder {
   }
 
   newLine(text?: string): this {
-    this.log += "\n" + this.indent + (text ?? "");
+    this.log += this.eol + this.indent + (text ?? "");
     return this;
   }
 
@@ -225,7 +228,7 @@ export function formatUserComparator(comparator: UserComparator): string {
 }
 
 export function formatUserCondition(condition: UserConditionUnion): string {
-  return new EvaluateLogBuilder().appendUserCondition(condition).toString();
+  return new EvaluateLogBuilder("").appendUserCondition(condition).toString();
 }
 
 export function formatPrerequisiteFlagComparator(comparator: PrerequisiteFlagComparator): string {
