@@ -597,7 +597,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return negate;
   }
 
-  private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean | string {
+  private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean {
     const logBuilder = context.logBuilder;
     logBuilder?.appendPrerequisiteFlagCondition(condition);
 
