@@ -599,7 +599,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
   private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean {
     const logBuilder = context.logBuilder;
-    logBuilder?.appendPrerequisiteFlagCondition(condition);
+    logBuilder?.appendPrerequisiteFlagCondition(condition, context.settings);
 
     const prerequisiteFlagKey = condition.prerequisiteFlagKey;
     const prerequisiteFlag = context.settings[prerequisiteFlagKey];
@@ -647,7 +647,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     logBuilder?.newLine(`Prerequisite flag evaluation result: '${valueToString(prerequisiteFlagValue)}'.`)
       .newLine("Condition (")
-      .appendPrerequisiteFlagCondition(condition)
+      .appendPrerequisiteFlagCondition(condition, context.settings)
       .append(") evaluates to ").appendEvaluationResult(result).append(".")
       .decreaseIndent()
       .newLine(")");

@@ -1,5 +1,5 @@
 import { PrerequisiteFlagComparator, SegmentComparator, UserComparator } from "./ConfigJson";
-import type { PrerequisiteFlagCondition, SegmentCondition, SettingValue, TargetingRule, UserCondition, UserConditionUnion } from "./ProjectConfig";
+import type { PrerequisiteFlagCondition, SegmentCondition, Setting, SettingValue, TargetingRule, UserCondition, UserConditionUnion } from "./ProjectConfig";
 import { isAllowedValue } from "./RolloutEvaluator";
 import { formatStringList, isArray } from "./Utils";
 
@@ -89,7 +89,9 @@ export class EvaluateLogBuilder {
   }
 
   appendUserCondition(condition: UserConditionUnion): this {
-    const { comparisonAttribute, comparator } = condition;
+    const comparisonAttribute = typeof condition.comparisonAttribute === "string" ? condition.comparisonAttribute : invalidNamePlaceholder;
+    const comparator = condition.comparator;
+
     switch (condition.comparator) {
       case UserComparator.IsOneOf:
       case UserComparator.IsNotOneOf:
@@ -144,8 +146,12 @@ export class EvaluateLogBuilder {
     }
   }
 
-  appendPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition): this {
-    const prerequisiteFlagKey = condition.prerequisiteFlagKey;
+  appendPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, settings: Readonly<{ [name: string]: Setting }>): this {
+    const prerequisiteFlagKey =
+      typeof condition.prerequisiteFlagKey !== "string" ? invalidNamePlaceholder :
+      !(condition.prerequisiteFlagKey in settings) ? invalidReferencePlaceholder :
+      condition.prerequisiteFlagKey;
+
     const comparator = condition.comparator;
     const comparisonValue = condition.comparisonValue;
 
@@ -156,8 +162,10 @@ export class EvaluateLogBuilder {
     const segment = condition.segment;
     const comparator = condition.comparator;
 
-    const segmentName = segment?.name ??
-      (segment == null ? invalidReferencePlaceholder : invalidNamePlaceholder);
+    const segmentName =
+      segment == null ? invalidReferencePlaceholder :
+      typeof segment.name !== "string" || !segment.name ? invalidNamePlaceholder :
+      segment.name;
 
     return this.append(`User ${formatSegmentComparator(comparator)} '${segmentName}'`);
   }
