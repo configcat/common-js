@@ -648,7 +648,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     logBuilder?.newLine(`Prerequisite flag evaluation result: '${valueToString(prerequisiteFlagValue)}'.`)
       .newLine("Condition (")
       .appendPrerequisiteFlagCondition(condition, context.settings)
-      .append(") evaluates to ").appendEvaluationResult(result).append(".")
+      .append(") evaluates to ").appendConditionResult(result).append(".")
       .decreaseIndent()
       .newLine(")");
 
@@ -698,7 +698,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       logBuilder.newLine("Condition (").appendSegmentCondition(condition).append(")");
       (!isEvaluationError(result)
-        ? logBuilder.append(" evaluates to ").appendEvaluationResult(result)
+        ? logBuilder.append(" evaluates to ").appendConditionResult(result)
         : logBuilder.append(" failed to evaluate"))
         .append(".");
 

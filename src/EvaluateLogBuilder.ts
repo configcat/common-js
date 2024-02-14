@@ -46,10 +46,6 @@ export class EvaluateLogBuilder {
     return this.log;
   }
 
-  appendEvaluationResult(result: boolean): this {
-    return this.append(`${result}`);
-  }
-
   private appendUserConditionCore(comparisonAttribute: string, comparator: UserComparator, comparisonValue?: unknown) {
     return this.append(`User.${comparisonAttribute} ${formatUserComparator(comparator)} '${comparisonValue ?? invalidValuePlaceholder}'`);
   }
@@ -170,8 +166,12 @@ export class EvaluateLogBuilder {
     return this.append(`User ${formatSegmentComparator(comparator)} '${segmentName}'`);
   }
 
+  appendConditionResult(result: boolean): this {
+    return this.append(`${result}`);
+  }
+
   appendConditionConsequence(result: boolean): this {
-    this.append(" => ").appendEvaluationResult(result);
+    this.append(" => ").appendConditionResult(result);
     return result ? this : this.append(", skipping the remaining AND conditions");
   }
 
