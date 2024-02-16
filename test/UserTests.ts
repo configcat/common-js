@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { User } from "../src/index";
-import { WellKnownUserObjectAttribute, getUserAttributes } from "../src/User";
+import { WellKnownUserObjectAttribute, getUserAttribute, getUserAttributes } from "../src/User";
 
 const identifierAttribute: WellKnownUserObjectAttribute = "Identifier";
 const emailAttribute: WellKnownUserObjectAttribute = "Email";
@@ -51,6 +51,7 @@ describe("User Object", () => {
       const user = createUser(attributeName, attributeValue);
 
       assert.strictEqual(getUserAttributes(user)[attributeName], expectedValue);
+      assert.strictEqual(getUserAttribute(user, attributeName) ?? void 0, expectedValue);
     });
   }
 
@@ -66,8 +67,13 @@ describe("User Object", () => {
     // Assert
 
     assert.strictEqual(actualAttributes[identifierAttribute], "id");
+    assert.strictEqual(getUserAttribute(user, identifierAttribute), "id");
+
     assert.strictEqual(actualAttributes[emailAttribute], "id@example.com");
+    assert.strictEqual(getUserAttribute(user, emailAttribute), "id@example.com");
+
     assert.strictEqual(actualAttributes[countryAttribute], "US");
+    assert.strictEqual(getUserAttribute(user, countryAttribute), "US");
 
     assert.equal(3, Object.keys(actualAttributes).length);
   });
@@ -89,9 +95,16 @@ describe("User Object", () => {
     // Assert
 
     assert.strictEqual(actualAttributes[identifierAttribute], "id");
+    assert.strictEqual(getUserAttribute(user, identifierAttribute), "id");
+
     assert.strictEqual(actualAttributes[emailAttribute], "id@example.com");
+    assert.strictEqual(getUserAttribute(user, emailAttribute), "id@example.com");
+
     assert.strictEqual(actualAttributes[countryAttribute], "US");
+    assert.strictEqual(getUserAttribute(user, countryAttribute), "US");
+
     assert.strictEqual(actualAttributes["myCustomAttribute"], "myCustomAttributeValue");
+    assert.strictEqual(getUserAttribute(user, "myCustomAttribute"), "myCustomAttributeValue");
 
     assert.equal(4, Object.keys(actualAttributes).length);
   });
@@ -119,6 +132,7 @@ describe("User Object", () => {
       // Assert
 
       assert.strictEqual(actualAttributes[attributeName], attributeValue);
+      assert.strictEqual(getUserAttribute(user, attributeName), attributeValue);
 
       assert.equal(4, Object.keys(actualAttributes).length);
     });
@@ -143,9 +157,16 @@ describe("User Object", () => {
     // Assert
 
     assert.strictEqual(actualAttributes[identifierAttribute], "id");
+    assert.strictEqual(getUserAttribute(user, identifierAttribute), "id");
+
     assert.strictEqual(actualAttributes[emailAttribute], "id@example.com");
+    assert.strictEqual(getUserAttribute(user, emailAttribute), "id@example.com");
+
     assert.strictEqual(actualAttributes[countryAttribute], "US");
+    assert.strictEqual(getUserAttribute(user, countryAttribute), "US");
+
     assert.strictEqual(actualAttributes["myCustomAttribute"], "myCustomAttributeValue");
+    assert.strictEqual(getUserAttribute(user, "myCustomAttribute"), "myCustomAttributeValue");
 
     assert.equal(4, Object.keys(actualAttributes).length);
   });
