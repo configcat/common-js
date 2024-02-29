@@ -754,7 +754,7 @@ function getUserAttributeValueAsNumber(attributeName: string, attributeValue: Us
   }
   let number: number;
   if (typeof attributeValue === "string"
-    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue === "NaN")) {
+    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue.trim() === "NaN")) {
     return number;
   }
   return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid decimal number`);
@@ -769,7 +769,7 @@ function getUserAttributeValueAsUnixTimeSeconds(attributeName: string, attribute
   }
   let number: number;
   if (typeof attributeValue === "string"
-    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue === "NaN")) {
+    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue.trim() === "NaN")) {
     return number;
   }
   return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);

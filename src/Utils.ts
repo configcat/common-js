@@ -97,7 +97,7 @@ export function utf8Encode(text: string): string {
 }
 
 export function parseFloatStrict(value: unknown): number {
-  // NOTE: parseFloat is too forgiving, it allows leading/trailing whitespace and ignores invalid characters after the number.
+  // NOTE: JS's float to string conversion is too forgiving, it accepts hex numbers and ignores invalid characters after the number.
 
   if (typeof value === "number") {
     return value;

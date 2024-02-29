@@ -1,7 +1,7 @@
 import { PrerequisiteFlagComparator, SegmentComparator, UserComparator } from "./ConfigJson";
 import type { PrerequisiteFlagCondition, SegmentCondition, Setting, SettingValue, TargetingRule, UserCondition, UserConditionUnion } from "./ProjectConfig";
 import { isAllowedValue } from "./RolloutEvaluator";
-import { formatStringList, isArray } from "./Utils";
+import { formatStringList, isArray, isStringArray } from "./Utils";
 
 const invalidValuePlaceholder = "<invalid value>";
 const invalidNamePlaceholder = "<invalid name>";
@@ -51,11 +51,15 @@ export class EvaluateLogBuilder {
   }
 
   private appendUserConditionString(comparisonAttribute: string, comparator: UserComparator, comparisonValue: string, isSensitive: boolean) {
+    if (typeof comparisonValue !== "string") {
+      return this.appendUserConditionCore(comparisonAttribute, comparator);
+    }
+
     return this.appendUserConditionCore(comparisonAttribute, comparator, !isSensitive ? comparisonValue : "<hashed value>");
   }
 
   private appendUserConditionStringList(comparisonAttribute: string, comparator: UserComparator, comparisonValue: ReadonlyArray<string>, isSensitive: boolean): this {
-    if (comparisonValue == null) {
+    if (!isStringArray(comparisonValue)) {
       return this.appendUserConditionCore(comparisonAttribute, comparator);
     }
 
@@ -73,7 +77,7 @@ export class EvaluateLogBuilder {
   }
 
   private appendUserConditionNumber(comparisonAttribute: string, comparator: UserComparator, comparisonValue: number, isDateTime?: boolean) {
-    if (comparisonValue == null) {
+    if (typeof comparisonValue !== "number") {
       return this.appendUserConditionCore(comparisonAttribute, comparator);
     }
 
