@@ -175,7 +175,7 @@ export class EvaluateLogBuilder {
     return result ? this : this.append(", skipping the remaining AND conditions");
   }
 
-  appendTargetingRuleThenPart(targetingRule: TargetingRule, newLine: boolean): this {
+  private appendTargetingRuleThenPart(targetingRule: TargetingRule, newLine: boolean): this {
     (newLine ? this.newLine() : this.append(" "))
       .append("THEN");
 
