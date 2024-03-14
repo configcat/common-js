@@ -239,7 +239,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       return { selectedValue: percentageOption, matchedTargetingRule, matchedPercentageOption: percentageOption };
     }
 
-    throw new Error("Sum of percentage option percentages are less than 100.");
+    throw new Error("Sum of percentage option percentages is less than 100.");
   }
 
   private evaluateConditions(conditions: ReadonlyArray<ConditionUnion>, targetingRule: TargetingRule | undefined, contextSalt: string, context: EvaluateContext): boolean | string {
