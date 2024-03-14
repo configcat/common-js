@@ -83,10 +83,10 @@ export type UserCondition<TComparator extends UserComparator = UserComparator> =
 } & UserConditionComparisonValue<TComparator>
 
 export type UserConditionComparisonValue<TComparator extends UserComparator = UserComparator> = {
-  [UserComparator.IsOneOf]: UserConditionStringListComparisonValue;
-  [UserComparator.IsNotOneOf]: UserConditionStringListComparisonValue;
-  [UserComparator.ContainsAnyOf]: UserConditionStringListComparisonValue;
-  [UserComparator.NotContainsAnyOf]: UserConditionStringListComparisonValue;
+  [UserComparator.TextIsOneOf]: UserConditionStringListComparisonValue;
+  [UserComparator.TextIsNotOneOf]: UserConditionStringListComparisonValue;
+  [UserComparator.TextContainsAnyOf]: UserConditionStringListComparisonValue;
+  [UserComparator.TextNotContainsAnyOf]: UserConditionStringListComparisonValue;
   [UserComparator.SemVerIsOneOf]: UserConditionStringListComparisonValue;
   [UserComparator.SemVerIsNotOneOf]: UserConditionStringListComparisonValue;
   [UserComparator.SemVerLess]: UserConditionStringComparisonValue;
@@ -99,8 +99,8 @@ export type UserConditionComparisonValue<TComparator extends UserComparator = Us
   [UserComparator.NumberLessOrEquals]: UserConditionNumberComparisonValue;
   [UserComparator.NumberGreater]: UserConditionNumberComparisonValue;
   [UserComparator.NumberGreaterOrEquals]: UserConditionNumberComparisonValue;
-  [UserComparator.SensitiveIsOneOf]: UserConditionStringListComparisonValue;
-  [UserComparator.SensitiveIsNotOneOf]: UserConditionStringListComparisonValue;
+  [UserComparator.SensitiveTextIsOneOf]: UserConditionStringListComparisonValue;
+  [UserComparator.SensitiveTextIsNotOneOf]: UserConditionStringListComparisonValue;
   [UserComparator.DateTimeBefore]: UserConditionNumberComparisonValue;
   [UserComparator.DateTimeAfter]: UserConditionNumberComparisonValue;
   [UserComparator.SensitiveTextEquals]: UserConditionStringComparisonValue;
@@ -168,13 +168,13 @@ export enum SettingType {
 /** User Object attribute comparison operator used during the evaluation process. */
 export enum UserComparator {
   /** IS ONE OF (cleartext) - It matches when the comparison attribute is equal to any of the comparison values. */
-  IsOneOf = 0,
+  TextIsOneOf = 0,
   /** IS NOT ONE OF (cleartext) - It matches when the comparison attribute is not equal to any of the comparison values. */
-  IsNotOneOf = 1,
+  TextIsNotOneOf = 1,
   /** CONTAINS ANY OF (cleartext) - It matches when the comparison attribute contains any comparison values as a substring. */
-  ContainsAnyOf = 2,
+  TextContainsAnyOf = 2,
   /** NOT CONTAINS ANY OF (cleartext) - It matches when the comparison attribute does not contain any comparison values as a substring. */
-  NotContainsAnyOf = 3,
+  TextNotContainsAnyOf = 3,
   /** IS ONE OF (semver) - It matches when the comparison attribute interpreted as a semantic version is equal to any of the comparison values. */
   SemVerIsOneOf = 4,
   /** IS NOT ONE OF (semver) - It matches when the comparison attribute interpreted as a semantic version is not equal to any of the comparison values. */
@@ -200,9 +200,9 @@ export enum UserComparator {
   /** &gt;= (number) - It matches when the comparison attribute interpreted as a decimal number is greater than or equal to the comparison value. */
   NumberGreaterOrEquals = 15,
   /** IS ONE OF (hashed) - It matches when the comparison attribute is equal to any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveIsOneOf = 16,
+  SensitiveTextIsOneOf = 16,
   /** IS NOT ONE OF (hashed) - It matches when the comparison attribute is not equal to any of the comparison values (where the comparison is performed using the salted SHA256 hashes of the values). */
-  SensitiveIsNotOneOf = 17,
+  SensitiveTextIsNotOneOf = 17,
   /** BEFORE (UTC datetime) - It matches when the comparison attribute interpreted as the seconds elapsed since <see href="https://en.wikipedia.org/wiki/Unix_time">Unix Epoch</see> is less than the comparison value. */
   DateTimeBefore = 18,
   /** AFTER (UTC datetime) - It matches when the comparison attribute interpreted as the seconds elapsed since <see href="https://en.wikipedia.org/wiki/Unix_time">Unix Epoch</see> is greater than the comparison value. */

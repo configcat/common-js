@@ -93,10 +93,10 @@ export class EvaluateLogBuilder {
     const comparator = condition.comparator;
 
     switch (condition.comparator) {
-      case UserComparator.IsOneOf:
-      case UserComparator.IsNotOneOf:
-      case UserComparator.ContainsAnyOf:
-      case UserComparator.NotContainsAnyOf:
+      case UserComparator.TextIsOneOf:
+      case UserComparator.TextIsNotOneOf:
+      case UserComparator.TextContainsAnyOf:
+      case UserComparator.TextNotContainsAnyOf:
       case UserComparator.SemVerIsOneOf:
       case UserComparator.SemVerIsNotOneOf:
       case UserComparator.TextStartsWithAnyOf:
@@ -123,8 +123,8 @@ export class EvaluateLogBuilder {
       case UserComparator.NumberGreaterOrEquals:
         return this.appendUserConditionNumber(comparisonAttribute, comparator, condition.comparisonValue);
 
-      case UserComparator.SensitiveIsOneOf:
-      case UserComparator.SensitiveIsNotOneOf:
+      case UserComparator.SensitiveTextIsOneOf:
+      case UserComparator.SensitiveTextIsNotOneOf:
       case UserComparator.SensitiveTextStartsWithAnyOf:
       case UserComparator.SensitiveTextNotStartsWithAnyOf:
       case UserComparator.SensitiveTextEndsWithAnyOf:
@@ -199,14 +199,14 @@ export class EvaluateLogBuilder {
 
 export function formatUserComparator(comparator: UserComparator): string {
   switch (comparator) {
-    case UserComparator.IsOneOf:
-    case UserComparator.SensitiveIsOneOf:
+    case UserComparator.TextIsOneOf:
+    case UserComparator.SensitiveTextIsOneOf:
     case UserComparator.SemVerIsOneOf: return "IS ONE OF";
-    case UserComparator.IsNotOneOf:
-    case UserComparator.SensitiveIsNotOneOf:
+    case UserComparator.TextIsNotOneOf:
+    case UserComparator.SensitiveTextIsNotOneOf:
     case UserComparator.SemVerIsNotOneOf: return "IS NOT ONE OF";
-    case UserComparator.ContainsAnyOf: return "CONTAINS ANY OF";
-    case UserComparator.NotContainsAnyOf: return "NOT CONTAINS ANY OF";
+    case UserComparator.TextContainsAnyOf: return "CONTAINS ANY OF";
+    case UserComparator.TextNotContainsAnyOf: return "NOT CONTAINS ANY OF";
     case UserComparator.SemVerLess:
     case UserComparator.NumberLess: return "<";
     case UserComparator.SemVerLessOrEquals:

@@ -272,10 +272,10 @@ export interface ICondition<TCondition extends keyof ConditionTypeMap = keyof Co
 export type ConditionUnion = UserConditionUnion | PrerequisiteFlagCondition | SegmentCondition;
 
 export type UserConditionComparisonValueTypeMap = {
-  [UserComparator.IsOneOf]: Readonly<string[]>;
-  [UserComparator.IsNotOneOf]: Readonly<string[]>;
-  [UserComparator.ContainsAnyOf]: Readonly<string[]>;
-  [UserComparator.NotContainsAnyOf]: Readonly<string[]>;
+  [UserComparator.TextIsOneOf]: Readonly<string[]>;
+  [UserComparator.TextIsNotOneOf]: Readonly<string[]>;
+  [UserComparator.TextContainsAnyOf]: Readonly<string[]>;
+  [UserComparator.TextNotContainsAnyOf]: Readonly<string[]>;
   [UserComparator.SemVerIsOneOf]: Readonly<string[]>;
   [UserComparator.SemVerIsNotOneOf]: Readonly<string[]>;
   [UserComparator.SemVerLess]: string;
@@ -288,8 +288,8 @@ export type UserConditionComparisonValueTypeMap = {
   [UserComparator.NumberLessOrEquals]: number;
   [UserComparator.NumberGreater]: number;
   [UserComparator.NumberGreaterOrEquals]: number;
-  [UserComparator.SensitiveIsOneOf]: Readonly<string[]>;
-  [UserComparator.SensitiveIsNotOneOf]: Readonly<string[]>;
+  [UserComparator.SensitiveTextIsOneOf]: Readonly<string[]>;
+  [UserComparator.SensitiveTextIsNotOneOf]: Readonly<string[]>;
   [UserComparator.DateTimeBefore]: number;
   [UserComparator.DateTimeAfter]: number;
   [UserComparator.SensitiveTextEquals]: string;

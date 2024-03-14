@@ -340,16 +340,16 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return this.evaluateSensitiveTextEquals(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveTextNotEquals);
 
-      case UserComparator.IsOneOf:
-      case UserComparator.IsNotOneOf:
+      case UserComparator.TextIsOneOf:
+      case UserComparator.TextIsNotOneOf:
         text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
-        return this.evaluateIsOneOf(text, condition.comparisonValue, condition.comparator === UserComparator.IsNotOneOf);
+        return this.evaluateTextIsOneOf(text, condition.comparisonValue, condition.comparator === UserComparator.TextIsNotOneOf);
 
-      case UserComparator.SensitiveIsOneOf:
-      case UserComparator.SensitiveIsNotOneOf:
+      case UserComparator.SensitiveTextIsOneOf:
+      case UserComparator.SensitiveTextIsNotOneOf:
         text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
-        return this.evaluateSensitiveIsOneOf(text, condition.comparisonValue,
-          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveIsNotOneOf);
+        return this.evaluateSensitiveTextIsOneOf(text, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveTextIsNotOneOf);
 
       case UserComparator.TextStartsWithAnyOf:
       case UserComparator.TextNotStartsWithAnyOf:
@@ -373,10 +373,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return this.evaluateSensitiveTextSliceEqualsAnyOf(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, false, condition.comparator === UserComparator.SensitiveTextNotEndsWithAnyOf);
 
-      case UserComparator.ContainsAnyOf:
-      case UserComparator.NotContainsAnyOf:
+      case UserComparator.TextContainsAnyOf:
+      case UserComparator.TextNotContainsAnyOf:
         text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
-        return this.evaluateContainsAnyOf(text, condition.comparisonValue, condition.comparator === UserComparator.NotContainsAnyOf);
+        return this.evaluateTextContainsAnyOf(text, condition.comparisonValue, condition.comparator === UserComparator.TextNotContainsAnyOf);
 
       case UserComparator.SemVerIsOneOf:
       case UserComparator.SemVerIsNotOneOf:
@@ -441,13 +441,13 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return (hash === comparisonValue) !== negate;
   }
 
-  private evaluateIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+  private evaluateTextIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     // NOTE: Array.prototype.indexOf uses strict equality.
     const result = comparisonValues.indexOf(text) >= 0;
     return result !== negate;
   }
 
-  private evaluateSensitiveIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
+  private evaluateSensitiveTextIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
     const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
     // NOTE: Array.prototype.indexOf uses strict equality.
     const result = comparisonValues.indexOf(hash) >= 0;
@@ -497,7 +497,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return negate;
   }
 
-  private evaluateContainsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+  private evaluateTextContainsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     for (let i = 0; i < comparisonValues.length; i++) {
       if (text.indexOf(comparisonValues[i]) >= 0) {
         return !negate;
