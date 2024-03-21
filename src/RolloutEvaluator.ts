@@ -6,17 +6,11 @@ import { sha1, sha256 } from "./Hash";
 import type { ConditionUnion, IPercentageOption, ITargetingRule, PercentageOption, PrerequisiteFlagCondition, ProjectConfig, SegmentCondition, Setting, SettingValue, SettingValueContainer, TargetingRule, UserConditionUnion, VariationIdValue } from "./ProjectConfig";
 import type { ISemVer } from "./Semver";
 import { parse as parseSemVer } from "./Semver";
-import type { User, UserAttributeValue } from "./User";
-import { getUserAttributes } from "./User";
-import { errorToString, formatStringList, isArray, parseFloatStrict, utf8Encode } from "./Utils";
+import type { User, UserAttributeValue, WellKnownUserObjectAttribute } from "./User";
+import { getUserAttribute, getUserAttributes } from "./User";
+import { errorToString, formatStringList, isArray, isStringArray, parseFloatStrict, utf8Encode } from "./Utils";
 
 export class EvaluateContext {
-  private $userAttributes?: { [key: string]: UserAttributeValue } | null;
-  get userAttributes(): { [key: string]: UserAttributeValue } | null {
-    const attributes = this.$userAttributes;
-    return attributes !== void 0 ? attributes : (this.$userAttributes = this.user ? getUserAttributes(this.user) : null);
-  }
-
   private $visitedFlags?: string[];
   get visitedFlags(): string[] { return this.$visitedFlags ??= []; }
 
@@ -35,7 +29,6 @@ export class EvaluateContext {
 
   static forPrerequisiteFlag(key: string, setting: Setting, dependentFlagContext: EvaluateContext): EvaluateContext {
     const context = new EvaluateContext(key, setting, dependentFlagContext.user, dependentFlagContext.settings);
-    context.$userAttributes = dependentFlagContext.userAttributes;
     context.$visitedFlags = dependentFlagContext.visitedFlags; // crucial to use the computed property here to make sure the list is created!
     context.logBuilder = dependentFlagContext.logBuilder;
     return context;
@@ -69,12 +62,12 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     // Building the evaluation log is expensive, so let's not do it if it wouldn't be logged anyway.
     if (this.logger.isEnabled(LogLevel.Info)) {
-      context.logBuilder = logBuilder = new EvaluateLogBuilder();
+      context.logBuilder = logBuilder = new EvaluateLogBuilder(this.logger.eol);
 
       logBuilder.append(`Evaluating '${context.key}'`);
 
-      if (context.userAttributes) {
-        logBuilder.append(` for User '${JSON.stringify(context.userAttributes)}'`);
+      if (context.user) {
+        logBuilder.append(` for User '${JSON.stringify(getUserAttributes(context.user))}'`);
       }
 
       logBuilder.increaseIndent();
@@ -188,10 +181,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
   }
 
-  private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, targetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
+  private evaluatePercentageOptions(percentageOptions: ReadonlyArray<PercentageOption>, matchedTargetingRule: TargetingRule | undefined, context: EvaluateContext): IEvaluateResult | undefined {
     const logBuilder = context.logBuilder;
 
-    if (!context.userAttributes) {
+    if (!context.user) {
       logBuilder?.newLine("Skipping % options because the User Object is missing.");
 
       if (!context.isMissingUserObjectLogged) {
@@ -202,8 +195,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       return;
     }
 
-    const percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
-    const percentageOptionsAttributeValue = context.userAttributes[percentageOptionsAttributeName];
+    let percentageOptionsAttributeName = context.setting.percentageOptionsAttribute;
+    let percentageOptionsAttributeValue: UserAttributeValue | null | undefined;
+
+    if (percentageOptionsAttributeName == null) {
+      percentageOptionsAttributeName = <WellKnownUserObjectAttribute>"Identifier";
+      percentageOptionsAttributeValue = context.user.identifier ?? "";
+    }
+    else {
+      percentageOptionsAttributeValue = getUserAttribute(context.user, percentageOptionsAttributeName);
+    }
+
     if (percentageOptionsAttributeValue == null) {
       logBuilder?.newLine(`Skipping % options because the User.${percentageOptionsAttributeName} attribute is missing.`);
 
@@ -234,10 +236,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       logBuilder?.newLine(`- Hash value ${hashValue} selects % option ${i + 1} (${percentageOption.percentage}%), '${valueToString(percentageOption.value)}'.`);
 
-      return { selectedValue: percentageOption, matchedTargetingRule: targetingRule, matchedPercentageOption: percentageOption };
+      return { selectedValue: percentageOption, matchedTargetingRule, matchedPercentageOption: percentageOption };
     }
 
-    throw new Error("Sum of percentage option percentages are less than 100.");
+    throw new Error("Sum of percentage option percentages is less than 100.");
   }
 
   private evaluateConditions(conditions: ReadonlyArray<ConditionUnion>, targetingRule: TargetingRule | undefined, contextSalt: string, context: EvaluateContext): boolean | string {
@@ -283,17 +285,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
           throw new Error(); // execution should never get here
       }
 
-      const isMatch = result === true;
+      const success = result === true;
 
       if (logBuilder) {
         if (!targetingRule || conditions.length > 1) {
-          logBuilder.appendConditionConsequence(isMatch);
+          logBuilder.appendConditionConsequence(success);
         }
 
         logBuilder.decreaseIndent();
       }
 
-      if (!isMatch) {
+      if (!success) {
         break;
       }
     }
@@ -309,7 +311,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     const logBuilder = context.logBuilder;
     logBuilder?.appendUserCondition(condition);
 
-    if (!context.userAttributes) {
+    if (!context.user) {
       if (!context.isMissingUserObjectLogged) {
         this.logger.userObjectIsMissing(context.key);
         context.isMissingUserObjectLogged = true;
@@ -319,7 +321,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     }
 
     const userAttributeName = condition.comparisonAttribute;
-    const userAttributeValue = context.userAttributes[userAttributeName];
+    const userAttributeValue = getUserAttribute(context.user, userAttributeName);
     if (userAttributeValue == null || userAttributeValue === "") { // besides null and undefined, empty string is considered missing value as well
       this.logger.userObjectAttributeIsMissingCondition(formatUserCondition(condition), context.key, userAttributeName);
       return missingUserAttributeError(userAttributeName);
@@ -338,16 +340,16 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return this.evaluateSensitiveTextEquals(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveTextNotEquals);
 
-      case UserComparator.IsOneOf:
-      case UserComparator.IsNotOneOf:
+      case UserComparator.TextIsOneOf:
+      case UserComparator.TextIsNotOneOf:
         text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
-        return this.evaluateIsOneOf(text, condition.comparisonValue, condition.comparator === UserComparator.IsNotOneOf);
+        return this.evaluateTextIsOneOf(text, condition.comparisonValue, condition.comparator === UserComparator.TextIsNotOneOf);
 
-      case UserComparator.SensitiveIsOneOf:
-      case UserComparator.SensitiveIsNotOneOf:
+      case UserComparator.SensitiveTextIsOneOf:
+      case UserComparator.SensitiveTextIsNotOneOf:
         text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
-        return this.evaluateSensitiveIsOneOf(text, condition.comparisonValue,
-          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveIsNotOneOf);
+        return this.evaluateSensitiveTextIsOneOf(text, condition.comparisonValue,
+          context.setting.configJsonSalt, contextSalt, condition.comparator === UserComparator.SensitiveTextIsNotOneOf);
 
       case UserComparator.TextStartsWithAnyOf:
       case UserComparator.TextNotStartsWithAnyOf:
@@ -371,10 +373,10 @@ export class RolloutEvaluator implements IRolloutEvaluator {
         return this.evaluateSensitiveTextSliceEqualsAnyOf(text, condition.comparisonValue,
           context.setting.configJsonSalt, contextSalt, false, condition.comparator === UserComparator.SensitiveTextNotEndsWithAnyOf);
 
-      case UserComparator.ContainsAnyOf:
-      case UserComparator.NotContainsAnyOf:
+      case UserComparator.TextContainsAnyOf:
+      case UserComparator.TextNotContainsAnyOf:
         text = getUserAttributeValueAsText(userAttributeName, userAttributeValue, condition, context.key, this.logger);
-        return this.evaluateContainsAnyOf(text, condition.comparisonValue, condition.comparator === UserComparator.NotContainsAnyOf);
+        return this.evaluateTextContainsAnyOf(text, condition.comparisonValue, condition.comparator === UserComparator.TextNotContainsAnyOf);
 
       case UserComparator.SemVerIsOneOf:
       case UserComparator.SemVerIsNotOneOf:
@@ -439,17 +441,17 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return (hash === comparisonValue) !== negate;
   }
 
-  private evaluateIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+  private evaluateTextIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     // NOTE: Array.prototype.indexOf uses strict equality.
-    const isMatch = comparisonValues.indexOf(text) >= 0;
-    return isMatch !== negate;
+    const result = comparisonValues.indexOf(text) >= 0;
+    return result !== negate;
   }
 
-  private evaluateSensitiveIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
+  private evaluateSensitiveTextIsOneOf(text: string, comparisonValues: ReadonlyArray<string>, configJsonSalt: string, contextSalt: string, negate: boolean): boolean {
     const hash = hashComparisonValue(text, configJsonSalt, contextSalt);
     // NOTE: Array.prototype.indexOf uses strict equality.
-    const isMatch = comparisonValues.indexOf(hash) >= 0;
-    return isMatch !== negate;
+    const result = comparisonValues.indexOf(hash) >= 0;
+    return result !== negate;
   }
 
   private evaluateTextSliceEqualsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, startsWith: boolean, negate: boolean): boolean {
@@ -461,8 +463,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       }
 
       // NOTE: String.prototype.startsWith/endsWith were introduced after ES5. We'd rather work around them instead of polyfilling them.
-      const isMatch = (startsWith ? text.lastIndexOf(item, 0) : text.indexOf(item, text.length - item.length)) >= 0;
-      if (isMatch) {
+      const result = (startsWith ? text.lastIndexOf(item, 0) : text.indexOf(item, text.length - item.length)) >= 0;
+      if (result) {
         return !negate;
       }
     }
@@ -486,8 +488,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       const sliceUtf8 = startsWith ? textUtf8.slice(0, sliceLength) : textUtf8.slice(textUtf8.length - sliceLength);
       const hash = hashComparisonValueSlice(sliceUtf8, configJsonSalt, contextSalt);
 
-      const isMatch = hash === item.slice(index + 1);
-      if (isMatch) {
+      const result = hash === item.slice(index + 1);
+      if (result) {
         return !negate;
       }
     }
@@ -495,7 +497,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return negate;
   }
 
-  private evaluateContainsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
+  private evaluateTextContainsAnyOf(text: string, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     for (let i = 0; i < comparisonValues.length; i++) {
       if (text.indexOf(comparisonValues[i]) >= 0) {
         return !negate;
@@ -573,8 +575,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
   private evaluateArrayContainsAnyOf(array: ReadonlyArray<string>, comparisonValues: ReadonlyArray<string>, negate: boolean): boolean {
     for (let i = 0; i < array.length; i++) {
       // NOTE: Array.prototype.indexOf uses strict equality.
-      const isMatch = comparisonValues.indexOf(array[i]) >= 0;
-      if (isMatch) {
+      const result = comparisonValues.indexOf(array[i]) >= 0;
+      if (result) {
         return !negate;
       }
     }
@@ -586,8 +588,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     for (let i = 0; i < array.length; i++) {
       const hash = hashComparisonValue(array[i], configJsonSalt, contextSalt);
       // NOTE: Array.prototype.indexOf uses strict equality.
-      const isMatch = comparisonValues.indexOf(hash) >= 0;
-      if (isMatch) {
+      const result = comparisonValues.indexOf(hash) >= 0;
+      if (result) {
         return !negate;
       }
     }
@@ -595,9 +597,9 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     return negate;
   }
 
-  private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean | string {
+  private evaluatePrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, context: EvaluateContext): boolean {
     const logBuilder = context.logBuilder;
-    logBuilder?.appendPrerequisiteFlagCondition(condition);
+    logBuilder?.appendPrerequisiteFlagCondition(condition, context.settings);
 
     const prerequisiteFlagKey = condition.prerequisiteFlagKey;
     const prerequisiteFlag = context.settings[prerequisiteFlagKey];
@@ -645,8 +647,8 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
     logBuilder?.newLine(`Prerequisite flag evaluation result: '${valueToString(prerequisiteFlagValue)}'.`)
       .newLine("Condition (")
-      .appendPrerequisiteFlagCondition(condition)
-      .append(") evaluates to ").appendEvaluationResult(result).append(".")
+      .appendPrerequisiteFlagCondition(condition, context.settings)
+      .append(") evaluates to ").appendConditionResult(result).append(".")
       .decreaseIndent()
       .newLine(")");
 
@@ -657,7 +659,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
     const logBuilder = context.logBuilder;
     logBuilder?.appendSegmentCondition(condition);
 
-    if (!context.userAttributes) {
+    if (!context.user) {
       if (!context.isMissingUserObjectLogged) {
         this.logger.userObjectIsMissing(context.key);
         context.isMissingUserObjectLogged = true;
@@ -696,7 +698,7 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
       logBuilder.newLine("Condition (").appendSegmentCondition(condition).append(")");
       (!isEvaluationError(result)
-        ? logBuilder.append(" evaluates to ").appendEvaluationResult(result)
+        ? logBuilder.append(" evaluates to ").appendConditionResult(result)
         : logBuilder.append(" failed to evaluate"))
         .append(".");
 
@@ -711,10 +713,6 @@ export class RolloutEvaluator implements IRolloutEvaluator {
 
 function isEvaluationError(isMatchOrError: boolean | string): isMatchOrError is string {
   return typeof isMatchOrError === "string";
-}
-
-export function isStringArray(value: unknown): value is string[] {
-  return isArray(value) && !value.some(item => typeof item !== "string");
 }
 
 function hashComparisonValue(value: string, configJsonSalt: string, contextSalt: string) {
@@ -756,7 +754,7 @@ function getUserAttributeValueAsNumber(attributeName: string, attributeValue: Us
   }
   let number: number;
   if (typeof attributeValue === "string"
-    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue === "NaN")) {
+    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue.trim() === "NaN")) {
     return number;
   }
   return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid decimal number`);
@@ -771,7 +769,7 @@ function getUserAttributeValueAsUnixTimeSeconds(attributeName: string, attribute
   }
   let number: number;
   if (typeof attributeValue === "string"
-    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue === "NaN")) {
+    && (!isNaN(number = parseFloatStrict(attributeValue.replace(",", "."))) || attributeValue.trim() === "NaN")) {
     return number;
   }
   return handleInvalidUserAttribute(logger, condition, key, attributeName, `'${attributeValue}' is not a valid Unix timestamp (number of seconds elapsed since Unix epoch)`);

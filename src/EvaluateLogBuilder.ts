@@ -1,7 +1,7 @@
 import { PrerequisiteFlagComparator, SegmentComparator, UserComparator } from "./ConfigJson";
-import type { PrerequisiteFlagCondition, SegmentCondition, SettingValue, TargetingRule, UserCondition, UserConditionUnion } from "./ProjectConfig";
+import type { PrerequisiteFlagCondition, SegmentCondition, Setting, SettingValue, TargetingRule, UserCondition, UserConditionUnion } from "./ProjectConfig";
 import { isAllowedValue } from "./RolloutEvaluator";
-import { formatStringList, isArray } from "./Utils";
+import { formatStringList, isArray, isStringArray } from "./Utils";
 
 const invalidValuePlaceholder = "<invalid value>";
 const invalidNamePlaceholder = "<invalid name>";
@@ -13,6 +13,9 @@ const stringListMaxLength = 10;
 export class EvaluateLogBuilder {
   private log = "";
   private indent = "";
+
+  constructor(private readonly eol: string) {
+  }
 
   resetIndent(): this {
     this.indent = "";
@@ -30,7 +33,7 @@ export class EvaluateLogBuilder {
   }
 
   newLine(text?: string): this {
-    this.log += "\n" + this.indent + (text ?? "");
+    this.log += this.eol + this.indent + (text ?? "");
     return this;
   }
 
@@ -43,20 +46,20 @@ export class EvaluateLogBuilder {
     return this.log;
   }
 
-  appendEvaluationResult(isMatch: boolean): this {
-    return this.append(`${isMatch}`);
-  }
-
   private appendUserConditionCore(comparisonAttribute: string, comparator: UserComparator, comparisonValue?: unknown) {
     return this.append(`User.${comparisonAttribute} ${formatUserComparator(comparator)} '${comparisonValue ?? invalidValuePlaceholder}'`);
   }
 
   private appendUserConditionString(comparisonAttribute: string, comparator: UserComparator, comparisonValue: string, isSensitive: boolean) {
+    if (typeof comparisonValue !== "string") {
+      return this.appendUserConditionCore(comparisonAttribute, comparator);
+    }
+
     return this.appendUserConditionCore(comparisonAttribute, comparator, !isSensitive ? comparisonValue : "<hashed value>");
   }
 
   private appendUserConditionStringList(comparisonAttribute: string, comparator: UserComparator, comparisonValue: ReadonlyArray<string>, isSensitive: boolean): this {
-    if (comparisonValue == null) {
+    if (!isStringArray(comparisonValue)) {
       return this.appendUserConditionCore(comparisonAttribute, comparator);
     }
 
@@ -74,7 +77,7 @@ export class EvaluateLogBuilder {
   }
 
   private appendUserConditionNumber(comparisonAttribute: string, comparator: UserComparator, comparisonValue: number, isDateTime?: boolean) {
-    if (comparisonValue == null) {
+    if (typeof comparisonValue !== "number") {
       return this.appendUserConditionCore(comparisonAttribute, comparator);
     }
 
@@ -86,12 +89,14 @@ export class EvaluateLogBuilder {
   }
 
   appendUserCondition(condition: UserConditionUnion): this {
-    const { comparisonAttribute, comparator } = condition;
+    const comparisonAttribute = typeof condition.comparisonAttribute === "string" ? condition.comparisonAttribute : invalidNamePlaceholder;
+    const comparator = condition.comparator;
+
     switch (condition.comparator) {
-      case UserComparator.IsOneOf:
-      case UserComparator.IsNotOneOf:
-      case UserComparator.ContainsAnyOf:
-      case UserComparator.NotContainsAnyOf:
+      case UserComparator.TextIsOneOf:
+      case UserComparator.TextIsNotOneOf:
+      case UserComparator.TextContainsAnyOf:
+      case UserComparator.TextNotContainsAnyOf:
       case UserComparator.SemVerIsOneOf:
       case UserComparator.SemVerIsNotOneOf:
       case UserComparator.TextStartsWithAnyOf:
@@ -118,8 +123,8 @@ export class EvaluateLogBuilder {
       case UserComparator.NumberGreaterOrEquals:
         return this.appendUserConditionNumber(comparisonAttribute, comparator, condition.comparisonValue);
 
-      case UserComparator.SensitiveIsOneOf:
-      case UserComparator.SensitiveIsNotOneOf:
+      case UserComparator.SensitiveTextIsOneOf:
+      case UserComparator.SensitiveTextIsNotOneOf:
       case UserComparator.SensitiveTextStartsWithAnyOf:
       case UserComparator.SensitiveTextNotStartsWithAnyOf:
       case UserComparator.SensitiveTextEndsWithAnyOf:
@@ -141,8 +146,12 @@ export class EvaluateLogBuilder {
     }
   }
 
-  appendPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition): this {
-    const prerequisiteFlagKey = condition.prerequisiteFlagKey;
+  appendPrerequisiteFlagCondition(condition: PrerequisiteFlagCondition, settings: Readonly<{ [name: string]: Setting }>): this {
+    const prerequisiteFlagKey =
+      typeof condition.prerequisiteFlagKey !== "string" ? invalidNamePlaceholder :
+      !(condition.prerequisiteFlagKey in settings) ? invalidReferencePlaceholder :
+      condition.prerequisiteFlagKey;
+
     const comparator = condition.comparator;
     const comparisonValue = condition.comparisonValue;
 
@@ -153,18 +162,24 @@ export class EvaluateLogBuilder {
     const segment = condition.segment;
     const comparator = condition.comparator;
 
-    const segmentName = segment?.name ??
-      (segment == null ? invalidReferencePlaceholder : invalidNamePlaceholder);
+    const segmentName =
+      segment == null ? invalidReferencePlaceholder :
+      typeof segment.name !== "string" || !segment.name ? invalidNamePlaceholder :
+      segment.name;
 
     return this.append(`User ${formatSegmentComparator(comparator)} '${segmentName}'`);
   }
 
-  appendConditionConsequence(isMatch: boolean): this {
-    this.append(" => ").appendEvaluationResult(isMatch);
-    return isMatch ? this : this.append(", skipping the remaining AND conditions");
+  appendConditionResult(result: boolean): this {
+    return this.append(`${result}`);
   }
 
-  appendTargetingRuleThenPart(targetingRule: TargetingRule, newLine: boolean): this {
+  appendConditionConsequence(result: boolean): this {
+    this.append(" => ").appendConditionResult(result);
+    return result ? this : this.append(", skipping the remaining AND conditions");
+  }
+
+  private appendTargetingRuleThenPart(targetingRule: TargetingRule, newLine: boolean): this {
     (newLine ? this.newLine() : this.append(" "))
       .append("THEN");
 
@@ -184,14 +199,14 @@ export class EvaluateLogBuilder {
 
 export function formatUserComparator(comparator: UserComparator): string {
   switch (comparator) {
-    case UserComparator.IsOneOf:
-    case UserComparator.SensitiveIsOneOf:
+    case UserComparator.TextIsOneOf:
+    case UserComparator.SensitiveTextIsOneOf:
     case UserComparator.SemVerIsOneOf: return "IS ONE OF";
-    case UserComparator.IsNotOneOf:
-    case UserComparator.SensitiveIsNotOneOf:
+    case UserComparator.TextIsNotOneOf:
+    case UserComparator.SensitiveTextIsNotOneOf:
     case UserComparator.SemVerIsNotOneOf: return "IS NOT ONE OF";
-    case UserComparator.ContainsAnyOf: return "CONTAINS ANY OF";
-    case UserComparator.NotContainsAnyOf: return "NOT CONTAINS ANY OF";
+    case UserComparator.TextContainsAnyOf: return "CONTAINS ANY OF";
+    case UserComparator.TextNotContainsAnyOf: return "NOT CONTAINS ANY OF";
     case UserComparator.SemVerLess:
     case UserComparator.NumberLess: return "<";
     case UserComparator.SemVerLessOrEquals:
@@ -225,7 +240,7 @@ export function formatUserComparator(comparator: UserComparator): string {
 }
 
 export function formatUserCondition(condition: UserConditionUnion): string {
-  return new EvaluateLogBuilder().appendUserCondition(condition).toString();
+  return new EvaluateLogBuilder("").appendUserCondition(condition).toString();
 }
 
 export function formatPrerequisiteFlagComparator(comparator: PrerequisiteFlagComparator): string {

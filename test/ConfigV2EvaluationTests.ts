@@ -235,6 +235,7 @@ describe("Setting evaluation (config v2)", () => {
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", Infinity, ">5"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", NaN, "<>4.2"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "-Infinity", "<2.1"],
+      ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", " -Infinity ", "<2.1"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "-1", "<2.1"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "2", "<2.1"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "2.1", "<=2,1"],
@@ -242,7 +243,9 @@ describe("Setting evaluation (config v2)", () => {
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "3", "<>4.2"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "5", ">=5"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "Infinity", ">5"],
+      ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", " Infinity ", ">5"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "NaN", "<>4.2"],
+      ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", " NaN ", "<>4.2"],
       ["configcat-sdk-1/PKDVCLf-Hq-h-kCzMp-L7Q/FCWN-k1dV0iBf8QZrDgjdw", "numberWithPercentage", "12345", "Custom1", "NaNa", "80%"],
       // Date time-based comparisons
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", new Date("2023-03-31T23:59:59.9990000Z"), false],
@@ -265,12 +268,15 @@ describe("Setting evaluation (config v2)", () => {
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", 1682899199, true],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", 1682899201, false],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "-Infinity", false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", " -Infinity ", false],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "1680307199.999", false],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "1680307200.001", true],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "1682899199.999", true],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "1682899200.001", false],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "+Infinity", false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", " +Infinity ", false],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", "NaN", false],
+      ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "boolTrueIn202304", "12345", "Custom1", " NaN ", false],
       // String array-based comparisons
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "stringArrayContainsAnyOfDogDefaultCat", "12345", "Custom1", ["x", "read"], "Dog"],
       ["configcat-sdk-1/JcPbCGl_1E-K9M-fJOyKyQ/OfQqcTjfFUGBwMKqtyEOrQ", "stringArrayContainsAnyOfDogDefaultCat", "12345", "Custom1", ["x", "Read"], "Cat"],
@@ -293,4 +299,156 @@ describe("Setting evaluation (config v2)", () => {
       assert.strictEqual(evaluationDetails.value, expectedReturnValue);
     });
   }
+
+  for (const [key, customAttributeValue, expectedReturnValue] of
+    <[string, number | Date | ReadonlyArray<string>, string][]>[
+      ["numberToStringConversion", .12345, "1"],
+      ["numberToStringConversionInt", 125.0, "4"],
+      ["numberToStringConversionPositiveExp", -1.23456789e96, "2"],
+      ["numberToStringConversionNegativeExp", -12345.6789E-100, "4"],
+      ["numberToStringConversionNaN", NaN, "3"],
+      ["numberToStringConversionPositiveInf", Infinity, "4"],
+      ["numberToStringConversionNegativeInf", -Infinity, "3"],
+      ["dateToStringConversion", new Date("2023-03-31T23:59:59.9990000Z"), "3"],
+      ["dateToStringConversion", 1680307199.999, "3"],
+      ["dateToStringConversionNaN", NaN, "3"],
+      ["dateToStringConversionPositiveInf", Infinity, "1"],
+      ["dateToStringConversionNegativeInf", -Infinity, "5"],
+      ["stringArrayToStringConversion", ["read", "Write", " eXecute "], "4"],
+      ["stringArrayToStringConversionEmpty", [], "5"],
+      ["stringArrayToStringConversionSpecialChars", ["+<>%\"'\\/\t\r\n"], "3"],
+      ["stringArrayToStringConversionUnicode", ["äöüÄÖÜçéèñışğâ¢™✓😀"], "2"],
+    ]) {
+    it(`Comparison attribute conversion to canonical string representation - key: ${key} | customAttributeValue: ${customAttributeValue}`, async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "comparison_attribute_conversion.json");
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = new User("12345", void 0, void 0, {
+        ["Custom1"]: customAttributeValue,
+      });
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, "default", user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+    });
+  }
+
+  for (const [key, expectedReturnValue] of
+    <[string, string][]>[
+      ["isoneof", "no trim"],
+      ["isnotoneof", "no trim"],
+      ["isoneofhashed", "no trim"],
+      ["isnotoneofhashed", "no trim"],
+      ["equalshashed", "no trim"],
+      ["notequalshashed", "no trim"],
+      ["arraycontainsanyofhashed", "no trim"],
+      ["arraynotcontainsanyofhashed", "no trim"],
+      ["equals", "no trim"],
+      ["notequals", "no trim"],
+      ["startwithanyof", "no trim"],
+      ["notstartwithanyof", "no trim"],
+      ["endswithanyof", "no trim"],
+      ["notendswithanyof", "no trim"],
+      ["arraycontainsanyof", "no trim"],
+      ["arraynotcontainsanyof", "no trim"],
+      ["startwithanyofhashed", "no trim"],
+      ["notstartwithanyofhashed", "no trim"],
+      ["endswithanyofhashed", "no trim"],
+      ["notendswithanyofhashed", "no trim"],
+      //semver comparators user values trimmed because of backward compatibility
+      ["semverisoneof", "4 trim"],
+      ["semverisnotoneof", "5 trim"],
+      ["semverless", "6 trim"],
+      ["semverlessequals", "7 trim"],
+      ["semvergreater", "8 trim"],
+      ["semvergreaterequals", "9 trim"],
+      //number and date comparators user values trimmed because of backward compatibility
+      ["numberequals", "10 trim"],
+      ["numbernotequals", "11 trim"],
+      ["numberless", "12 trim"],
+      ["numberlessequals", "13 trim"],
+      ["numbergreater", "14 trim"],
+      ["numbergreaterequals", "15 trim"],
+      ["datebefore", "18 trim"],
+      ["dateafter", "19 trim"],
+      //"contains any of" and "not contains any of" is a special case, the not trimmed user attribute checked against not trimmed comparator values.
+      ["containsanyof", "no trim"],
+      ["notcontainsanyof", "no trim"],
+    ]) {
+    it(`Comparison attribute trimming - key: ${key}`, async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "comparison_attribute_trimming.json");
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = new User(" 12345 ", void 0, "[\" USA \"]", {
+        ["Version"]: " 1.0.0 ",
+        ["Number"]: " 3 ",
+        ["Date"]: " 1705253400 "
+      });
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, "default", user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+    });
+  }
+
+  for (const [key, expectedReturnValue] of
+    <[string, string][]>[
+      ["isoneof", "no trim"],
+      ["isnotoneof", "no trim"],
+      ["containsanyof", "no trim"],
+      ["notcontainsanyof", "no trim"],
+      ["isoneofhashed", "no trim"],
+      ["isnotoneofhashed", "no trim"],
+      ["equalshashed", "no trim"],
+      ["notequalshashed", "no trim"],
+      ["arraycontainsanyofhashed", "no trim"],
+      ["arraynotcontainsanyofhashed", "no trim"],
+      ["equals", "no trim"],
+      ["notequals", "no trim"],
+      ["startwithanyof", "no trim"],
+      ["notstartwithanyof", "no trim"],
+      ["endswithanyof", "no trim"],
+      ["notendswithanyof", "no trim"],
+      ["arraycontainsanyof", "no trim"],
+      ["arraynotcontainsanyof", "no trim"],
+      ["startwithanyofhashed", "no trim"],
+      ["notstartwithanyofhashed", "no trim"],
+      ["endswithanyofhashed", "no trim"],
+      ["notendswithanyofhashed", "no trim"],
+      //semver comparator values trimmed because of backward compatibility
+      ["semverisoneof", "4 trim"],
+      ["semverisnotoneof", "5 trim"],
+      ["semverless", "6 trim"],
+      ["semverlessequals", "7 trim"],
+      ["semvergreater", "8 trim"],
+      ["semvergreaterequals", "9 trim"],
+    ]) {
+    it(`Comparison value trimming - key: ${key}`, async () => {
+      const configLocation = new LocalFileConfigLocation("test", "data", "comparison_value_trimming.json");
+      const config = await configLocation.fetchConfigAsync();
+
+      const fakeLogger = new FakeLogger();
+      const logger = new LoggerWrapper(fakeLogger);
+      const evaluator = new RolloutEvaluator(logger);
+
+      const user = new User("12345", void 0, "[\"USA\"]", {
+        ["Version"]: "1.0.0",
+        ["Number"]: "3",
+        ["Date"]: "1705253400"
+      });
+
+      const evaluationDetails = evaluate(evaluator, config.settings, key, "default", user!, null, logger);
+
+      assert.strictEqual(evaluationDetails.value, expectedReturnValue);
+    });
+  }
+
 });
