@@ -139,6 +139,24 @@ describe("DataGovernance", () => {
     configService.validateCall(1, customUrl);
   });
 
+  it("sdk global, custom - should respect custom url when redirect is not forced", async () => {
+    // In this case
+    // the first invocation should call https://cdn-custom.configcat.com
+    // the second invocation should call https://cdn-custom.configcat.com
+    const configService = new FakeConfigServiceBase(DataGovernance.Global, customUrl);
+    configService.prepareResponse(customUrl, globalUrl, 1, null);
+
+    let [, config] = await configService.refreshLogicAsync();
+    assert.isNull(JSON.parse(config.configJson!)["f"]);
+    configService.validateCallCount(1);
+    configService.validateCall(0, customUrl);
+
+    [, config] = await configService.refreshLogicAsync();
+    assert.isNull(JSON.parse(config.configJson!)["f"]);
+    configService.validateCallCount(2);
+    configService.validateCall(1, customUrl);
+  });
+
   it("sdk global, forced", async () => {
     // In this case
     // the first invocation should call https://cdn-global.configcat.com
