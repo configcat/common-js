@@ -164,11 +164,6 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   }
 
   private async refreshWorkerLogic(isFirstIteration: boolean, initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig> | null) {
-    if (this.disposed) {
-      this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called on a disposed client.");
-      return;
-    }
-
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
     const latestConfig = await (initialCacheSyncUp ?? this.options.cache.get(this.cacheKey));
