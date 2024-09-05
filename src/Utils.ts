@@ -1,10 +1,49 @@
-export function delay(delayMs: number, delayCleanup?: { clearTimer?: () => void } | null): Promise<void> {
-  let timerId: ReturnType<typeof setTimeout>;
-  const promise = new Promise<void>(resolve => timerId = setTimeout(resolve, delayMs));
-  if (delayCleanup) {
-    delayCleanup.clearTimer = () => clearTimeout(timerId);
+// NOTE: Normally, we'd just use AbortController/AbortSignal, however that may not be available on all platforms,
+// and we don't want to include a complete polyfill. So we implement a simplified version that fits our use case.
+export class AbortToken {
+  private callbacks: (() => void)[] | null = [];
+  get aborted(): boolean { return !this.callbacks; }
+
+  abort(): void {
+    if (!this.aborted) {
+      const callbacks = this.callbacks!;
+      this.callbacks = null;
+      for (const callback of callbacks) {
+        callback();
+      }
+    }
   }
-  return promise;
+
+  registerCallback(callback: () => void): () => void {
+    if (this.aborted) {
+      callback();
+      return () => { };
+    }
+
+    this.callbacks!.push(callback);
+    return () => {
+      const callbacks = this.callbacks;
+      let index: number;
+      if (callbacks && (index = callbacks.indexOf(callback)) >= 0) {
+        callbacks.splice(index, 1);
+      }
+    };
+  }
+}
+
+export function delay(delayMs: number, abortToken?: AbortToken | null): Promise<boolean> {
+  let timerId: ReturnType<typeof setTimeout>;
+  return new Promise<boolean>(resolve => {
+    const unregisterAbortCallback = abortToken?.registerCallback(() => {
+      clearTimeout(timerId);
+      resolve(false);
+    });
+
+    timerId = setTimeout(() => {
+      unregisterAbortCallback?.();
+      resolve(true);
+    }, delayMs);
+  });
 }
 
 export function errorToString(err: any, includeStackTrace = false): string {
