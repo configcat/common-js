@@ -185,8 +185,10 @@ export class FakeConfigFetcherWithAlwaysVariableEtag extends FakeConfigFetcher {
     return '{"f":{"debug":{"t":0,"v":{"b":true},"i":"abcdefgh"}}}';
   }
 
+  private eTag = 0;
+
   getEtag(): string {
-    return Math.random().toString();
+    return `"${(this.eTag++).toString(16).padStart(8, "0")}"`;
   }
 }
 
