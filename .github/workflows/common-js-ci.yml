@@ -18,6 +18,9 @@ jobs:
       matrix:
         node: [ 14, 16, 18, 20 ]
         os: [ macos-latest, ubuntu-latest, windows-latest ]
+        exclude:
+          - node: 14
+            os: macos-latest
       fail-fast: false
     name: Test [${{ matrix.os }}, Node ${{ matrix.node }}]
     steps:
