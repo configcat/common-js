@@ -6,6 +6,8 @@ import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
 import type { ProjectConfig } from "./ProjectConfig";
 import { AbortToken, delay } from "./Utils";
 
+export const POLL_EXPIRATION_TOLERANCE_MS = 500;
+
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
 
   private initialized: boolean;
@@ -13,6 +15,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   private signalInitialization: () => void = () => { /* Intentional no-op. */ };
   private stopToken = new AbortToken();
   private readonly pollIntervalMs: number;
+  private readonly pollExpirationMs: number;
   readonly readyPromise: Promise<ClientCacheState>;
 
   constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
@@ -20,6 +23,9 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     super(configFetcher, options);
 
     this.pollIntervalMs = options.pollIntervalSeconds * 1000;
+    // Due to the inaccuracy of the timer, some tolerance should be allowed when checking for
+    // cache expiration in the polling loop, otherwise some fetch operations may be missed.
+    this.pollExpirationMs = this.pollIntervalMs - POLL_EXPIRATION_TOLERANCE_MS;
 
     const initialCacheSyncUp = this.syncUpWithCache();
 
@@ -165,28 +171,20 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
-    if (isFirstIteration) {
-      const latestConfig = await (initialCacheSyncUp ?? this.options.cache.get(this.cacheKey));
-      if (latestConfig.isExpired(this.pollIntervalMs)) {
-        // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
-        // i.e. to not break usage patterns like this:
-        // ```
-        // client.getValueAsync("SOME_KEY", false).then(value => { /* ... */ }, user);
-        // client.dispose();
-        // ```
-        if (!this.isOfflineExactly) {
-          await this.refreshConfigCoreAsync(latestConfig);
-        }
-      }
-      else {
-        this.signalInitialization();
-      }
-    }
-    else {
-      if (!this.isOffline) {
-        const latestConfig = await this.options.cache.get(this.cacheKey);
+    const latestConfig = await (initialCacheSyncUp ?? this.options.cache.get(this.cacheKey));
+    if (latestConfig.isExpired(this.pollExpirationMs)) {
+      // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
+      // i.e. to not break usage patterns like this:
+      // ```
+      // client.getValueAsync("SOME_KEY", false).then(value => { /* ... */ }, user);
+      // client.dispose();
+      // ```
+      if (isFirstIteration ? !this.isOfflineExactly : !this.isOffline) {
         await this.refreshConfigCoreAsync(latestConfig);
       }
+    }
+    else if (isFirstIteration) {
+      this.signalInitialization();
     }
   }
 
