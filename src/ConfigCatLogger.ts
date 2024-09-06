@@ -231,6 +231,14 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
+  autoPollConfigServiceErrorDuringPolling(ex: any): LogMessage {
+    return this.log(
+      LogLevel.Error, 1200,
+      "Error occurred during auto polling.",
+      ex
+    );
+  }
+
   /* SDK-specific error messages (2000-2999) */
 
   settingForVariationIdIsNotPresent(variationId: string): LogMessage {

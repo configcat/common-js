@@ -526,11 +526,13 @@ describe("ConfigCatClient", () => {
       setupHooks: hooks => hooks.on("configChanged", () => configChangedEventCount++)
     };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", userOptions, null);
-    new ConfigCatClient(options, configCatKernel);
+    const client = new ConfigCatClient(options, configCatKernel);
+    try {
+      await delay(2.5 * pollIntervalSeconds * 1000);
 
-    await delay(2.5 * pollIntervalSeconds * 1000);
-
-    assert.equal(configChangedEventCount, 3);
+      assert.equal(configChangedEventCount, 3);
+    }
+    finally { client.dispose(); }
   });
 
   it("Initialization With AutoPollOptions - config doesn't change - should fire configChanged only once", async () => {
@@ -544,11 +546,13 @@ describe("ConfigCatClient", () => {
       setupHooks: hooks => hooks.on("configChanged", () => configChangedEventCount++)
     };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", userOptions, null);
-    new ConfigCatClient(options, configCatKernel);
+    const client = new ConfigCatClient(options, configCatKernel);
+    try {
+      await delay(2.5 * pollIntervalSeconds * 1000);
 
-    await delay(2.5 * pollIntervalSeconds * 1000);
-
-    assert.equal(configChangedEventCount, 1);
+      assert.equal(configChangedEventCount, 1); 
+    }
+    finally { client.dispose(); }
   });
 
   it("Initialization With AutoPollOptions - with maxInitWaitTimeSeconds - getValueAsync should wait", async () => {

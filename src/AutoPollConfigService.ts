@@ -4,15 +4,18 @@ import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
 import type { ProjectConfig } from "./ProjectConfig";
-import { delay } from "./Utils";
+import { AbortToken, delay } from "./Utils";
+
+export const POLL_EXPIRATION_TOLERANCE_MS = 500;
 
 export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> implements IConfigService {
 
   private initialized: boolean;
   private readonly initializationPromise: Promise<boolean>;
   private signalInitialization: () => void = () => { /* Intentional no-op. */ };
-  private workerTimerId?: ReturnType<typeof setTimeout>;
+  private stopToken = new AbortToken();
   private readonly pollIntervalMs: number;
+  private readonly pollExpirationMs: number;
   readonly readyPromise: Promise<ClientCacheState>;
 
   constructor(configFetcher: IConfigFetcher, options: AutoPollOptions) {
@@ -20,6 +23,9 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     super(configFetcher, options);
 
     this.pollIntervalMs = options.pollIntervalSeconds * 1000;
+    // Due to the inaccuracy of the timer, some tolerance should be allowed when checking for
+    // cache expiration in the polling loop, otherwise some fetch operations may be missed.
+    this.pollExpirationMs = this.pollIntervalMs - POLL_EXPIRATION_TOLERANCE_MS;
 
     const initialCacheSyncUp = this.syncUpWithCache();
 
@@ -48,7 +54,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     });
 
     if (!options.offline) {
-      this.startRefreshWorker(initialCacheSyncUp);
+      this.startRefreshWorker(initialCacheSyncUp, this.stopToken);
     }
   }
 
@@ -58,12 +64,12 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       return true;
     }
 
-    const delayCleanup: { clearTimer?: () => void } = {};
+    const abortToken = new AbortToken();
     const success = await Promise.race([
       initSignalPromise.then(() => true),
-      delay(this.options.maxInitWaitTimeSeconds * 1000, delayCleanup).then(() => false)
+      delay(this.options.maxInitWaitTimeSeconds * 1000, abortToken).then(() => false)
     ]);
-    delayCleanup.clearTimer!();
+    abortToken.abort();
     return success;
   }
 
@@ -105,7 +111,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   dispose(): void {
     this.options.logger.debug("AutoPollConfigService.dispose() called.");
     super.dispose();
-    if (this.workerTimerId) {
+    if (!this.stopToken.aborted) {
       this.stopRefreshWorker();
     }
   }
@@ -116,58 +122,65 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   }
 
   protected setOnlineCore(): void {
-    this.startRefreshWorker();
+    this.startRefreshWorker(null, this.stopToken);
   }
 
   protected setOfflineCore(): void {
     this.stopRefreshWorker();
+    this.stopToken = new AbortToken();
   }
 
-  private async startRefreshWorker(initialCacheSyncUp?: ProjectConfig | Promise<ProjectConfig>) {
+  private async startRefreshWorker(initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig> | null, stopToken: AbortToken) {
     this.options.logger.debug("AutoPollConfigService.startRefreshWorker() called.");
 
-    const delayMs = this.pollIntervalMs;
+    let isFirstIteration = true;
+    while (!stopToken.aborted) {
+      try {
+        const scheduledNextTimeMs = new Date().getTime() + this.pollIntervalMs;
+        try {
+          await this.refreshWorkerLogic(isFirstIteration, initialCacheSyncUp);
+        }
+        catch (err) {
+          this.options.logger.autoPollConfigServiceErrorDuringPolling(err);
+        }
+
+        const realNextTimeMs = scheduledNextTimeMs - new Date().getTime();
+        if (realNextTimeMs > 0) {
+          await delay(realNextTimeMs, stopToken);
+        }
+      }
+      catch (err) {
+        this.options.logger.autoPollConfigServiceErrorDuringPolling(err);
+      }
+
+      isFirstIteration = false;
+      initialCacheSyncUp = null; // allow GC to collect the Promise and its result
+    }
+  }
+
+  private stopRefreshWorker() {
+    this.options.logger.debug("AutoPollConfigService.stopRefreshWorker() called.");
+    this.stopToken.abort();
+  }
+
+  private async refreshWorkerLogic(isFirstIteration: boolean, initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig> | null) {
+    this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
     const latestConfig = await (initialCacheSyncUp ?? this.options.cache.get(this.cacheKey));
-    if (latestConfig.isExpired(this.pollIntervalMs)) {
+    if (latestConfig.isExpired(this.pollExpirationMs)) {
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:
       // ```
       // client.getValueAsync("SOME_KEY", false).then(value => { /* ... */ }, user);
       // client.dispose();
       // ```
-      if (!this.isOfflineExactly) {
+      if (isFirstIteration ? !this.isOfflineExactly : !this.isOffline) {
         await this.refreshConfigCoreAsync(latestConfig);
       }
     }
-    else {
+    else if (isFirstIteration) {
       this.signalInitialization();
     }
-
-    this.options.logger.debug("AutoPollConfigService.startRefreshWorker() - calling refreshWorkerLogic()'s setTimeout.");
-    this.workerTimerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
-  }
-
-  private stopRefreshWorker() {
-    this.options.logger.debug("AutoPollConfigService.stopRefreshWorker() - clearing setTimeout.");
-    clearTimeout(this.workerTimerId);
-  }
-
-  private async refreshWorkerLogic(delayMs: number) {
-    if (this.disposed) {
-      this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called on a disposed client.");
-      return;
-    }
-
-    this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
-
-    if (!this.isOffline) {
-      const latestConfig = await this.options.cache.get(this.cacheKey);
-      await this.refreshConfigCoreAsync(latestConfig);
-    }
-
-    this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - calling refreshWorkerLogic()'s setTimeout.");
-    this.workerTimerId = setTimeout(d => this.refreshWorkerLogic(d), delayMs, delayMs);
   }
 
   getCacheState(cachedConfig: ProjectConfig): ClientCacheState {

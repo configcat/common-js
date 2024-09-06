@@ -2,7 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import { EqualMatchingInjectorConfig, It, Mock, RejectedPromiseFactory, ResolvedPromiseFactory, Times } from "moq.ts";
 import { MimicsRejectedAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, Presets, ReturnsAsyncPresetFactory, RootMockProvider, ThrowsAsyncPresetFactory } from "moq.ts/internal";
-import { AutoPollConfigService } from "../src/AutoPollConfigService";
+import { AutoPollConfigService, POLL_EXPIRATION_TOLERANCE_MS } from "../src/AutoPollConfigService";
 import { IConfigCache, InMemoryConfigCache } from "../src/ConfigCatCache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
@@ -167,7 +167,7 @@ describe("ConfigServiceBaseTests", () => {
     const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew);
 
     const time: number = new Date().getTime();
-    const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld).with(time - (1.5 * pollInterval * 1000));
+    const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld).with(time - (1.5 * pollInterval * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
 
     const cache = new InMemoryConfigCache();
 
@@ -214,7 +214,7 @@ describe("ConfigServiceBaseTests", () => {
     const pollInterval = 10;
 
     const time: number = new Date().getTime();
-    const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 1000) + 50); // 50ms for tolerance
+    const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
 
     const cache = new InMemoryConfigCache();
 
@@ -453,7 +453,7 @@ describe("ConfigServiceBaseTests", () => {
     const fr: FetchResult = createFetchResult();
 
     let cachedPc: ProjectConfig = createConfigFromFetchResult(fr);
-    cachedPc = cachedPc.with(cachedPc.timestamp - 0.5 * pollIntervalSeconds * 1000);
+    cachedPc = cachedPc.with(cachedPc.timestamp - pollIntervalSeconds * 1000 + 1.5 * POLL_EXPIRATION_TOLERANCE_MS);
 
     const cache = new FakeCache();
     cache.set("", cachedPc);
@@ -474,6 +474,9 @@ describe("ConfigServiceBaseTests", () => {
 
     const service = new AutoPollConfigService(fetcherMock.object(), options);
 
+    // Give a bit of time to the polling loop to do the first iteration.
+    await delay(pollIntervalSeconds / 4 * 1000);
+
     const actualPc = await service.getConfig();
 
     // Assert
@@ -491,17 +494,14 @@ describe("ConfigServiceBaseTests", () => {
     const fr: FetchResult = createFetchResult();
 
     let cachedPc: ProjectConfig = createConfigFromFetchResult(fr);
-    cachedPc = cachedPc.with(cachedPc.timestamp - 1.5 * pollIntervalSeconds * 1000);
+    cachedPc = cachedPc.with(cachedPc.timestamp - pollIntervalSeconds * 1000 + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
 
     const cache = new FakeCache();
     cache.set("", cachedPc);
 
     const fetcherMock = new Mock<IConfigFetcher>()
       .setup(m => m.fetchLogic(It.IsAny<OptionsBase>(), It.IsAny<string>()))
-      .callback(async () => {
-        await delay(500);
-        return { statusCode: 200, reasonPhrase: "OK", eTag: fr.config.httpETag, body: fr.config.configJson };
-      });
+      .returnsAsync({ statusCode: 200, reasonPhrase: "OK", eTag: fr.config.httpETag, body: fr.config.configJson });
 
     const options = new AutoPollOptions(
       "APIKEY", "common", "1.0.0",
@@ -514,6 +514,9 @@ describe("ConfigServiceBaseTests", () => {
     // Act
 
     const service = new AutoPollConfigService(fetcherMock.object(), options);
+
+    // Give a bit of time to the polling loop to do the first iteration.
+    await delay(pollIntervalSeconds / 4 * 1000);
 
     const actualPc = await service.getConfig();
 
