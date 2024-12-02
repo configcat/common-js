@@ -46,7 +46,7 @@
     "eslint-plugin-import": "^2.27.5",
     "mocha": "^10.2.0",
     "moq.ts": "^7.4.1",
-    "nyc": "^14.1.1",
+    "nyc": "^15.0.0",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",
     "tunnel": "^0.0.6",
