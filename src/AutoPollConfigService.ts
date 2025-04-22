@@ -4,7 +4,7 @@ import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
 import type { ProjectConfig } from "./ProjectConfig";
-import { AbortToken, delay } from "./Utils";
+import { AbortToken, delay, getMonotonicTimeMs } from "./Utils";
 
 export const POLL_EXPIRATION_TOLERANCE_MS = 500;
 
@@ -136,7 +136,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
     let isFirstIteration = true;
     while (!stopToken.aborted) {
       try {
-        const scheduledNextTimeMs = new Date().getTime() + this.pollIntervalMs;
+        const scheduledNextTimeMs = getMonotonicTimeMs() + this.pollIntervalMs;
         try {
           await this.refreshWorkerLogic(isFirstIteration, initialCacheSyncUp);
         }
@@ -144,7 +144,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
           this.options.logger.autoPollConfigServiceErrorDuringPolling(err);
         }
 
-        const realNextTimeMs = scheduledNextTimeMs - new Date().getTime();
+        const realNextTimeMs = scheduledNextTimeMs - getMonotonicTimeMs();
         if (realNextTimeMs > 0) {
           await delay(realNextTimeMs, stopToken);
         }
