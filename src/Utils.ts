@@ -175,7 +175,7 @@ export function parseFloatStrict(value: unknown): number {
     return value;
   }
 
-  if (typeof value !== "string" || !value.length || /^\s*$|^\s*0[^\d.e]/.test(value)) {
+  if (typeof value !== "string" || !value.length || /^\s*$|^\s*0[^\d.eE]/.test(value)) {
     return NaN;
   }
 
