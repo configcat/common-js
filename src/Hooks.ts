@@ -6,11 +6,24 @@ import type { IEvaluationDetails } from "./RolloutEvaluator";
 
 /** Hooks (events) that can be emitted by `ConfigCatClient`. */
 export type HookEvents = {
-  /** Occurs when the client is ready to provide the actual value of feature flags or settings. */
+  /**
+   * Occurs when the client reaches the ready state, i.e. completes initialization.
+   *
+   * @remarks Ready state is reached as soon as the initial sync with the external cache (if any) completes.
+   * If this does not produce up-to-date config data, and the client is online (i.e. HTTP requests are allowed),
+   * the first config fetch operation is also awaited in Auto Polling mode before ready state is reported.
+   *
+   * That is, reaching the ready state usually means the client is ready to evaluate feature flags and settings.
+   * However, please note that this is not guaranteed. In case of initialization failure or timeout, the local cache
+   * may be empty or expired even after the ready state is reported. You can verify this by checking the `cacheState` parameter.
+   */
   clientReady: [cacheState: ClientCacheState];
   /** Occurs after the value of a feature flag of setting has been evaluated. */
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
-  /** Occurs after the locally cached config has been updated. */
+  /**
+   * Occurs after the locally cached config has been updated to a newer version, either as a result of synchronization
+   * with the external cache, or as a result of fetching a newer version from the ConfigCat CDN.
+   */
   configChanged: [newConfig: IConfig];
   /** Occurs in the case of a failure in the client. */
   clientError: [message: string, exception?: any];

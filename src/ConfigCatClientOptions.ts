@@ -15,11 +15,11 @@ import type { User } from "./User";
 
 /** Specifies the supported polling modes. */
 export enum PollingMode {
-  /** The ConfigCat SDK downloads the latest values automatically and stores them in the local cache. */
+  /** The ConfigCat SDK downloads the latest config data automatically and stores it in the local cache. */
   AutoPoll = 0,
-  /** The ConfigCat SDK downloads the latest setting values only if they are not present in the local cache, or if the cache entry has expired. */
+  /** The ConfigCat SDK downloads the latest config data only if it is not present in the local cache, or if it is but has expired. */
   LazyLoad = 1,
-  /** The ConfigCat SDK will not download the config JSON automatically. You need to update the cache manually, by calling `forceRefresh()`. */
+  /** The ConfigCat SDK will not download the config data automatically. You need to update the cache manually, by calling `forceRefreshAsync()`. */
   ManualPoll = 2
 }
 
@@ -92,14 +92,15 @@ export interface IOptions {
 export interface IAutoPollOptions extends IOptions {
   /**
    * Config refresh interval.
-   * Specifies how frequently the locally cached config will be refreshed by fetching the latest version from the remote server.
+   * Specifies how frequently the locally cached config will be updated by synchronizing with
+   * the external cache and/or by fetching the latest version from the ConfigCat CDN.
    *
    * Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483 seconds.
    */
   pollIntervalSeconds?: number;
 
   /**
-   * Maximum waiting time between initialization and the first config acquisition.
+   * Maximum waiting time before reporting the ready state, i.e. emitting the `clientReady` event.
    *
    * Default value is 5 seconds. Maximum value is 2147483 seconds. Negative values mean infinite waiting.
    */
@@ -113,7 +114,9 @@ export interface IManualPollOptions extends IOptions {
 /** Options used to configure the ConfigCat SDK in the case of Lazy Loading mode. */
 export interface ILazyLoadingOptions extends IOptions {
   /**
-   * Cache time to live value. Specifies how long the locally cached config can be used before refreshing it again by fetching the latest version from the remote server.
+   * Cache time to live value.
+   * Specifies how long the locally cached config can be used before updating it again
+   * by fetching the latest version from the ConfigCat CDN.
    *
    * Default value is 60 seconds. Minimum value is 1 second. Maximum value is 2147483647 seconds.
    */
