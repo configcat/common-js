@@ -1,3 +1,4 @@
+import { ExternalConfigCache } from "./ConfigCatCache";
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
@@ -101,6 +102,9 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     if (!this.isOffline) {
       const [fetchResult, config] = await this.refreshConfigCoreAsync(latestConfig);
       return [RefreshResult.from(fetchResult), config];
+    }
+    else if (this.options.cache instanceof ExternalConfigCache) {
+      return [RefreshResult.success(), latestConfig];
     }
     else {
       const errorMessage = this.options.logger.configServiceCannotInitiateHttpCalls().toString();
@@ -273,11 +277,11 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     return this.status !== ConfigServiceStatus.Online;
   }
 
-  protected setOnlineCore(): void { /* Intentionally empty. */ }
+  protected goOnline(): void { /* Intentionally empty. */ }
 
   setOnline(): void {
     if (this.status === ConfigServiceStatus.Offline) {
-      this.setOnlineCore();
+      this.goOnline();
       this.status = ConfigServiceStatus.Online;
       this.options.logger.configServiceStatusChanged(ConfigServiceStatus[this.status]);
     }
@@ -286,11 +290,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  protected setOfflineCore(): void { /* Intentionally empty. */ }
-
   setOffline(): void {
     if (this.status === ConfigServiceStatus.Online) {
-      this.setOfflineCore();
       this.status = ConfigServiceStatus.Offline;
       this.options.logger.configServiceStatusChanged(ConfigServiceStatus[this.status]);
     }

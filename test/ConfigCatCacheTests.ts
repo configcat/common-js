@@ -1,10 +1,10 @@
 import { assert } from "chai";
 import "mocha";
-import { ExternalConfigCache, IConfigCache, IConfigCatCache, InMemoryConfigCache, } from "../src/ConfigCatCache";
+import { ExternalConfigCache, IConfigCache, InMemoryConfigCache, } from "../src/ConfigCatCache";
 import { ManualPollOptions } from "../src/ConfigCatClientOptions";
 import { LogLevel, LoggerWrapper } from "../src/ConfigCatLogger";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
-import { FakeLogger } from "./helpers/fakes";
+import { FakeExternalCache, FakeLogger, FaultyFakeExternalCache } from "./helpers/fakes";
 
 describe("ConfigCatCache", () => {
   for (const isExternal of [false, true]) {
@@ -113,23 +113,3 @@ describe("ConfigCatCache", () => {
     });
   }
 });
-
-class FakeExternalCache implements IConfigCatCache {
-  cachedValue?: string;
-
-  set(key: string, value: string): void {
-    this.cachedValue = value;
-  }
-  get(key: string): string | undefined {
-    return this.cachedValue;
-  }
-}
-
-class FaultyFakeExternalCache implements IConfigCatCache {
-  set(key: string, value: string): never {
-    throw new Error("Operation failed :(");
-  }
-  get(key: string): never {
-    throw new Error("Operation failed :(");
-  }
-}

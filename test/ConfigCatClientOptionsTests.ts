@@ -442,7 +442,7 @@ class FakeCache implements IConfigCache {
   }
 }
 
-export class FakeLogger implements IConfigCatLogger {
+class FakeLogger implements IConfigCatLogger {
   level?: LogLevel | undefined;
 
   log(level: LogLevel, eventId: LogEventId, message: LogMessage, exception?: any): void {

@@ -3,14 +3,16 @@ import "mocha";
 import { EqualMatchingInjectorConfig, It, Mock, RejectedPromiseFactory, ResolvedPromiseFactory, Times } from "moq.ts";
 import { MimicsRejectedAsyncPresetFactory, MimicsResolvedAsyncPresetFactory, Presets, ReturnsAsyncPresetFactory, RootMockProvider, ThrowsAsyncPresetFactory } from "moq.ts/internal";
 import { AutoPollConfigService, POLL_EXPIRATION_TOLERANCE_MS } from "../src/AutoPollConfigService";
-import { IConfigCache, InMemoryConfigCache } from "../src/ConfigCatCache";
+import { ExternalConfigCache, IConfigCache, InMemoryConfigCache } from "../src/ConfigCatCache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
+import { LoggerWrapper } from "../src/ConfigCatLogger";
 import { FetchResult, IConfigFetcher, IFetchResponse } from "../src/ConfigFetcher";
+import { ClientCacheState } from "../src/ConfigServiceBase";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { ManualPollConfigService } from "../src/ManualPollConfigService";
 import { Config, ProjectConfig } from "../src/ProjectConfig";
-import { delay } from "../src/Utils";
-import { FakeCache } from "./helpers/fakes";
+import { AbortToken, delay } from "../src/Utils";
+import { FakeCache, FakeExternalCache, FakeLogger } from "./helpers/fakes";
 
 describe("ConfigServiceBaseTests", () => {
 
@@ -293,6 +295,69 @@ describe("ConfigServiceBaseTests", () => {
     assert.isDefined(actualProjectConfig?.configJson);
     assert.equal(actualProjectConfig?.httpETag, projectConfigOld.httpETag);
     assert.equal(actualProjectConfig?.configJson, projectConfigOld?.configJson);
+
+    service.dispose();
+  });
+
+  it("AutoPollConfigService - Should initialize in offline mode when external cache becomes up-to-date", async () => {
+
+    // Arrange
+
+    const pollIntervalSeconds = 1;
+    const maxInitWaitTimeSeconds = 2.5;
+    const cacheSetDelayMs = 0.5 * pollIntervalSeconds * 1000;
+
+    const frOld: FetchResult = createFetchResult("oldEtag");
+    const projectConfigOld = createConfigFromFetchResult(frOld)
+      .with(ProjectConfig.generateTimestamp() - (1.5 * pollIntervalSeconds * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
+
+    const logger = new LoggerWrapper(new FakeLogger());
+    const cache = new ExternalConfigCache(new FakeExternalCache(), logger);
+
+    const options = new AutoPollOptions(
+      "APIKEY", "common", "1.0.0",
+      {
+        pollIntervalSeconds,
+        maxInitWaitTimeSeconds,
+        offline: true,
+      },
+      () => cache
+    );
+
+    cache.set(options.getCacheKey(), projectConfigOld);
+
+    const fetcherMock = new Mock<IConfigFetcher>();
+
+    // Act
+
+    const service: AutoPollConfigService = new AutoPollConfigService(
+      fetcherMock.object(),
+      options);
+
+    const { readyPromise } = service;
+    const delayAbortToken = new AbortToken();
+    const delayPromise = delay(maxInitWaitTimeSeconds * 1000 - 250, delayAbortToken);
+    const racePromise = Promise.race([readyPromise, delayPromise]);
+
+    const cacheSetDelayAbortToken = new AbortToken();
+    const cacheSetDelayPromise = delay(cacheSetDelayMs, cacheSetDelayAbortToken);
+    const cacheSetRaceResult = await Promise.race([readyPromise, cacheSetDelayPromise]);
+    cacheSetDelayAbortToken.abort();
+    assert.strictEqual(cacheSetRaceResult, true);
+
+    const frNew: FetchResult = createFetchResult("newEtag");
+    const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew)
+      .with(ProjectConfig.generateTimestamp() + (pollIntervalSeconds * 1000) - cacheSetDelayMs + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
+    cache.set(options.getCacheKey(), projectConfigNew);
+
+    const raceResult = await racePromise;
+    delayAbortToken.abort();
+
+    // Assert
+
+    assert.strictEqual(raceResult, ClientCacheState.HasUpToDateFlagData);
+
+    // Cleanup
 
     service.dispose();
   });
