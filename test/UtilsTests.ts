@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import "mocha";
-import { formatStringList, parseFloatStrict, stringifyCircularJSON, utf8Encode } from "../src/Utils";
+import { formatStringList, parseFloatStrict, utf8Encode } from "../src/Utils";
 
 describe("Utils", () => {
 
@@ -76,32 +76,4 @@ describe("Utils", () => {
       assert.strictEqual(actualOutput, expectedOutput);
     });
   }
-
-  describe("stringifyCircularJSON", () => {
-    it("should stringify a simple object", () => {
-      const obj = { a: 1, b: "test" };
-      const result = stringifyCircularJSON(obj);
-      assert.strictEqual(result, '{"a":1,"b":"test"}');
-    });
-
-    it("should stringify a nested object", () => {
-      const obj = { a: 1, b: { c: 2, d: "test" } };
-      const result = stringifyCircularJSON(obj);
-      assert.strictEqual(result, JSON.stringify(obj));
-    });
-
-    it("should handle circular references and remove those properties", () => {
-      const obj: any = { a: 1 };
-      obj.self = obj; // circular reference
-      const result = stringifyCircularJSON(obj);
-      assert.strictEqual(result, '{"a":1}');
-    });
-
-    it("should handle arrays with circular references", () => {
-      const arr: any[] = [1, 2];
-      arr.push(arr); // circular reference
-      const result = stringifyCircularJSON(arr);
-      assert.strictEqual(result, "[1,2,null]");
-    });
-  });
 });

@@ -1,10 +1,12 @@
 import { assert, expect } from "chai";
 import "mocha";
+import { OverrideBehaviour, User, createFlagOverridesFromMap } from "../src";
 import { ExternalConfigCache, IConfigCache, InMemoryConfigCache } from "../src/ConfigCatCache";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { ConfigCatConsoleLogger, IConfigCatLogger, LogEventId, LogLevel, LogMessage, LoggerWrapper } from "../src/ConfigCatLogger";
 import { ProjectConfig } from "../src/ProjectConfig";
 import { FakeExternalCache } from "./helpers/fakes";
+import { getSerializableOptions } from "../src/ConfigCatClient";
 
 describe("Options", () => {
 
@@ -396,6 +398,32 @@ describe("Options", () => {
       }
     });
   }
+
+  it("Dumping options should not leak internals or fail because of circular references", () => {
+    const logger = new class implements IConfigCatLogger {
+      circularRef?: IConfigCatLogger;
+      log() { }
+    }();
+    logger.circularRef = logger;
+
+    const defaultUser = new User("12345", "bob@example.com", void 0, {
+      ["RegisteredAt"]: new Date(2025, 0, 1),
+      nicknames: ["Bobby", "Robbie"],
+    });
+
+    const options = new AutoPollOptions("APIKEY", "common", "1.0.0", {
+      logger,
+      pollIntervalSeconds: 5,
+      requestTimeoutMs: 20,
+      flagOverrides: createFlagOverridesFromMap({}, OverrideBehaviour.RemoteOverLocal),
+      defaultUser
+    }, null);
+
+    const actualDumpedOptions = JSON.stringify(getSerializableOptions(options));
+    const expectedDumpedOptions = '{"requestTimeoutMs":20,"baseUrlOverriden":false,"proxy":"","offline":false,"sdkKey":"APIKEY","clientVersion":"common/a-1.0.0","dataGovernance":0,"baseUrl":"https://cdn-global.configcat.com","hooks":"[object Object]","flagOverrides":{"dataSource":"[object Object]","behaviour":2},"defaultUser":{"Identifier":"12345","Email":"bob@example.com","RegisteredAt":"2024-12-31T23:00:00.000Z","nicknames":["Bobby","Robbie"]},"logger":"[object Object]","cache":"[object Object]","pollIntervalSeconds":5,"maxInitWaitTimeSeconds":5}';
+
+    assert.deepEqual(JSON.parse(actualDumpedOptions), JSON.parse(expectedDumpedOptions));
+  });
 });
 
 class FakeOptionsBase extends OptionsBase { }

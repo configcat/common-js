@@ -3,10 +3,12 @@ import type { IConfigCache } from "./ConfigCatCache";
 import type { ConfigCatClientOptions, OptionsBase, OptionsForPollingMode } from "./ConfigCatClientOptions";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from "./ConfigCatClientOptions";
 import type { LoggerWrapper } from "./ConfigCatLogger";
+import { LogLevel } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService } from "./ConfigServiceBase";
 import { ClientCacheState, RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
+import type { FlagOverrides } from "./FlagOverrides";
 import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
@@ -16,7 +18,8 @@ import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue } 
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, handleInvalidReturnValue, isAllowedValue } from "./RolloutEvaluator";
 import type { User } from "./User";
-import { errorToString, isArray, stringifyCircularJSON, throwError } from "./Utils";
+import { getUserAttributes } from "./User";
+import { errorToString, isArray, isObject, shallowClone, throwError } from "./Utils";
 
 /** ConfigCat SDK client. */
 export interface IConfigCatClient extends IProvidesHooks {
@@ -280,7 +283,9 @@ export class ConfigCatClient implements IConfigCatClient {
 
     this.options = options;
 
-    this.options.logger.debug("Initializing ConfigCatClient. Options: " + stringifyCircularJSON(this.options));
+    if (options.logger.isEnabled(LogLevel.Debug)) {
+      options.logger.debug("Initializing ConfigCatClient. Options: " + JSON.stringify(getSerializableOptions(options)));
+    }
 
     if (!configCatKernel) {
       throw new Error("Invalid 'configCatKernel' value");
@@ -796,6 +801,19 @@ function ensureAllowedDefaultValue(value: SettingValue): void {
 
 function ensureAllowedValue(value: NonNullable<SettingValue>): NonNullable<SettingValue> {
   return isAllowedValue(value) ? value : handleInvalidReturnValue(value);
+}
+
+export function getSerializableOptions(options: ConfigCatClientOptions): Record<string, unknown> {
+  return shallowClone(options, (key, value) => {
+    if (key === "defaultUser") {
+      return getUserAttributes(value as User);
+    }
+    if (key === "flagOverrides") {
+      return shallowClone(value as FlagOverrides, (_, value) => isObject(value) ? value.toString() : value);
+    }
+    // NOTE: Prevent internals from leaking into logs and avoid errors because of circular references in user-provided objects.
+    return isObject(value) ? value.toString() : value;
+  });
 }
 
 /* GC finalization support */

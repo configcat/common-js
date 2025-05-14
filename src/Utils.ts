@@ -56,6 +56,10 @@ export function throwError(err: any): never {
   throw err;
 }
 
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !isArray(value);
+}
+
 export function isArray(value: unknown): value is readonly unknown[] {
   // See also: https://github.com/microsoft/TypeScript/issues/17002#issuecomment-1477626624
   return Array.isArray(value);
@@ -149,15 +153,13 @@ export function parseFloatStrict(value: unknown): number {
   return +value;
 }
 
-export function stringifyCircularJSON(obj: unknown): string {
-  // NOTE: This is a version of JSON.stringify that ignores circular references.
-  // to prevent throwing errors when logging options objects that may contain circular references. eg. redis cluster client for cache
-  const seen = new WeakSet();
-  return JSON.stringify(obj, (k, v) => {
-    if (v !== null && typeof v === "object") {
-      if (seen.has(v)) return;
-      seen.add(v);
+export function shallowClone<T extends {}>(obj: T, propertyReplacer?: (key: keyof T, value: unknown) => unknown): Record<keyof T, unknown> {
+  const clone = {} as Record<keyof T, unknown>;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      clone[key] = propertyReplacer ? propertyReplacer(key, value) : value;
     }
-    return v;
-  });
+  }
+  return clone;
 }
