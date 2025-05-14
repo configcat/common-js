@@ -89,7 +89,7 @@ export class FakeExternalCacheWithInitialData implements IConfigCatCache {
   }
   get(key: string): string | Promise<string | null | undefined> | null | undefined {
     const cachedJson = '{"f":{"debug":{"t":0,"v":{"b":true},"i":"abcdefgh"}}}';
-    const config = new ProjectConfig(cachedJson, JSON.parse(cachedJson), (new Date().getTime()) - this.expirationDelta, "\"ETAG\"");
+    const config = new ProjectConfig(cachedJson, JSON.parse(cachedJson), ProjectConfig.generateTimestamp() - this.expirationDelta, "\"ETAG\"");
     return ProjectConfig.serialize(config);
   }
 

@@ -166,7 +166,7 @@ describe("ConfigServiceBaseTests", () => {
 
     const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew);
 
-    const time: number = new Date().getTime();
+    const time: number = ProjectConfig.generateTimestamp();
     const projectConfigOld: ProjectConfig = createConfigFromFetchResult(frOld).with(time - (1.5 * pollInterval * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
 
     const cache = new InMemoryConfigCache();
@@ -213,7 +213,7 @@ describe("ConfigServiceBaseTests", () => {
 
     const pollInterval = 10;
 
-    const time: number = new Date().getTime();
+    const time: number = ProjectConfig.generateTimestamp();
     const projectConfigOld = createConfigFromFetchResult(frOld).with(time - (pollInterval * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
 
     const cache = new InMemoryConfigCache();
@@ -302,7 +302,7 @@ describe("ConfigServiceBaseTests", () => {
     // Arrange
 
     const cacheTimeToLiveSeconds = 10;
-    const oldConfig: ProjectConfig = createProjectConfig("oldConfig").with(new Date().getTime() - (cacheTimeToLiveSeconds * 1000) - 1000);
+    const oldConfig: ProjectConfig = createProjectConfig("oldConfig").with(ProjectConfig.generateTimestamp() - (cacheTimeToLiveSeconds * 1000) - 1000);
 
     const fr: FetchResult = createFetchResult("newConfig");
 
@@ -342,7 +342,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Arrange
 
-    const config: ProjectConfig = createProjectConfig().with(new Date().getTime());
+    const config: ProjectConfig = createProjectConfig().with(ProjectConfig.generateTimestamp());
 
     const fetcherMock = new Mock<IConfigFetcher>();
 
@@ -373,7 +373,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Arrange
 
-    const config: ProjectConfig = createProjectConfig().with(new Date().getTime() - 1000);
+    const config: ProjectConfig = createProjectConfig().with(ProjectConfig.generateTimestamp() - 1000);
 
     const fr: FetchResult = createFetchResult();
 
@@ -411,7 +411,7 @@ describe("ConfigServiceBaseTests", () => {
 
     // Arrange
 
-    const config: ProjectConfig = createProjectConfig().with(new Date().getTime() - 1000);
+    const config: ProjectConfig = createProjectConfig().with(ProjectConfig.generateTimestamp() - 1000);
 
     const fr: FetchResult = createFetchResult();
 
