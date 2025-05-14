@@ -148,3 +148,16 @@ export function parseFloatStrict(value: unknown): number {
 
   return +value;
 }
+
+export function stringifyCircularJSON(obj: unknown): string {
+  // NOTE: This is a version of JSON.stringify that ignores circular references.
+  // to prevent throwing errors when logging options objects that may contain circular references. eg. redis cluster client for cache
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (k, v) => {
+    if (v !== null && typeof v === "object") {
+      if (seen.has(v)) return;
+      seen.add(v);
+    }
+    return v;
+  });
+}

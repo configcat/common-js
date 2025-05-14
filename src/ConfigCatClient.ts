@@ -16,7 +16,7 @@ import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue } 
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, handleInvalidReturnValue, isAllowedValue } from "./RolloutEvaluator";
 import type { User } from "./User";
-import { errorToString, isArray, throwError } from "./Utils";
+import { errorToString, isArray, stringifyCircularJSON, throwError } from "./Utils";
 
 /** ConfigCat SDK client. */
 export interface IConfigCatClient extends IProvidesHooks {
@@ -280,7 +280,7 @@ export class ConfigCatClient implements IConfigCatClient {
 
     this.options = options;
 
-    this.options.logger.debug("Initializing ConfigCatClient. Options: " + JSON.stringify(this.options));
+    this.options.logger.debug("Initializing ConfigCatClient. Options: " + stringifyCircularJSON(this.options));
 
     if (!configCatKernel) {
       throw new Error("Invalid 'configCatKernel' value");
