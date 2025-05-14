@@ -46,10 +46,39 @@ export function delay(delayMs: number, abortToken?: AbortToken | null): Promise<
   });
 }
 
+/** Formats error in a similar way to Chromium-based browsers. */
 export function errorToString(err: any, includeStackTrace = false): string {
-  return err instanceof Error
-    ? includeStackTrace && err.stack ? err.stack : err.toString()
-    : err + "";
+  return err instanceof Error ? visit(err, "") : "" + err;
+
+  function visit(err: Error, indent: string, visited?: Error[]) {
+    const errString = err.toString();
+    let s = (!indent ? indent : indent.substring(4) + "--> ") + errString;
+    if (includeStackTrace && err.stack) {
+      let stack = err.stack.trim();
+      // NOTE: Some JS runtimes (e.g. V8) includes the error in the stack trace, some don't (e.g. SpiderMonkey).
+      if (stack.lastIndexOf(errString, 0) === 0) {
+        stack = stack.substring(errString.length).trim();
+      }
+      s += "\n" + stack.replace(/^\s*(?:at\s)?/gm, indent + "    at ");
+    }
+
+    if (typeof AggregateError !== "undefined" && err instanceof AggregateError) {
+      (visited ??= []).push(err);
+      for (const innerErr of err.errors) {
+        if (innerErr instanceof Error) {
+          if (visited.indexOf(innerErr) >= 0) {
+            continue;
+          }
+          s += "\n" + visit(innerErr, indent + "    ", visited);
+        } else {
+          s += "\n" + indent + innerErr;
+        }
+      }
+      visited.pop();
+    }
+
+    return s;
+  }
 }
 
 export function throwError(err: any): never {
