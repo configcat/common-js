@@ -407,7 +407,7 @@ describe("Options", () => {
     logger.circularRef = logger;
 
     const defaultUser = new User("12345", "bob@example.com", void 0, {
-      ["RegisteredAt"]: new Date(2025, 0, 1),
+      ["RegisteredAt"]: new Date("2025-01-01T00:00:00.000Z"),
       nicknames: ["Bobby", "Robbie"],
     });
 
@@ -420,7 +420,7 @@ describe("Options", () => {
     }, null);
 
     const actualDumpedOptions = JSON.stringify(getSerializableOptions(options));
-    const expectedDumpedOptions = '{"requestTimeoutMs":20,"baseUrlOverriden":false,"proxy":"","offline":false,"sdkKey":"APIKEY","clientVersion":"common/a-1.0.0","dataGovernance":0,"baseUrl":"https://cdn-global.configcat.com","hooks":"[object Object]","flagOverrides":{"dataSource":"[object Object]","behaviour":2},"defaultUser":{"Identifier":"12345","Email":"bob@example.com","RegisteredAt":"2024-12-31T23:00:00.000Z","nicknames":["Bobby","Robbie"]},"logger":"[object Object]","cache":"[object Object]","pollIntervalSeconds":5,"maxInitWaitTimeSeconds":5}';
+    const expectedDumpedOptions = '{"requestTimeoutMs":20,"baseUrlOverriden":false,"proxy":"","offline":false,"sdkKey":"APIKEY","clientVersion":"common/a-1.0.0","dataGovernance":0,"baseUrl":"https://cdn-global.configcat.com","hooks":"[object Object]","flagOverrides":{"dataSource":"[object Object]","behaviour":2},"defaultUser":{"Identifier":"12345","Email":"bob@example.com","RegisteredAt":"2025-01-01T00:00:00.000Z","nicknames":["Bobby","Robbie"]},"logger":"[object Object]","cache":"[object Object]","pollIntervalSeconds":5,"maxInitWaitTimeSeconds":5}';
 
     assert.deepEqual(JSON.parse(actualDumpedOptions), JSON.parse(expectedDumpedOptions));
   });
