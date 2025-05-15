@@ -1,5 +1,4 @@
 import type { AutoPollOptions } from "./ConfigCatClientOptions";
-import type { LoggerWrapper } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService, RefreshResult } from "./ConfigServiceBase";
 import { ClientCacheState, ConfigServiceBase } from "./ConfigServiceBase";
@@ -75,7 +74,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   async getConfig(): Promise<ProjectConfig> {
     this.options.logger.debug("AutoPollConfigService.getConfig() called.");
 
-    let cachedConfig = await this.options.cache.get(this.cacheKey);
+    let cachedConfig = await this.syncUpWithCache();
 
     if (!cachedConfig.isExpired(this.pollIntervalMs)) {
       this.signalInitialization();
@@ -154,7 +153,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   private async refreshWorkerLogic(initialCacheSyncUp: ProjectConfig | Promise<ProjectConfig> | null) {
     this.options.logger.debug("AutoPollConfigService.refreshWorkerLogic() - called.");
 
-    const latestConfig = await (initialCacheSyncUp ?? this.options.cache.get(this.cacheKey));
+    const latestConfig = await (initialCacheSyncUp ?? this.syncUpWithCache());
     if (latestConfig.isExpired(this.pollExpirationMs)) {
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:

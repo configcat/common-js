@@ -4,6 +4,7 @@ import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigF
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
 import { RedirectMode } from "./ConfigJson";
 import { Config, ProjectConfig } from "./ProjectConfig";
+import { isPromiseLike } from "./Utils";
 
 /** Contains the result of an `IConfigCatClient.forceRefresh` or `IConfigCatClient.forceRefreshAsync` operation. */
 export class RefreshResult {
@@ -70,6 +71,7 @@ enum ConfigServiceStatus {
 export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   private status: ConfigServiceStatus;
 
+  private pendingCacheSyncUp: Promise<ProjectConfig> | null = null;
   private pendingFetch: Promise<FetchResult> | null = null;
 
   protected readonly cacheKey: string;
@@ -98,7 +100,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   abstract getConfig(): Promise<ProjectConfig>;
 
   async refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
-    const latestConfig = await this.options.cache.get(this.cacheKey);
+    const latestConfig = await this.syncUpWithCache();
     if (!this.isOffline) {
       const [fetchResult, config] = await this.refreshConfigCoreAsync(latestConfig);
       return [RefreshResult.from(fetchResult), config];
@@ -142,14 +144,8 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   }
 
   private fetchAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
-    return this.pendingFetch ??= (async () => {
-      try {
-        return await this.fetchLogicAsync(lastConfig);
-      }
-      finally {
-        this.pendingFetch = null;
-      }
-    })();
+    return this.pendingFetch ??= this.fetchLogicAsync(lastConfig)
+      .finally(() => this.pendingFetch = null);
   }
 
   private async fetchLogicAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
@@ -303,7 +299,20 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
   protected syncUpWithCache(): ProjectConfig | Promise<ProjectConfig> {
-    return this.options.cache.get(this.cacheKey);
+    if (this.pendingCacheSyncUp) {
+      return this.pendingCacheSyncUp;
+    }
+
+    const syncResult = this.options.cache.get(this.cacheKey);
+    if (!isPromiseLike(syncResult)) {
+      return syncResult;
+    }
+
+    const syncUpAndFinish = syncResult
+      .finally(() => this.pendingCacheSyncUp = null);
+
+    this.pendingCacheSyncUp = syncResult;
+    return syncUpAndFinish;
   }
 
   protected async getReadyPromise<TState>(state: TState, waitForReadyAsync: (state: TState) => Promise<ClientCacheState>): Promise<ClientCacheState> {
