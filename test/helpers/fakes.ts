@@ -124,9 +124,11 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
         this.config = fr.body ?? null;
         return fr;
       }
-      : () => this.config !== null
-        ? { statusCode: 200, reasonPhrase: "OK", eTag: this.getEtag(), body: this.config } as IFetchResponse
-        : { statusCode: 404, reasonPhrase: "Not Found" } as IFetchResponse;
+      : () => {
+        return this.config === null ? { statusCode: 404, reasonPhrase: "Not Found" } as IFetchResponse
+          : this.getEtag() === lastEtag ? { statusCode: 304, reasonPhrase: "Not Modified" } as IFetchResponse
+          : { statusCode: 200, reasonPhrase: "OK", eTag: this.getEtag(), body: this.config } as IFetchResponse;
+      };
 
     await delay(this.callbackDelay);
 

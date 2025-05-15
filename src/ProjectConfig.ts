@@ -7,13 +7,6 @@ export class ProjectConfig {
 
   static readonly empty = new ProjectConfig(void 0, void 0, 0, void 0);
 
-  static equals(projectConfig1: ProjectConfig, projectConfig2: ProjectConfig): boolean {
-    // When both ETags are available, we don't need to check the JSON content.
-    return projectConfig1.httpETag && projectConfig2.httpETag
-      ? projectConfig1.httpETag === projectConfig2.httpETag
-      : projectConfig1.configJson === projectConfig2.configJson;
-  }
-
   constructor(
     readonly configJson: string | undefined,
     readonly config: Config | undefined,

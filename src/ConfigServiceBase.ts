@@ -69,11 +69,16 @@ enum ConfigServiceStatus {
   Disposed,
 }
 
+type ConfigRefreshOperation = {
+  promise: Promise<[FetchResult, ProjectConfig]>;
+  latestConfig: ProjectConfig;
+};
+
 export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   private status: ConfigServiceStatus;
 
   private pendingCacheSyncUp: Promise<ProjectConfig> | null = null;
-  private pendingFetch: Promise<FetchResult> | null = null;
+  private pendingConfigRefresh: ConfigRefreshOperation | null = null;
 
   protected readonly cacheKey: string;
 
@@ -115,26 +120,58 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     }
   }
 
-  protected async refreshConfigCoreAsync(latestConfig: ProjectConfig): Promise<[FetchResult, ProjectConfig]> {
-    const fetchResult = await this.fetchAsync(latestConfig);
+  protected refreshConfigCoreAsync(latestConfig: ProjectConfig): Promise<[FetchResult, ProjectConfig]> {
+    let refreshOperation = this.pendingConfigRefresh;
 
-    let configChanged = false;
-    const success = fetchResult.status === FetchStatus.Fetched;
-    if (success
-        || fetchResult.config.timestamp > latestConfig.timestamp && (!fetchResult.config.isEmpty || latestConfig.isEmpty)) {
-      await this.options.cache.set(this.cacheKey, fetchResult.config);
-
-      configChanged = success && !ProjectConfig.equals(fetchResult.config, latestConfig);
-      latestConfig = fetchResult.config;
+    if (refreshOperation) {
+      const { promise, latestConfig: knownLatestConfig } = refreshOperation;
+      if (latestConfig.timestamp > knownLatestConfig.timestamp && (!latestConfig.isEmpty || knownLatestConfig.isEmpty)) {
+        refreshOperation.latestConfig = latestConfig;
+      }
+      return promise;
     }
 
-    this.onConfigFetched(fetchResult.config);
+    refreshOperation = { latestConfig } as ConfigRefreshOperation;
+    refreshOperation.promise = (async (refreshOperation: ConfigRefreshOperation): Promise<[FetchResult, ProjectConfig]> => {
+      const fetchResult = await this.fetchAsync(refreshOperation.latestConfig);
 
-    if (configChanged) {
-      this.onConfigChanged(fetchResult.config);
-    }
+      // NOTE: Further joiners may obtain more up-to-date configs from the external cache, and update
+      // operation.latestConfig before the operation completes, but those updates will be ignored.
+      // In other words, the operation may not return the most recent config obtained during its execution.
+      // However, this is acceptable, especially if we consider that reading and writing the external cache is
+      // not synchronized, which means that a more recent config can be overwritten with a stale one.
+      // (We don't make any effort to synchronize external cache access as that would be extremely hard,
+      // and we expect the "stuttering" resulting from this race condition to be temporary only.)
+      let { latestConfig } = refreshOperation;
 
-    return [fetchResult, latestConfig];
+      const success = fetchResult.status === FetchStatus.Fetched;
+      if (success
+          || fetchResult.config.timestamp > latestConfig.timestamp && (!fetchResult.config.isEmpty || latestConfig.isEmpty)) {
+        await this.options.cache.set(this.cacheKey, fetchResult.config);
+
+        latestConfig = fetchResult.config;
+      }
+
+      return [fetchResult, latestConfig];
+    })(refreshOperation);
+
+    const refreshAndFinish = refreshOperation.promise
+      .finally(() => this.pendingConfigRefresh = null)
+      .then(refreshResult => {
+        const [fetchResult] = refreshResult;
+
+        this.onConfigFetched(fetchResult.config);
+
+        if (fetchResult.status === FetchStatus.Fetched) {
+          this.onConfigChanged(fetchResult.config);
+        }
+
+        return refreshResult;
+      });
+
+    this.pendingConfigRefresh = refreshOperation;
+
+    return refreshAndFinish;
   }
 
   protected onConfigFetched(newConfig: ProjectConfig): void { }
@@ -144,12 +181,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
     this.options.hooks.emit("configChanged", newConfig.config ?? new Config({}));
   }
 
-  private fetchAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
-    return this.pendingFetch ??= this.fetchLogicAsync(lastConfig)
-      .finally(() => this.pendingFetch = null);
-  }
-
-  private async fetchLogicAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
+  private async fetchAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
     const options = this.options;
     options.logger.debug("ConfigServiceBase.fetchLogicAsync() - called.");
 
