@@ -2,11 +2,11 @@ import { assert, expect } from "chai";
 import "mocha";
 import { OverrideBehaviour, User, createFlagOverridesFromMap } from "../src";
 import { ExternalConfigCache, IConfigCache, InMemoryConfigCache } from "../src/ConfigCatCache";
+import { getSerializableOptions } from "../src/ConfigCatClient";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, OptionsBase } from "../src/ConfigCatClientOptions";
 import { ConfigCatConsoleLogger, IConfigCatLogger, LogEventId, LogLevel, LogMessage, LoggerWrapper } from "../src/ConfigCatLogger";
 import { ProjectConfig } from "../src/ProjectConfig";
 import { FakeExternalCache } from "./helpers/fakes";
-import { getSerializableOptions } from "../src/ConfigCatClient";
 
 describe("Options", () => {
 

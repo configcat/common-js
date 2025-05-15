@@ -112,7 +112,8 @@ export class ExternalConfigCache implements IConfigCache {
       // Otherwise, keep the code flow synchronous so the config services can sync up
       // with the cache in their ctors synchronously (see ConfigServiceBase.syncUpWithCache).
       cacheSyncResult = this.updateCachedConfig(cacheGetResult);
-    } catch (err) {
+    }
+    catch (err) {
       cacheSyncResult = this.cachedConfig;
       this.logger.configServiceCacheReadError(err);
     }

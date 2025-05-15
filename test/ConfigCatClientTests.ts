@@ -550,7 +550,7 @@ describe("ConfigCatClient", () => {
     try {
       await delay(2.5 * pollIntervalSeconds * 1000);
 
-      assert.equal(configChangedEventCount, 1); 
+      assert.equal(configChangedEventCount, 1);
     }
     finally { client.dispose(); }
   });

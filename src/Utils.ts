@@ -74,7 +74,8 @@ export function errorToString(err: any, includeStackTrace = false): string {
             continue;
           }
           s += "\n" + visit(innerErr, indent + "    ", visited);
-        } else {
+        }
+        else {
           s += "\n" + indent + innerErr;
         }
       }
