@@ -19,10 +19,13 @@ export interface IConfigCatCache {
   get(key: string): Promise<string | null | undefined> | string | null | undefined;
 }
 
+/** @remarks Unchanged config is returned as is, changed config is wrapped in an array so we can distinguish between the two cases. */
+export type CacheSyncResult = ProjectConfig | [changedConfig: ProjectConfig];
+
 export interface IConfigCache {
   set(key: string, config: ProjectConfig): Promise<void> | void;
 
-  get(key: string): Promise<ProjectConfig> | ProjectConfig;
+  get(key: string): Promise<CacheSyncResult> | CacheSyncResult;
 
   getInMemory(): ProjectConfig;
 }
@@ -73,41 +76,48 @@ export class ExternalConfigCache implements IConfigCache {
     }
   }
 
-  private updateCachedConfig(externalSerializedConfig: string | null | undefined): void {
+  private updateCachedConfig(externalSerializedConfig: string | null | undefined): CacheSyncResult {
     if (externalSerializedConfig == null || externalSerializedConfig === this.cachedSerializedConfig) {
-      return;
+      return this.cachedConfig;
     }
 
     this.cachedConfig = ProjectConfig.deserialize(externalSerializedConfig);
     this.cachedSerializedConfig = externalSerializedConfig;
+    return [this.cachedConfig];
   }
 
-  get(key: string): Promise<ProjectConfig> {
+  get(key: string): Promise<CacheSyncResult> | CacheSyncResult {
+    let cacheSyncResult: CacheSyncResult;
+
     try {
       const cacheGetResult = this.cache.get(key);
 
       // Take the async path only when the IConfigCatCache.get operation is asynchronous.
       if (isPromiseLike(cacheGetResult)) {
         return (async (cacheGetPromise) => {
+          let cacheSyncResult: CacheSyncResult;
+
           try {
-            this.updateCachedConfig(await cacheGetPromise);
+            cacheSyncResult = this.updateCachedConfig(await cacheGetPromise);
           }
           catch (err) {
+            cacheSyncResult = this.cachedConfig;
             this.logger.configServiceCacheReadError(err);
           }
-          return this.cachedConfig;
+
+          return cacheSyncResult;
         })(cacheGetResult);
       }
 
       // Otherwise, keep the code flow synchronous so the config services can sync up
       // with the cache in their ctors synchronously (see ConfigServiceBase.syncUpWithCache).
-      this.updateCachedConfig(cacheGetResult);
-    }
-    catch (err) {
+      cacheSyncResult = this.updateCachedConfig(cacheGetResult);
+    } catch (err) {
+      cacheSyncResult = this.cachedConfig;
       this.logger.configServiceCacheReadError(err);
     }
 
-    return Promise.resolve(this.cachedConfig);
+    return cacheSyncResult;
   }
 
   getInMemory(): ProjectConfig {
