@@ -33,8 +33,8 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       this.initialized = false;
 
       // This promise will be resolved as soon as
-      // 1. the initial sync with the external cache completes (see startRefreshWorker),
-      // 2. and, in case the client is online and the local cache is still empty or expired,
+      // 1. a cache sync operation completes, and the obtained config is up-to-date (see getConfig and startRefreshWorker),
+      // 2. or, in case the client is online and the local cache is still empty or expired after the initial cache sync-up,
       //    the first config fetch operation completes, regardless of success or failure (see onConfigFetched).
       const initSignalPromise = new Promise<void>(resolve => this.signalInitialization = resolve);
 
@@ -75,30 +75,22 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
   async getConfig(): Promise<ProjectConfig> {
     this.options.logger.debug("AutoPollConfigService.getConfig() called.");
 
-    function logSuccess(logger: LoggerWrapper) {
-      logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
+    let cachedConfig = await this.options.cache.get(this.cacheKey);
+
+    if (!cachedConfig.isExpired(this.pollIntervalMs)) {
+      this.signalInitialization();
     }
-
-    let cachedConfig: ProjectConfig;
-    if (!this.isOffline && !this.initialized) {
-      cachedConfig = await this.options.cache.get(this.cacheKey);
-      if (!cachedConfig.isExpired(this.pollIntervalMs)) {
-        logSuccess(this.options.logger);
-        return cachedConfig;
-      }
-
+    else if (!this.isOffline && !this.initialized) {
       this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired, waiting for initialization.");
       await this.initializationPromise;
-    }
-
-    cachedConfig = await this.options.cache.get(this.cacheKey);
-    if (!cachedConfig.isExpired(this.pollIntervalMs)) {
-      logSuccess(this.options.logger);
+      cachedConfig = this.options.cache.getInMemory();
     }
     else {
       this.options.logger.debug("AutoPollConfigService.getConfig() - cache is empty or expired.");
+      return cachedConfig;
     }
 
+    this.options.logger.debug("AutoPollConfigService.getConfig() - returning value from cache.");
     return cachedConfig;
   }
 
