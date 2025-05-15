@@ -33,8 +33,9 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       this.initialized = false;
 
       // This promise will be resolved as soon as
-      // 1. an up-to-date config is obtained from the cache (see startRefreshWorker),
-      // 2. or a config fetch operation completes, regardless of success or failure (see onConfigUpdated).
+      // 1. the initial sync with the external cache completes (see startRefreshWorker),
+      // 2. and, in case the client is online and the local cache is still empty or expired,
+      //    the first config fetch operation completes, regardless of success or failure (see onConfigFetched).
       const initSignalPromise = new Promise<void>(resolve => this.signalInitialization = resolve);
 
       // This promise will be resolved when either initialization ready is signalled by signalInitialization() or maxInitWaitTimeSeconds pass.
@@ -166,16 +167,16 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
       // Even if the service gets disposed immediately, we allow the first refresh for backward compatibility,
       // i.e. to not break usage patterns like this:
       // ```
-      // client.getValueAsync("SOME_KEY", false).then(value => { /* ... */ }, user);
+      // client.getValueAsync("SOME_KEY", false, user).then(value => { /* ... */ });
       // client.dispose();
       // ```
       if (initialCacheSyncUp ? !this.isOfflineExactly : !this.isOffline) {
         await this.refreshConfigCoreAsync(latestConfig);
+        return; // postpone signalling initialization until `onConfigFetched`
       }
     }
-    else {
-      this.signalInitialization();
-    }
+
+    this.signalInitialization();
   }
 
   getCacheState(cachedConfig: ProjectConfig): ClientCacheState {

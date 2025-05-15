@@ -299,68 +299,62 @@ describe("ConfigServiceBaseTests", () => {
     service.dispose();
   });
 
-  it("AutoPollConfigService - Should initialize in offline mode when external cache becomes up-to-date", async () => {
+  for (const expectedCacheState of [ClientCacheState.NoFlagData, ClientCacheState.HasCachedFlagDataOnly, ClientCacheState.HasUpToDateFlagData]) {
+    it(`AutoPollConfigService - Should emit clientReady in offline mode when sync with external cache is completed - expectedCacheState: ${expectedCacheState}`, async () => {
 
-    // Arrange
+      // Arrange
 
-    const pollIntervalSeconds = 1;
-    const maxInitWaitTimeSeconds = 2.5;
-    const cacheSetDelayMs = 0.5 * pollIntervalSeconds * 1000;
+      const pollIntervalSeconds = 1;
 
-    const frOld: FetchResult = createFetchResult("oldEtag");
-    const projectConfigOld = createConfigFromFetchResult(frOld)
-      .with(ProjectConfig.generateTimestamp() - (1.5 * pollIntervalSeconds * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
+      let projectConfig: ProjectConfig | undefined;
+      if (expectedCacheState !== ClientCacheState.NoFlagData) {
+        const fr: FetchResult = createFetchResult("oldEtag");
+        projectConfig = createConfigFromFetchResult(fr);
 
-    const logger = new LoggerWrapper(new FakeLogger());
-    const cache = new ExternalConfigCache(new FakeExternalCache(), logger);
+        if (expectedCacheState === ClientCacheState.HasCachedFlagDataOnly) {
+          projectConfig = projectConfig
+            .with(ProjectConfig.generateTimestamp() - (1.5 * pollIntervalSeconds * 1000) + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
+        }
+      }
 
-    const options = new AutoPollOptions(
-      "APIKEY", "common", "1.0.0",
-      {
-        pollIntervalSeconds,
-        maxInitWaitTimeSeconds,
-        offline: true,
-      },
-      () => cache
-    );
+      const logger = new LoggerWrapper(new FakeLogger());
+      const cache = new ExternalConfigCache(new FakeExternalCache(), logger);
 
-    cache.set(options.getCacheKey(), projectConfigOld);
+      const options = new AutoPollOptions(
+        "APIKEY", "common", "1.0.0",
+        {
+          pollIntervalSeconds,
+          offline: true,
+        },
+        () => cache
+      );
 
-    const fetcherMock = new Mock<IConfigFetcher>();
+      if (projectConfig) {
+        cache.set(options.getCacheKey(), projectConfig);
+      }
 
-    // Act
+      const fetcherMock = new Mock<IConfigFetcher>();
 
-    const service: AutoPollConfigService = new AutoPollConfigService(
-      fetcherMock.object(),
-      options);
+      // Act
 
-    const { readyPromise } = service;
-    const delayAbortToken = new AbortToken();
-    const delayPromise = delay(maxInitWaitTimeSeconds * 1000 - 250, delayAbortToken);
-    const racePromise = Promise.race([readyPromise, delayPromise]);
+      const service: AutoPollConfigService = new AutoPollConfigService(
+        fetcherMock.object(),
+        options);
 
-    const cacheSetDelayAbortToken = new AbortToken();
-    const cacheSetDelayPromise = delay(cacheSetDelayMs, cacheSetDelayAbortToken);
-    const cacheSetRaceResult = await Promise.race([readyPromise, cacheSetDelayPromise]);
-    cacheSetDelayAbortToken.abort();
-    assert.strictEqual(cacheSetRaceResult, true);
+      const { readyPromise } = service;
+      const delayAbortToken = new AbortToken();
+      const delayPromise = delay(pollIntervalSeconds * 1000 - 250, delayAbortToken);
+      const raceResult = await Promise.race([readyPromise, delayPromise]);
 
-    const frNew: FetchResult = createFetchResult("newEtag");
-    const projectConfigNew: ProjectConfig = createConfigFromFetchResult(frNew)
-      .with(ProjectConfig.generateTimestamp() + (pollIntervalSeconds * 1000) - cacheSetDelayMs + 0.5 * POLL_EXPIRATION_TOLERANCE_MS);
-    cache.set(options.getCacheKey(), projectConfigNew);
+      // Assert
 
-    const raceResult = await racePromise;
-    delayAbortToken.abort();
+      assert.strictEqual(raceResult, expectedCacheState);
 
-    // Assert
+      // Cleanup
 
-    assert.strictEqual(raceResult, ClientCacheState.HasUpToDateFlagData);
-
-    // Cleanup
-
-    service.dispose();
-  });
+      service.dispose();
+    });
+  }
 
   it("LazyLoadConfigService - ProjectConfig is different in the cache - should fetch a new config and put into cache", async () => {
 

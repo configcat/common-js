@@ -1163,8 +1163,9 @@ describe("ConfigCatClient", () => {
 
   for (const [pollingMode, optionsFactory] of optionsFactoriesForOfflineModeTests) {
     it(`setOnline() should make a(n) ${PollingMode[pollingMode]} client created in offline mode transition to online mode.`, async () => {
+      const configFetcherDelayMs = 100;
 
-      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => ({
+      const configFetcher = new FakeConfigFetcherBase("{}", configFetcherDelayMs, (lastConfig, lastETag) => ({
         statusCode: 200,
         reasonPhrase: "OK",
         eTag: (lastETag as any | 0) + 1 + "",
@@ -1192,7 +1193,7 @@ describe("ConfigCatClient", () => {
       client.setOnline();
 
       if (configService instanceof AutoPollConfigService) {
-        assert.isTrue(await configService["initializationPromise"]);
+        await delay(configFetcherDelayMs + 50);
         expectedFetchTimes++;
       }
 
