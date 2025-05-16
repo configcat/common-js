@@ -62,7 +62,7 @@ export class ExternalConfigCache implements IConfigCache {
         this.cachedConfig = config;
       }
       else {
-        // We may have empty entries with timestamp > 0 (see the flooding prevention logic in ConfigServiceBase.fetchLogicAsync).
+        // We may have empty entries with timestamp > 0 (see the flooding prevention logic in ConfigServiceBase.fetchAsync).
         // In such cases we want to preserve the timestamp locally but don't want to store those entries into the external cache.
         this.cachedSerializedConfig = void 0;
         this.cachedConfig = config;
@@ -81,9 +81,11 @@ export class ExternalConfigCache implements IConfigCache {
       return this.cachedConfig;
     }
 
-    this.cachedConfig = ProjectConfig.deserialize(externalSerializedConfig);
+    const externalConfig = ProjectConfig.deserialize(externalSerializedConfig);
+    const hasChanged = !ProjectConfig.contentEquals(externalConfig, this.cachedConfig);
+    this.cachedConfig = externalConfig;
     this.cachedSerializedConfig = externalSerializedConfig;
-    return [this.cachedConfig];
+    return hasChanged ? [this.cachedConfig] : this.cachedConfig;
   }
 
   get(key: string): Promise<CacheSyncResult> | CacheSyncResult {

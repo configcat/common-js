@@ -69,16 +69,11 @@ enum ConfigServiceStatus {
   Disposed,
 }
 
-type ConfigRefreshOperation = {
-  promise: Promise<[FetchResult, ProjectConfig]>;
-  latestConfig: ProjectConfig;
-};
-
 export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   private status: ConfigServiceStatus;
 
   private pendingCacheSyncUp: Promise<ProjectConfig> | null = null;
-  private pendingConfigRefresh: ConfigRefreshOperation | null = null;
+  private pendingConfigRefresh: Promise<[FetchResult, ProjectConfig]> | null = null;
 
   protected readonly cacheKey: string;
 
@@ -121,41 +116,36 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   }
 
   protected refreshConfigCoreAsync(latestConfig: ProjectConfig): Promise<[FetchResult, ProjectConfig]> {
-    let refreshOperation = this.pendingConfigRefresh;
+    if (this.pendingConfigRefresh) {
+      // NOTE: Joiners may obtain more up-to-date config data from the external cache than the `latestConfig`
+      // that was used to initiate the fetch operation. However, we ignore this possibility because we consider
+      // the fetch operation result a more authentic source of truth. Although this may lead to overwriting
+      // the cache with stale data, we expect this to be a temporary effect, which corrects itself eventually.
 
-    if (refreshOperation) {
-      const { promise, latestConfig: knownLatestConfig } = refreshOperation;
-      if (latestConfig.timestamp > knownLatestConfig.timestamp && (!latestConfig.isEmpty || knownLatestConfig.isEmpty)) {
-        refreshOperation.latestConfig = latestConfig;
-      }
-      return promise;
+      return this.pendingConfigRefresh;
     }
 
-    refreshOperation = { latestConfig } as ConfigRefreshOperation;
-    refreshOperation.promise = (async (refreshOperation: ConfigRefreshOperation): Promise<[FetchResult, ProjectConfig]> => {
-      const fetchResult = await this.fetchAsync(refreshOperation.latestConfig);
+    const configRefreshPromise = (async (latestConfig: ProjectConfig): Promise<[FetchResult, ProjectConfig]> => {
+      const fetchResult = await this.fetchAsync(latestConfig);
 
-      // NOTE: Further joiners may obtain more up-to-date configs from the external cache, and update
-      // operation.latestConfig before the operation completes, but those updates will be ignored.
-      // In other words, the operation may not return the most recent config obtained during its execution.
-      // However, this is acceptable, especially if we consider that reading and writing the external cache is
-      // not synchronized, which means that a more recent config can be overwritten with a stale one.
-      // (We don't make any effort to synchronize external cache access as that would be extremely hard,
-      // and we expect the "stuttering" resulting from this race condition to be temporary only.)
-      let { latestConfig } = refreshOperation;
+      const shouldUpdateCache =
+        fetchResult.status === FetchStatus.Fetched
+        || fetchResult.status === FetchStatus.NotModified
+        || fetchResult.config.timestamp > latestConfig.timestamp // is not transient error?
+          && (!fetchResult.config.isEmpty || this.options.cache.getInMemory().isEmpty);
 
-      const success = fetchResult.status === FetchStatus.Fetched;
-      if (success
-          || fetchResult.config.timestamp > latestConfig.timestamp && (!fetchResult.config.isEmpty || latestConfig.isEmpty)) {
+      if (shouldUpdateCache) {
+        // NOTE: `ExternalConfigCache.set` makes sure that the external cache is not overwritten with empty
+        // config data under any circumstances.
         await this.options.cache.set(this.cacheKey, fetchResult.config);
 
         latestConfig = fetchResult.config;
       }
 
       return [fetchResult, latestConfig];
-    })(refreshOperation);
+    })(latestConfig);
 
-    const refreshAndFinish = refreshOperation.promise
+    const refreshAndFinish = configRefreshPromise
       .finally(() => this.pendingConfigRefresh = null)
       .then(refreshResult => {
         const [fetchResult] = refreshResult;
@@ -169,7 +159,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         return refreshResult;
       });
 
-    this.pendingConfigRefresh = refreshOperation;
+    this.pendingConfigRefresh = configRefreshPromise;
 
     return refreshAndFinish;
   }
@@ -183,7 +173,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
 
   private async fetchAsync(lastConfig: ProjectConfig): Promise<FetchResult> {
     const options = this.options;
-    options.logger.debug("ConfigServiceBase.fetchLogicAsync() - called.");
+    options.logger.debug("ConfigServiceBase.fetchAsync() - called.");
 
     let errorMessage: string;
     try {
@@ -193,32 +183,32 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         case 200: // OK
           if (!(configOrError instanceof Config)) {
             errorMessage = options.logger.fetchReceived200WithInvalidBody(configOrError).toString();
-            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
+            options.logger.debug(`ConfigServiceBase.fetchAsync(): ${response.statusCode} ${response.reasonPhrase} was received but the HTTP response content was invalid. Returning null.`);
             return FetchResult.error(lastConfig, errorMessage, configOrError);
           }
 
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was successful. Returning new config.");
+          options.logger.debug("ConfigServiceBase.fetchAsync(): fetch was successful. Returning new config.");
           return FetchResult.success(new ProjectConfig(response.body, configOrError, ProjectConfig.generateTimestamp(), response.eTag));
 
         case 304: // Not Modified
-          if (!lastConfig) {
+          if (lastConfig.isEmpty) {
             errorMessage = options.logger.fetchReceived304WhenLocalCacheIsEmpty(response.statusCode, response.reasonPhrase).toString();
-            options.logger.debug(`ConfigServiceBase.fetchLogicAsync(): ${response.statusCode} ${response.reasonPhrase} was received when no config is cached locally. Returning null.`);
+            options.logger.debug(`ConfigServiceBase.fetchAsync(): ${response.statusCode} ${response.reasonPhrase} was received when no config is cached locally. Returning null.`);
             return FetchResult.error(lastConfig, errorMessage);
           }
 
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): content was not modified. Returning last config with updated timestamp.");
+          options.logger.debug("ConfigServiceBase.fetchAsync(): content was not modified. Returning last config with updated timestamp.");
           return FetchResult.notModified(lastConfig.with(ProjectConfig.generateTimestamp()));
 
         case 403: // Forbidden
         case 404: // Not Found
           errorMessage = options.logger.fetchFailedDueToInvalidSdkKey().toString();
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning last config (if any) with updated timestamp.");
+          options.logger.debug("ConfigServiceBase.fetchAsync(): fetch was unsuccessful. Returning last config (if any) with updated timestamp.");
           return FetchResult.error(lastConfig.with(ProjectConfig.generateTimestamp()), errorMessage);
 
         default:
           errorMessage = options.logger.fetchFailedDueToUnexpectedHttpResponse(response.statusCode, response.reasonPhrase).toString();
-          options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
+          options.logger.debug("ConfigServiceBase.fetchAsync(): fetch was unsuccessful. Returning null.");
           return FetchResult.error(lastConfig, errorMessage);
       }
     }
@@ -227,7 +217,7 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         ? options.logger.fetchFailedDueToRequestTimeout((err.args as FetchErrorCauses["timeout"])[0], err)
         : options.logger.fetchFailedDueToUnexpectedError(err)).toString();
 
-      options.logger.debug("ConfigServiceBase.fetchLogicAsync(): fetch was unsuccessful. Returning null.");
+      options.logger.debug("ConfigServiceBase.fetchAsync(): fetch was unsuccessful. Returning null.");
       return FetchResult.error(lastConfig, errorMessage, err);
     }
   }
