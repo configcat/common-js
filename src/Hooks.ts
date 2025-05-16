@@ -14,14 +14,14 @@ export type HookEvents = {
    * the first config fetch operation is also awaited in Auto Polling mode before ready state is reported.
    *
    * That is, reaching the ready state usually means the client is ready to evaluate feature flags and settings.
-   * However, please note that this is not guaranteed. In case of initialization failure or timeout, the local cache
+   * However, please note that this is not guaranteed. In case of initialization failure or timeout, the internal cache
    * may be empty or expired even after the ready state is reported. You can verify this by checking the `cacheState` parameter.
    */
   clientReady: [cacheState: ClientCacheState];
   /** Occurs after the value of a feature flag of setting has been evaluated. */
   flagEvaluated: [evaluationDetails: IEvaluationDetails];
   /**
-   * Occurs after the locally cached config has been updated to a newer version, either as a result of synchronization
+   * Occurs after the internally cached config has been updated to a newer version, either as a result of synchronization
    * with the external cache, or as a result of fetching a newer version from the ConfigCat CDN.
    */
   configChanged: [newConfig: IConfig];

@@ -82,7 +82,7 @@ export interface IConfigCatClient extends IProvidesHooks {
   getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
 
   /**
-   * Updates the locally cached config by synchronizing with the external cache (if any),
+   * Updates the internally cached config by synchronizing with the external cache (if any),
    * then by fetching the latest version from the ConfigCat CDN (provided that the client is online).
    * @returns A promise that fulfills with the refresh result.
    */
@@ -96,10 +96,10 @@ export interface IConfigCatClient extends IProvidesHooks {
    * the first config fetch operation is also awaited in Auto Polling mode before ready state is reported.
    *
    * That is, reaching the ready state usually means the client is ready to evaluate feature flags and settings.
-   * However, please note that this is not guaranteed. In case of initialization failure or timeout, the local cache
+   * However, please note that this is not guaranteed. In case of initialization failure or timeout, the internal cache
    * may be empty or expired even after the ready state is reported. You can verify this by checking the return value.
    *
-   * @returns A promise that fulfills with the state of the local cache at the time initialization was completed.
+   * @returns A promise that fulfills with the state of the internal cache at the time initialization was completed.
    */
   waitForReady(): Promise<ClientCacheState>;
 
@@ -107,11 +107,11 @@ export interface IConfigCatClient extends IProvidesHooks {
    * Captures the current state of the client.
    * The resulting snapshot can be used to synchronously evaluate feature flags and settings based on the captured state.
    *
-   * @remarks The operation captures the locally cached config data. It does not attempt to update it by synchronizing with
+   * @remarks The operation captures the internally cached config data. It does not attempt to update it by synchronizing with
    * the external cache or by fetching the latest version from the ConfigCat CDN.
    *
    * Therefore, it is recommended to use snapshots in conjunction with the Auto Polling mode, where the SDK automatically
-   * updates the local cache in the background.
+   * updates the internal cache in the background.
    *
    * For other polling modes, you will need to manually initiate a cache update by invoking `forceRefreshAsync`.
    */
@@ -139,7 +139,7 @@ export interface IConfigCatClient extends IProvidesHooks {
   setOnline(): void;
 
   /**
-   * Configures the client to not initiate HTTP requests and work using the locally cached config only.
+   * Configures the client to not initiate HTTP requests but work using the cache only.
    */
   setOffline(): void;
 
@@ -151,10 +151,10 @@ export interface IConfigCatClient extends IProvidesHooks {
 
 /** Represents the state of `IConfigCatClient` captured at a specific point in time. */
 export interface IConfigCatClientSnapshot {
-  /** The state of the local cache at the time the snapshot was created. */
+  /** The state of the internal cache at the time the snapshot was created. */
   readonly cacheState: ClientCacheState;
 
-  /** The locally cached config at the time the snapshot was created. */
+  /** The internally cached config at the time the snapshot was created. */
   readonly fetchedConfig: IConfig | null;
 
   /**

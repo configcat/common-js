@@ -33,7 +33,7 @@ export class AutoPollConfigService extends ConfigServiceBase<AutoPollOptions> im
 
       // This promise will be resolved as soon as
       // 1. a cache sync operation completes, and the obtained config is up-to-date (see getConfig and startRefreshWorker),
-      // 2. or, in case the client is online and the local cache is still empty or expired after the initial cache sync-up,
+      // 2. or, in case the client is online and the internal cache is still empty or expired after the initial cache sync-up,
       //    the first config fetch operation completes, regardless of success or failure (see onConfigFetched).
       const initSignalPromise = new Promise<void>(resolve => this.signalInitialization = resolve);
 

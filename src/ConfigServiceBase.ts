@@ -37,15 +37,15 @@ export class RefreshResult {
   }
 }
 
-/** Specifies the possible states of the local cache. */
+/** Specifies the possible states of the internal cache. */
 export enum ClientCacheState {
-  /** No config data is available in the local cache. */
+  /** No config data is available in the internal cache. */
   NoFlagData,
-  /** Only config data provided by local flag override is available in the local cache. */
+  /** Only config data provided by local flag override is available in the internal cache. */
   HasLocalOverrideFlagDataOnly,
-  /** Only expired config data obtained from the external cache or the ConfigCat CDN is available in the local cache. */
+  /** Only expired config data obtained from the external cache or the ConfigCat CDN is available in the internal cache. */
   HasCachedFlagDataOnly,
-  /** Up-to-date config data obtained from the external cache or the ConfigCat CDN is available in the local cache. */
+  /** Up-to-date config data obtained from the external cache or the ConfigCat CDN is available in the internal cache. */
   HasUpToDateFlagData,
 }
 
