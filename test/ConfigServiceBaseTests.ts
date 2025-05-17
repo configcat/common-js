@@ -11,8 +11,8 @@ import { ClientCacheState } from "../src/ConfigServiceBase";
 import { LazyLoadConfigService } from "../src/LazyLoadConfigService";
 import { ManualPollConfigService } from "../src/ManualPollConfigService";
 import { Config, IConfig, ProjectConfig } from "../src/ProjectConfig";
-import { AbortToken, delay } from "../src/Utils";
-import { FakeCache, FakeExternalAsyncCache, FakeExternalCache, FakeLogger } from "./helpers/fakes";
+import { AbortToken, delay, throwError } from "../src/Utils";
+import { FakeCache, FakeConfigFetcherBase, FakeExternalAsyncCache, FakeExternalCache, FakeLogger } from "./helpers/fakes";
 
 describe("ConfigServiceBaseTests", () => {
 
@@ -886,6 +886,109 @@ describe("ConfigServiceBaseTests", () => {
     assert.strictEqual(projectConfig, cachedPc);
     assert.strictEqual(cache.get(options.getCacheKey()), cachedPc);
   });
+
+  it("refreshConfigAsync() - only one config refresh should be in progress at a time - success", async () => {
+
+    // Arrange
+
+    const fakeFetcher = new FakeConfigFetcherBase(null, 1000,
+      () => ({ statusCode: 200, reasonPhrase: "OK", eTag: '"ETAG2"', body: '{ "p": { "s": "0" } }' }));
+
+    const lastConfig = createProjectConfig('"ETAG"', "{}");
+
+    const cacheMock = new Mock<IConfigCache>()
+      .setup(m => m.get(It.IsAny<string>()))
+      .returns(lastConfig)
+      .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
+      .returns();
+
+    const configChangedEvents: IConfig[] = [];
+
+    const service = new ManualPollConfigService(
+      fakeFetcher,
+      new ManualPollOptions(
+        "APIKEY", "common", "1.0.0",
+        {
+          setupHooks: hooks => {
+            hooks.on("configChanged", config => configChangedEvents.push(config));
+          },
+        },
+        () => cacheMock.object()
+      ));
+
+    // Act
+
+    const promise1 = (async () => { await delay(0); return await service.refreshConfigAsync(); })();
+    const promise2 = service.refreshConfigAsync();
+
+    const [[refreshResult1, config1], [refreshResult2, config2]] = await Promise.all([promise1, promise2]);
+
+    // Assert
+
+    assert.strictEqual(fakeFetcher.calledTimes, 1);
+    assert.isTrue(refreshResult1.isSuccess);
+    assert.isTrue(refreshResult2.isSuccess);
+    assert.strictEqual(config1, config2);
+
+    assert.strictEqual(configChangedEvents.length, 1);
+    const [configChangedEvent] = configChangedEvents;
+    assert.strictEqual(configChangedEvent.salt, "0");
+
+    service.dispose();
+  });
+
+  it("refreshConfigAsync() - only one config refresh should be in progress at a time - failure", async () => {
+
+    // Arrange
+
+    const fetchError = Error("Something went wrong.");
+
+    const fakeFetcher = new FakeConfigFetcherBase(null, 1000,
+      () => throwError(fetchError));
+
+    const lastConfig = createProjectConfig('"ETAG"', "{}");
+
+    const cacheMock = new Mock<IConfigCache>()
+      .setup(m => m.get(It.IsAny<string>()))
+      .returns(lastConfig)
+      .setup(m => m.set(It.IsAny<string>(), It.IsAny<ProjectConfig>()))
+      .returns();
+
+    const configChangedEvents: IConfig[] = [];
+
+    const service = new ManualPollConfigService(
+      fakeFetcher,
+      new ManualPollOptions(
+        "APIKEY", "common", "1.0.0",
+        {
+          setupHooks: hooks => {
+            hooks.on("configChanged", config => configChangedEvents.push(config));
+          },
+        },
+        () => cacheMock.object()
+      ));
+
+    // Act
+
+    const promise1 = (async () => { await delay(0); return await service.refreshConfigAsync(); })();
+    const promise2 = service.refreshConfigAsync();
+
+    const [[refreshResult1, config1], [refreshResult2, config2]] = await Promise.all([promise1, promise2]);
+
+    // Assert
+
+    assert.strictEqual(fakeFetcher.calledTimes, 1);
+    assert.isFalse(refreshResult1.isSuccess);
+    assert.strictEqual(refreshResult1.errorException, fetchError);
+    assert.isFalse(refreshResult2.isSuccess);
+    assert.strictEqual(refreshResult2.errorException, fetchError);
+    assert.strictEqual(config1, config2);
+
+    assert.strictEqual(configChangedEvents.length, 0);
+
+    service.dispose();
+  });
+
 });
 
 const DEFAULT_ETAG = "etag";

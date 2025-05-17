@@ -1,5 +1,5 @@
 import type { CacheSyncResult } from "./ConfigCatCache";
-import { ExternalConfigCache } from "./ConfigCatCache";
+import { ExternalConfigCache, InMemoryConfigCache } from "./ConfigCatCache";
 import type { OptionsBase } from "./ConfigCatClientOptions";
 import type { FetchErrorCauses, IConfigFetcher, IFetchResponse } from "./ConfigFetcher";
 import { FetchError, FetchResult, FetchStatus } from "./ConfigFetcher";
@@ -146,26 +146,24 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
         latestConfig = fetchResult.config;
       }
 
+      this.onConfigFetched(fetchResult.config);
+
+      if (fetchResult.status === FetchStatus.Fetched) {
+        this.onConfigChanged(fetchResult.config);
+      }
+
       return [fetchResult, latestConfig];
     })(latestConfig);
 
-    const refreshAndFinish = configRefreshPromise
-      .finally(() => this.pendingConfigRefresh = null)
-      .then(refreshResult => {
-        const [fetchResult] = refreshResult;
-
-        this.onConfigFetched(fetchResult.config);
-
-        if (fetchResult.status === FetchStatus.Fetched) {
-          this.onConfigChanged(fetchResult.config);
-        }
-
-        return refreshResult;
-      });
-
     this.pendingConfigRefresh = configRefreshPromise;
-
-    return refreshAndFinish;
+    try {
+      configRefreshPromise.finally(() => this.pendingConfigRefresh = null);
+    }
+    catch (err) {
+      this.pendingConfigRefresh = null;
+      throw err;
+    }
+    return configRefreshPromise;
   }
 
   protected onConfigFetched(newConfig: ProjectConfig): void { }
@@ -326,23 +324,31 @@ export abstract class ConfigServiceBase<TOptions extends OptionsBase> {
   abstract getCacheState(cachedConfig: ProjectConfig): ClientCacheState;
 
   protected syncUpWithCache(): ProjectConfig | Promise<ProjectConfig> {
+    const { cache } = this.options;
+    if (cache instanceof InMemoryConfigCache) {
+      return cache.get(this.cacheKey);
+    }
+
     if (this.pendingCacheSyncUp) {
       return this.pendingCacheSyncUp;
     }
 
-    const syncResult = this.options.cache.get(this.cacheKey);
+    const syncResult = cache.get(this.cacheKey);
     if (!isPromiseLike(syncResult)) {
       return this.onCacheSynced(syncResult);
     }
 
-    const syncUpAndFinish = syncResult
-      .finally(() => this.pendingCacheSyncUp = null)
-      .then(syncResult => this.onCacheSynced(syncResult));
+    const cacheSyncUpPromise = syncResult.then(syncResult => this.onCacheSynced(syncResult));
 
-    this.pendingCacheSyncUp = syncResult
-      .then(syncResult => !Array.isArray(syncResult) ? syncResult : syncResult[0]);
-
-    return syncUpAndFinish;
+    this.pendingCacheSyncUp = cacheSyncUpPromise;
+    try {
+      cacheSyncUpPromise.finally(() => this.pendingCacheSyncUp = null);
+    }
+    catch (err) {
+      this.pendingCacheSyncUp = null;
+      throw err;
+    }
+    return cacheSyncUpPromise;
   }
 
   private onCacheSynced(syncResult: CacheSyncResult): ProjectConfig {
