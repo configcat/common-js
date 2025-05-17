@@ -1,6 +1,7 @@
 import { assert } from "chai";
 import "mocha";
-import { formatStringList, parseFloatStrict, utf8Encode } from "../src/Utils";
+import { FetchError } from "../src/ConfigFetcher";
+import { errorToString, formatStringList, parseFloatStrict, utf8Encode } from "../src/Utils";
 
 describe("Utils", () => {
 
@@ -80,4 +81,118 @@ describe("Utils", () => {
       assert.strictEqual(actualOutput, expectedOutput);
     });
   }
+
+  it("errorToString - basic error without stack trace", () => {
+    const message = "Something went wrong.";
+    try {
+      throw new FetchError("failure", message);
+    }
+    catch (err) {
+      const expected = `${FetchError.name}: Request failed due to a network or protocol error. ${message}`;
+      const actual = errorToString(err);
+      assert.equal(actual, expected);
+    }
+  });
+
+  it("errorToString - basic error with stack trace", () => {
+    const message = "Something went wrong.";
+    try {
+      throw new FetchError("failure", message);
+    }
+    catch (err) {
+      const expectedMessage = `${FetchError.name}: Request failed due to a network or protocol error. ${message}`;
+      const actualLines = errorToString(err, true).split("\n");
+      assert.equal(actualLines[0], expectedMessage);
+      const stackTrace = actualLines.slice(1);
+      assert.isNotEmpty(stackTrace);
+      assert.isTrue(stackTrace.every(line => line.startsWith("    at ")));
+    }
+  });
+
+  it("errorToString - aggregate error without stack trace", function() {
+    if (typeof AggregateError === "undefined") {
+      this.skip();
+    }
+
+    const message1 = "Something went wrong.";
+    const message2 = "Aggregated error.";
+    const message3 = "Another error.";
+
+    let error1: Error, error2: Error, innerAggregateError: Error, fetchError: Error;
+    try { throw Error(); }
+    catch (err) { error1 = err as Error; }
+    try { throw Error(message3); }
+    catch (err) { error2 = err as Error; }
+    try { throw AggregateError([error1, error2], message2); }
+    catch (err) { innerAggregateError = err as Error; }
+    try { throw new FetchError("failure", message1); }
+    catch (err) { fetchError = err as Error; }
+
+    try {
+      throw AggregateError([innerAggregateError, fetchError]);
+    }
+    catch (err) {
+      const expected = AggregateError.name + "\n"
+        + `--> ${AggregateError.name}: ${message2}\n`
+        + `    --> ${Error.name}\n`
+        + `    --> ${Error.name}: ${message3}\n`
+        + `--> ${FetchError.name}: Request failed due to a network or protocol error. ${message1}`;
+
+      const actual = errorToString(err);
+      assert.equal(actual, expected);
+    }
+  });
+
+  it("errorToString - aggregate error with stack trace", function() {
+    if (typeof AggregateError === "undefined") {
+      this.skip();
+    }
+
+    const message1 = "Something went wrong.";
+    const message2 = "Aggregated error.";
+    const message3 = "Another error.";
+
+    let error1: Error, error2: Error, innerAggregateError: Error, fetchError: Error;
+    try { throw Error(); }
+    catch (err) { error1 = err as Error; }
+    try { throw Error(message3); }
+    catch (err) { error2 = err as Error; }
+    try { throw AggregateError([error1, error2], message2); }
+    catch (err) { innerAggregateError = err as Error; }
+    try { throw new FetchError("failure", message1); }
+    catch (err) { fetchError = err as Error; }
+
+    try {
+      throw AggregateError([innerAggregateError, fetchError]);
+    }
+    catch (err) {
+      const expectedMessages = [
+        AggregateError.name,
+        `--> ${AggregateError.name}: ${message2}`,
+        `    --> ${Error.name}`,
+        `    --> ${Error.name}: ${message3}`,
+        `--> ${FetchError.name}: Request failed due to a network or protocol error. ${message1}`,
+      ];
+      const actualLines = errorToString(err, true).split("\n");
+      assert.equal(actualLines[0], expectedMessages[0]);
+
+      let expectedMessageIndex = 1;
+      let requireStackTraceLine = true;
+      for (const actualLine of actualLines.slice(1)) {
+        if (!requireStackTraceLine && actualLine === expectedMessages[expectedMessageIndex]) {
+          expectedMessageIndex++;
+          requireStackTraceLine = true;
+        }
+        else {
+          const indent =
+            expectedMessageIndex === 1 ? ""
+            : expectedMessageIndex === 2 || expectedMessageIndex === 5 ? "    "
+            : "        ";
+          assert.isTrue(actualLine.startsWith(indent + "    at "), "Line: " + actualLine);
+          requireStackTraceLine = false;
+        }
+      }
+      assert.strictEqual(expectedMessageIndex, expectedMessages.length);
+    }
+  });
 });
