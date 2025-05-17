@@ -963,7 +963,10 @@ describe("ConfigCatClient", () => {
       assert.isEmpty(logEvents1.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
 
       if (passOptionsToSecondGet) {
-        assert.isNotEmpty(logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
+        const logEvents = logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0);
+        assert.isNotEmpty(logEvents);
+        const [[, , msg]] = logEvents;
+        assert.isTrue(msg.toString().endsWith("SDK Key: '**********************/****************789012'."));
       }
       else {
         assert.isEmpty(logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
