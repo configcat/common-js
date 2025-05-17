@@ -49,7 +49,7 @@ export class FakeCache implements IConfigCache {
 }
 
 export class FakeExternalCache implements IConfigCatCache {
-  private cachedValue: string | undefined;
+  cachedValue: string | undefined;
 
   set(key: string, value: string): void {
     this.cachedValue = value;
@@ -60,8 +60,17 @@ export class FakeExternalCache implements IConfigCatCache {
   }
 }
 
+export class FaultyFakeExternalCache implements IConfigCatCache {
+  set(key: string, value: string): never {
+    throw new Error("Operation failed :(");
+  }
+  get(key: string): never {
+    throw new Error("Operation failed :(");
+  }
+}
+
 export class FakeExternalAsyncCache implements IConfigCatCache {
-  private cachedValue: string | undefined;
+  cachedValue: string | undefined;
 
   constructor(private readonly delayMs = 0) {
   }
@@ -89,7 +98,7 @@ export class FakeExternalCacheWithInitialData implements IConfigCatCache {
   }
   get(key: string): string | Promise<string | null | undefined> | null | undefined {
     const cachedJson = '{"f":{"debug":{"t":0,"v":{"b":true},"i":"abcdefgh"}}}';
-    const config = new ProjectConfig(cachedJson, JSON.parse(cachedJson), (new Date().getTime()) - this.expirationDelta, "\"ETAG\"");
+    const config = new ProjectConfig(cachedJson, JSON.parse(cachedJson), ProjectConfig.generateTimestamp() - this.expirationDelta, "\"ETAG\"");
     return ProjectConfig.serialize(config);
   }
 
@@ -115,9 +124,11 @@ export class FakeConfigFetcherBase implements IConfigFetcher {
         this.config = fr.body ?? null;
         return fr;
       }
-      : () => this.config !== null
-        ? { statusCode: 200, reasonPhrase: "OK", eTag: this.getEtag(), body: this.config } as IFetchResponse
-        : { statusCode: 404, reasonPhrase: "Not Found" } as IFetchResponse;
+      : () => {
+        return this.config === null ? { statusCode: 404, reasonPhrase: "Not Found" } as IFetchResponse
+          : this.getEtag() === lastEtag ? { statusCode: 304, reasonPhrase: "Not Modified" } as IFetchResponse
+          : { statusCode: 200, reasonPhrase: "OK", eTag: this.getEtag(), body: this.config } as IFetchResponse;
+      };
 
     await delay(this.callbackDelay);
 

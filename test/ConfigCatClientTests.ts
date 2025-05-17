@@ -15,7 +15,7 @@ import { SettingValueContainer } from "../src/ProjectConfig";
 import { Config, IConfig, ProjectConfig, SettingValue } from "../src/ProjectConfig";
 import { EvaluateContext, IEvaluateResult, IEvaluationDetails, IRolloutEvaluator } from "../src/RolloutEvaluator";
 import { User } from "../src/User";
-import { delay } from "../src/Utils";
+import { delay, getMonotonicTimeMs } from "../src/Utils";
 import "./helpers/ConfigCatClientCacheExtensions";
 import { FakeCache, FakeConfigCatKernel, FakeConfigFetcher, FakeConfigFetcherBase, FakeConfigFetcherWithAlwaysVariableEtag, FakeConfigFetcherWithNullNewConfig, FakeConfigFetcherWithPercentageOptions, FakeConfigFetcherWithRules, FakeConfigFetcherWithTwoCaseSensitiveKeys, FakeConfigFetcherWithTwoKeys, FakeConfigFetcherWithTwoKeysAndRules, FakeExternalAsyncCache, FakeExternalCache, FakeExternalCacheWithInitialData, FakeLogger } from "./helpers/fakes";
 import { allowEventLoop } from "./helpers/utils";
@@ -183,7 +183,7 @@ describe("ConfigCatClient", () => {
 
     const key = "notexists";
     const defaultValue = false;
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -224,7 +224,7 @@ describe("ConfigCatClient", () => {
 
     const key = "debug";
     const defaultValue = false;
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -265,7 +265,7 @@ describe("ConfigCatClient", () => {
 
     const key = "debug";
     const defaultValue = "N/A";
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithRules;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -309,7 +309,7 @@ describe("ConfigCatClient", () => {
 
     const key = "string25Cat25Dog25Falcon25Horse";
     const defaultValue = "N/A";
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithPercentageOptions;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -352,7 +352,7 @@ describe("ConfigCatClient", () => {
 
     const key = "debug";
     const defaultValue = false;
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -405,7 +405,7 @@ describe("ConfigCatClient", () => {
 
     // Arrange
 
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -455,7 +455,7 @@ describe("ConfigCatClient", () => {
 
     // Arrange
 
-    const timestamp = new Date().getTime();
+    const timestamp = ProjectConfig.generateTimestamp();
 
     const configFetcherClass = FakeConfigFetcherWithTwoKeys;
     const cachedPc = new ProjectConfig(configFetcherClass.configJson, Config.deserialize(configFetcherClass.configJson), timestamp, "etag");
@@ -550,7 +550,7 @@ describe("ConfigCatClient", () => {
     try {
       await delay(2.5 * pollIntervalSeconds * 1000);
 
-      assert.equal(configChangedEventCount, 1); 
+      assert.equal(configChangedEventCount, 1);
     }
     finally { client.dispose(); }
   });
@@ -562,10 +562,10 @@ describe("ConfigCatClient", () => {
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcher(500), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
-    const startDate: number = new Date().getTime();
+    const startDate: number = getMonotonicTimeMs();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
-    const elapsedMilliseconds: number = new Date().getTime() - startDate;
+    const elapsedMilliseconds: number = getMonotonicTimeMs() - startDate;
 
     assert.isAtLeast(elapsedMilliseconds, 500 - 10); // 10 ms for tolerance
     assert.isAtMost(elapsedMilliseconds, maxInitWaitTimeSeconds * 1000 + 50); // 50 ms for tolerance
@@ -584,10 +584,10 @@ describe("ConfigCatClient", () => {
       const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
-      const startDate: number = new Date().getTime();
+      const startDate: number = getMonotonicTimeMs();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const actualDetails = await client.getValueDetailsAsync("debug", false);
-      const elapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = getMonotonicTimeMs() - startDate;
 
       assert.isAtLeast(elapsedMilliseconds, 500 - 10); // 10 ms for tolerance
       assert.isAtMost(elapsedMilliseconds, configFetchDelay * 2 + 50); // 50 ms for tolerance
@@ -603,10 +603,10 @@ describe("ConfigCatClient", () => {
     const configCatKernel: FakeConfigCatKernel = { configFetcher: new FakeConfigFetcherWithNullNewConfig(10000), sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
-    const startDate: number = new Date().getTime();
+    const startDate: number = getMonotonicTimeMs();
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
     const actualValue = await client.getValueAsync("debug", false);
-    const elapsedMilliseconds: number = new Date().getTime() - startDate;
+    const elapsedMilliseconds: number = getMonotonicTimeMs() - startDate;
 
     assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
     assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
@@ -640,10 +640,10 @@ describe("ConfigCatClient", () => {
       const configCatKernel: FakeConfigCatKernel = { configFetcher, sdkType: "common", sdkVersion: "1.0.0" };
       const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds }, null);
 
-      const startDate: number = new Date().getTime();
+      const startDate: number = getMonotonicTimeMs();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      const elapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = getMonotonicTimeMs() - startDate;
 
       assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
       assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
@@ -671,10 +671,10 @@ describe("ConfigCatClient", () => {
         cache: new FakeExternalCacheWithInitialData(120_000)
       }, null);
 
-      const startDate: number = new Date().getTime();
+      const startDate: number = getMonotonicTimeMs();
       const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
       const state = await client.waitForReady();
-      const elapsedMilliseconds: number = new Date().getTime() - startDate;
+      const elapsedMilliseconds: number = getMonotonicTimeMs() - startDate;
 
       assert.isAtLeast(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) - 10); // 10 ms for tolerance
       assert.isAtMost(elapsedMilliseconds, (maxInitWaitTimeSeconds * 1000) + 50); // 50 ms for tolerance
@@ -894,7 +894,7 @@ describe("ConfigCatClient", () => {
 
     const configFetcher = new FakeConfigFetcher(500);
     const configJson = "{\"f\": { \"debug\": { \"v\": { \"b\": false }, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
-    const configCache = new FakeCache(new ProjectConfig(configJson, Config.deserialize(configJson), new Date().getTime() - 10000000, "etag2"));
+    const configCache = new FakeCache(new ProjectConfig(configJson, Config.deserialize(configJson), ProjectConfig.generateTimestamp() - 10000000, "etag2"));
     const configCatKernel: FakeConfigCatKernel = { configFetcher, defaultCacheFactory: () => configCache, sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 10 });
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -908,7 +908,7 @@ describe("ConfigCatClient", () => {
 
     const configFetcher = new FakeConfigFetcher(500);
     const configJson = "{\"f\": { \"debug\": { \"v\": { \"b\": false }, \"i\": \"abcdefgh\", \"t\": 0, \"p\": [], \"r\": [] } } }";
-    const configCache = new FakeCache(new ProjectConfig(configJson, Config.deserialize(configJson), new Date().getTime() - 10000000, "etag2"));
+    const configCache = new FakeCache(new ProjectConfig(configJson, Config.deserialize(configJson), ProjectConfig.generateTimestamp() - 10000000, "etag2"));
     const configCatKernel: FakeConfigCatKernel = { configFetcher, defaultCacheFactory: () => configCache, sdkType: "common", sdkVersion: "1.0.0" };
     const options: AutoPollOptions = new AutoPollOptions("APIKEY", "common", "1.0.0", { maxInitWaitTimeSeconds: 10 });
     const client: IConfigCatClient = new ConfigCatClient(options, configCatKernel);
@@ -963,7 +963,10 @@ describe("ConfigCatClient", () => {
       assert.isEmpty(logEvents1.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
 
       if (passOptionsToSecondGet) {
-        assert.isNotEmpty(logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
+        const logEvents = logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0);
+        assert.isNotEmpty(logEvents);
+        const [[, , msg]] = logEvents;
+        assert.isTrue(msg.toString().endsWith("SDK Key: '**********************/****************789012'."));
       }
       else {
         assert.isEmpty(logEvents2.filter(([, , msg]) => msg.toString().indexOf("the specified options are ignored") >= 0));
@@ -1163,8 +1166,9 @@ describe("ConfigCatClient", () => {
 
   for (const [pollingMode, optionsFactory] of optionsFactoriesForOfflineModeTests) {
     it(`setOnline() should make a(n) ${PollingMode[pollingMode]} client created in offline mode transition to online mode.`, async () => {
+      const configFetcherDelayMs = 100;
 
-      const configFetcher = new FakeConfigFetcherBase("{}", 100, (lastConfig, lastETag) => ({
+      const configFetcher = new FakeConfigFetcherBase("{}", configFetcherDelayMs, (lastConfig, lastETag) => ({
         statusCode: 200,
         reasonPhrase: "OK",
         eTag: (lastETag as any | 0) + 1 + "",
@@ -1192,7 +1196,7 @@ describe("ConfigCatClient", () => {
       client.setOnline();
 
       if (configService instanceof AutoPollConfigService) {
-        assert.isTrue(await configService["initializationPromise"]);
+        await delay(configFetcherDelayMs + 50);
         expectedFetchTimes++;
       }
 
