@@ -80,9 +80,14 @@ export class RolloutEvaluator implements IRolloutEvaluator {
       if (defaultValue != null) {
         // NOTE: We've already checked earlier in the call chain that the defaultValue is of an allowed type (see also ensureAllowedDefaultValue).
 
-        const settingType = context.setting.type;
-        // A negative setting type indicates a setting which comes from a flag override (see also Setting.fromValue).
-        if (settingType >= 0 && !isCompatibleValue(defaultValue, settingType)) {
+        let settingType = context.setting.type as SettingType | -1;
+        // Setting type -1 indicates a setting which comes from a flag override (see also Setting.fromValue).
+        if (settingType === -1) {
+          settingType = inferSettingType(context.setting.value);
+        }
+        // At this point, setting type -1 indicates a setting which comes from a flag override AND has an unsupported value.
+        // This case will be handled by handleInvalidReturnValue below.
+        if (settingType !== -1 && !isCompatibleValue(defaultValue, settingType)) {
           throw new TypeError(
             "The type of a setting must match the type of the specified default value. "
             + `Setting's type was ${SettingType[settingType]} but the default value's type was ${typeof defaultValue}. `
@@ -924,7 +929,17 @@ export function checkSettingsAvailable(settings: Readonly<{ [name: string]: Sett
 }
 
 export function isAllowedValue(value: unknown): value is NonNullable<SettingValue> {
-  return typeof value === "boolean" || typeof value === "string" || typeof value === "number";
+  return inferSettingType(value) !== -1;
+}
+
+function inferSettingType(value: unknown): SettingType | -1 {
+  // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
+  switch (typeof value) {
+    case "boolean": return SettingType.Boolean;
+    case "string": return SettingType.String;
+    case "number": return SettingType.Double;
+    default: return -1;
+  }
 }
 
 function isCompatibleValue(value: SettingValue, settingType: SettingType): boolean {

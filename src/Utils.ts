@@ -46,14 +46,52 @@ export function delay(delayMs: number, abortToken?: AbortToken | null): Promise<
   });
 }
 
+export const getMonotonicTimeMs = typeof performance !== "undefined" && typeof performance.now === "function"
+  ? () => performance.now()
+  : () => new Date().getTime();
+
+/** Formats error in a similar way to Chromium-based browsers. */
 export function errorToString(err: any, includeStackTrace = false): string {
-  return err instanceof Error
-    ? includeStackTrace && err.stack ? err.stack : err.toString()
-    : err + "";
+  return err instanceof Error ? visit(err, "") : "" + err;
+
+  function visit(err: Error, indent: string, visited?: Error[]) {
+    const errString = err.toString();
+    let s = (!indent ? indent : indent.substring(4) + "--> ") + errString;
+    if (includeStackTrace && err.stack) {
+      let stack = err.stack.trim();
+      // NOTE: Some JS runtimes (e.g. V8) includes the error in the stack trace, some don't (e.g. SpiderMonkey).
+      if (stack.lastIndexOf(errString, 0) === 0) {
+        stack = stack.substring(errString.length).trim();
+      }
+      s += "\n" + stack.replace(/^\s*(?:at\s)?/gm, indent + "    at ");
+    }
+
+    if (typeof AggregateError !== "undefined" && err instanceof AggregateError) {
+      (visited ??= []).push(err);
+      for (const innerErr of err.errors) {
+        if (innerErr instanceof Error) {
+          if (visited.indexOf(innerErr) >= 0) {
+            continue;
+          }
+          s += "\n" + visit(innerErr, indent + "    ", visited);
+        }
+        else {
+          s += "\n" + indent + "--> " + innerErr;
+        }
+      }
+      visited.pop();
+    }
+
+    return s;
+  }
 }
 
 export function throwError(err: any): never {
   throw err;
+}
+
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !isArray(value);
 }
 
 export function isArray(value: unknown): value is readonly unknown[] {
@@ -142,22 +180,20 @@ export function parseFloatStrict(value: unknown): number {
     return value;
   }
 
-  if (typeof value !== "string" || !value.length || /^\s*$|^\s*0[^\d.e]/.test(value)) {
+  if (typeof value !== "string" || !value.length || /^\s*$|^\s*0[^\d.eE]/.test(value)) {
     return NaN;
   }
 
   return +value;
 }
 
-export function stringifyCircularJSON(obj: unknown): string {
-  // NOTE: This is a version of JSON.stringify that ignores circular references.
-  // to prevent throwing errors when logging options objects that may contain circular references. eg. redis cluster client for cache
-  const seen = new WeakSet();
-  return JSON.stringify(obj, (k, v) => {
-    if (v !== null && typeof v === "object") {
-      if (seen.has(v)) return;
-      seen.add(v);
+export function shallowClone<T extends {}>(obj: T, propertyReplacer?: (key: keyof T, value: unknown) => unknown): Record<keyof T, unknown> {
+  const clone = {} as Record<keyof T, unknown>;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      clone[key] = propertyReplacer ? propertyReplacer(key, value) : value;
     }
-    return v;
-  });
+  }
+  return clone;
 }

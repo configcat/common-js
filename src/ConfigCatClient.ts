@@ -3,10 +3,12 @@ import type { IConfigCache } from "./ConfigCatCache";
 import type { ConfigCatClientOptions, OptionsBase, OptionsForPollingMode } from "./ConfigCatClientOptions";
 import { AutoPollOptions, LazyLoadOptions, ManualPollOptions, PollingMode } from "./ConfigCatClientOptions";
 import type { LoggerWrapper } from "./ConfigCatLogger";
+import { LogLevel } from "./ConfigCatLogger";
 import type { IConfigFetcher } from "./ConfigFetcher";
 import type { IConfigService } from "./ConfigServiceBase";
 import { ClientCacheState, RefreshResult } from "./ConfigServiceBase";
 import type { IEventEmitter } from "./EventEmitter";
+import type { FlagOverrides } from "./FlagOverrides";
 import { OverrideBehaviour } from "./FlagOverrides";
 import type { HookEvents, Hooks, IProvidesHooks } from "./Hooks";
 import { LazyLoadConfigService } from "./LazyLoadConfigService";
@@ -16,7 +18,8 @@ import type { IConfig, PercentageOption, ProjectConfig, Setting, SettingValue } 
 import type { IEvaluationDetails, IRolloutEvaluator, SettingTypeOf } from "./RolloutEvaluator";
 import { RolloutEvaluator, checkSettingsAvailable, evaluate, evaluateAll, evaluationDetailsFromDefaultValue, getTimestampAsDate, handleInvalidReturnValue, isAllowedValue } from "./RolloutEvaluator";
 import type { User } from "./User";
-import { errorToString, isArray, stringifyCircularJSON, throwError } from "./Utils";
+import { getUserAttributes } from "./User";
+import { errorToString, isArray, isObject, shallowClone, throwError } from "./Utils";
 
 /** ConfigCat SDK client. */
 export interface IConfigCatClient extends IProvidesHooks {
@@ -79,20 +82,38 @@ export interface IConfigCatClient extends IProvidesHooks {
   getKeyAndValueAsync(variationId: string): Promise<SettingKeyValue | null>;
 
   /**
-   * Refreshes the locally cached config by fetching the latest version from the remote server.
+   * Updates the internally cached config by synchronizing with the external cache (if any),
+   * then by fetching the latest version from the ConfigCat CDN (provided that the client is online).
    * @returns A promise that fulfills with the refresh result.
    */
   forceRefreshAsync(): Promise<RefreshResult>;
 
   /**
-   * Waits for the client initialization.
-   * @returns A promise that fulfills with the client's initialization state.
+   * Waits for the client to reach the ready state, i.e. to complete initialization.
+   *
+   * @remarks Ready state is reached as soon as the initial sync with the external cache (if any) completes.
+   * If this does not produce up-to-date config data, and the client is online (i.e. HTTP requests are allowed),
+   * the first config fetch operation is also awaited in Auto Polling mode before ready state is reported.
+   *
+   * That is, reaching the ready state usually means the client is ready to evaluate feature flags and settings.
+   * However, please note that this is not guaranteed. In case of initialization failure or timeout, the internal cache
+   * may be empty or expired even after the ready state is reported. You can verify this by checking the return value.
+   *
+   * @returns A promise that fulfills with the state of the internal cache at the time initialization was completed.
    */
   waitForReady(): Promise<ClientCacheState>;
 
   /**
    * Captures the current state of the client.
    * The resulting snapshot can be used to synchronously evaluate feature flags and settings based on the captured state.
+   *
+   * @remarks The operation captures the internally cached config data. It does not attempt to update it by synchronizing with
+   * the external cache or by fetching the latest version from the ConfigCat CDN.
+   *
+   * Therefore, it is recommended to use snapshots in conjunction with the Auto Polling mode, where the SDK automatically
+   * updates the internal cache in the background.
+   *
+   * For other polling modes, you will need to manually initiate a cache update by invoking `forceRefreshAsync`.
    */
   snapshot(): IConfigCatClientSnapshot;
 
@@ -118,7 +139,7 @@ export interface IConfigCatClient extends IProvidesHooks {
   setOnline(): void;
 
   /**
-   * Configures the client to not initiate HTTP requests and work using the locally cached config only.
+   * Configures the client to not initiate HTTP requests but work using the cache only.
    */
   setOffline(): void;
 
@@ -130,9 +151,10 @@ export interface IConfigCatClient extends IProvidesHooks {
 
 /** Represents the state of `IConfigCatClient` captured at a specific point in time. */
 export interface IConfigCatClientSnapshot {
+  /** The state of the internal cache at the time the snapshot was created. */
   readonly cacheState: ClientCacheState;
 
-  /** The latest config which has been fetched from the remote server. */
+  /** The internally cached config at the time the snapshot was created. */
   readonly fetchedConfig: IConfig | null;
 
   /**
@@ -280,7 +302,9 @@ export class ConfigCatClient implements IConfigCatClient {
 
     this.options = options;
 
-    this.options.logger.debug("Initializing ConfigCatClient. Options: " + stringifyCircularJSON(this.options));
+    if (options.logger.isEnabled(LogLevel.Debug)) {
+      options.logger.debug("Initializing ConfigCatClient. Options: " + JSON.stringify(getSerializableOptions(options)));
+    }
 
     if (!configCatKernel) {
       throw new Error("Invalid 'configCatKernel' value");
@@ -551,7 +575,7 @@ export class ConfigCatClient implements IConfigCatClient {
       }
     }
     else {
-      return RefreshResult.failure("Client is configured to use the LocalOnly override behavior, which prevents making HTTP requests.");
+      return RefreshResult.failure("Client is configured to use the LocalOnly override behavior, which prevents synchronization with external cache and making HTTP requests.");
     }
   }
 
@@ -796,6 +820,19 @@ function ensureAllowedDefaultValue(value: SettingValue): void {
 
 function ensureAllowedValue(value: NonNullable<SettingValue>): NonNullable<SettingValue> {
   return isAllowedValue(value) ? value : handleInvalidReturnValue(value);
+}
+
+export function getSerializableOptions(options: ConfigCatClientOptions): Record<string, unknown> {
+  return shallowClone(options, (key, value) => {
+    if (key === "defaultUser") {
+      return getUserAttributes(value as User);
+    }
+    if (key === "flagOverrides") {
+      return shallowClone(value as FlagOverrides, (_, value) => isObject(value) ? value.toString() : value);
+    }
+    // NOTE: Prevent internals from leaking into logs and avoid errors because of circular references in user-provided objects.
+    return isObject(value) ? value.toString() : value;
+  });
 }
 
 /* GC finalization support */

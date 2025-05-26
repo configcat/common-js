@@ -174,10 +174,13 @@ export class LoggerWrapper implements IConfigCatLogger {
     );
   }
 
-  fetchFailedDueToInvalidSdkKey(): LogMessage {
+  fetchFailedDueToInvalidSdkKey(sdkKey: string): LogMessage {
+    sdkKey = maskSdkKey(sdkKey);
     return this.log(
       LogLevel.Error, 1100,
-      "Your SDK Key seems to be wrong. You can find the valid SDK Key at https://app.configcat.com/sdkkey"
+      FormattableLogMessage.from(
+        "SDK_KEY"
+      )`Your SDK Key seems to be wrong: '${sdkKey}'. You can find the valid SDK Key at https://app.configcat.com/sdkkey`
     );
   }
 
@@ -267,6 +270,7 @@ export class LoggerWrapper implements IConfigCatLogger {
   /* Common warning messages (3000-3999) */
 
   clientIsAlreadyCreated(sdkKey: string): LogMessage {
+    sdkKey = maskSdkKey(sdkKey);
     return this.log(
       LogLevel.Warn, 3000,
       FormattableLogMessage.from(
@@ -400,4 +404,9 @@ export class ConfigCatConsoleLogger implements IConfigCatLogger {
 
     logMethod(`${this.SOURCE} - ${levelString} - [${eventId}] ${message}${exceptionString}`);
   }
+}
+
+function maskSdkKey(sdkKey: string) {
+  const numCharsToKeep = 6;
+  return sdkKey.substring(0, sdkKey.length - numCharsToKeep).replace(/[^/]/g, "*") + sdkKey.substring(sdkKey.length - numCharsToKeep);
 }

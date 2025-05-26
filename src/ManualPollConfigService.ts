@@ -26,7 +26,7 @@ export class ManualPollConfigService extends ConfigServiceBase<ManualPollOptions
 
   async getConfig(): Promise<ProjectConfig> {
     this.options.logger.debug("ManualPollService.getConfig() called.");
-    return await this.options.cache.get(this.cacheKey);
+    return await this.syncUpWithCache();
   }
 
   refreshConfigAsync(): Promise<[RefreshResult, ProjectConfig]> {
