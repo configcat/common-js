@@ -121,7 +121,7 @@ describe("Utils", () => {
     let error1: Error, error2: Error, innerAggregateError: Error, fetchError: Error;
     try { throw Error(); }
     catch (err) { error1 = err as Error; }
-    try { throw Error(message3); }
+    try { throw message3; }
     catch (err) { error2 = err as Error; }
     try { throw AggregateError([error1, error2], message2); }
     catch (err) { innerAggregateError = err as Error; }
@@ -135,7 +135,7 @@ describe("Utils", () => {
       const expected = AggregateError.name + "\n"
         + `--> ${AggregateError.name}: ${message2}\n`
         + `    --> ${Error.name}\n`
-        + `    --> ${Error.name}: ${message3}\n`
+        + `    --> ${message3}\n`
         + `--> ${FetchError.name}: Request failed due to a network or protocol error. ${message1}`;
 
       const actual = errorToString(err);
@@ -155,7 +155,7 @@ describe("Utils", () => {
     let error1: Error, error2: Error, innerAggregateError: Error, fetchError: Error;
     try { throw Error(); }
     catch (err) { error1 = err as Error; }
-    try { throw Error(message3); }
+    try { throw message3; }
     catch (err) { error2 = err as Error; }
     try { throw AggregateError([error1, error2], message2); }
     catch (err) { innerAggregateError = err as Error; }
@@ -170,7 +170,7 @@ describe("Utils", () => {
         AggregateError.name,
         `--> ${AggregateError.name}: ${message2}`,
         `    --> ${Error.name}`,
-        `    --> ${Error.name}: ${message3}`,
+        `    --> ${message3}`,
         `--> ${FetchError.name}: Request failed due to a network or protocol error. ${message1}`,
       ];
       const actualLines = errorToString(err, true).split("\n");
@@ -181,7 +181,7 @@ describe("Utils", () => {
       for (const actualLine of actualLines.slice(1)) {
         if (!requireStackTraceLine && actualLine === expectedMessages[expectedMessageIndex]) {
           expectedMessageIndex++;
-          requireStackTraceLine = true;
+          requireStackTraceLine = expectedMessageIndex !== 4;
         }
         else {
           const indent =

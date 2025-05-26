@@ -76,7 +76,7 @@ export function errorToString(err: any, includeStackTrace = false): string {
           s += "\n" + visit(innerErr, indent + "    ", visited);
         }
         else {
-          s += "\n" + indent + innerErr;
+          s += "\n" + indent + "--> " + innerErr;
         }
       }
       visited.pop();
