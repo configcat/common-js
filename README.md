@@ -1,3 +1,7 @@
+| :mega: Important notice |
+|-------------------------|
+| This library is superseded by the [new, unified ConfigCat SDK for JavaScript](https://github.com/configcat/js-unified-sdk#configcat-sdk-for-javascript).<br/>This legacy library is in maintenance mode now, it will receive only critical security patches until **official support ends on August 31, 2026**. |
+
 # ConfigCat Common library for JavaScript
 
 [![Common JS CI](https://github.com/configcat/common-js/actions/workflows/common-js-ci.yml/badge.svg?branch=master)](https://github.com/configcat/common-js/actions/workflows/common-js-ci.yml) [![codecov](https://codecov.io/gh/configcat/common-js/branch/master/graph/badge.svg)](https://codecov.io/gh/configcat/common-js) [![Known Vulnerabilities](https://snyk.io/test/github/configcat/common-js/badge.svg?targetFile=package.json)](https://snyk.io/test/github/configcat/common-js?targetFile=package.json) [![Tree Shaking](https://badgen.net/bundlephobia/tree-shaking/configcat-common)](https://bundlephobia.com/result?p=configcat-common) ![License](https://img.shields.io/github/license/configcat/common-js.svg) \
